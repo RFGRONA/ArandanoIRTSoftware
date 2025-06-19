@@ -1,0 +1,72 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.DeviceDetailsDto
+@{
+    ViewData["Title"] = "Detalles del Dispositivo";
+    Layout = "_AdminLayout";
+}
+<h1>@ViewData["Title"]</h1>
+@if (Model == null) { /* ... manejo de no encontrado ... */ return; }
+@if (ViewData["ErrorMessage"] != null) { /* ... manejo de error ... */ }
+@if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
+
+
+<div>
+    <h4>Dispositivo: @Model.Name</h4>
+    <p><strong>ID para Firmware: @Model.Id</strong></p>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Name)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.Name)</dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Description)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.Description)</dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.PlantName)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.PlantName)</dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.CropName)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.CropName) (@Html.DisplayFor(model => model.CropCityName))</dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DataCollectionTimeMinutes)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.DataCollectionTimeMinutes) minutos</dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DeviceStatusName)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.DeviceStatusName)</dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.RegisteredAt)</dt>
+        <dd class="col-sm-8">@Model.RegisteredAt.ToString("F")</dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.UpdatedAt)</dt>
+        <dd class="col-sm-8">@Model.UpdatedAt.ToString("F")</dd>
+    </dl>
+
+    <h5 class="mt-4">Información de Activación</h5>
+    @if (Model.ActivationId.HasValue)
+    {
+    <dl class="row">
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationCode)</dt>
+        <dd class="col-sm-8"><strong>@Html.DisplayFor(model => model.ActivationCode)</strong></dd>
+
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationStatusName)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationStatusName)</dd>
+
+        @if (Model.ActivationCodeExpiresAt.HasValue)
+        {
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationCodeExpiresAt)</dt>
+        <dd class="col-sm-8">@Model.ActivationCodeExpiresAt.Value.ToString("F")</dd>
+        }
+        @if (Model.DeviceActivatedAt.HasValue)
+        {
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DeviceActivatedAt)</dt>
+        <dd class="col-sm-8">@Model.DeviceActivatedAt.Value.ToString("F")</dd>
+        }
+    </dl>
+    }
+    else
+    {
+        <p class="text-muted">No hay información de activación generada para este dispositivo (esto no debería suceder si el dispositivo se creó a través de esta interfaz).</p>
+    }
+</div>
+<div class="mt-4">
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar Dispositivo</a> |
+    <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>
+</div>

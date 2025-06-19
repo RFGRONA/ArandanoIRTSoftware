@@ -1,0 +1,24 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.CropEditDto
+@{
+    ViewData["Title"] = "Editar Cultivo";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+<h4>@Model.Name</h4>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit">
+            <input type="hidden" asp-for="Id" />
+            <partial name="_CropFormPartial" model="Model" />
+            <div class="form-group mt-3">
+                <input type="submit" value="Guardar Cambios" class="btn btn-success" />
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

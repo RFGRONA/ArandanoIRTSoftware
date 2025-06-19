@@ -1,0 +1,39 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.CropDetailsDto 
+@{
+    ViewData["Title"] = "Eliminar Cultivo";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (Model == null)
+{
+    <div class="alert alert-warning">Cultivo no encontrado.</div>
+    <p><a asp-action="Index">Volver al listado</a></p>
+    return;
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+
+<h3>¿Estás seguro de que quieres eliminar el cultivo "@Model.Name"?</h3>
+<div>
+    <h4>Detalles del Cultivo</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.Name)</dt>
+        <dd class = "col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.CityName)</dt>
+        <dd class = "col-sm-9">@Html.DisplayFor(model => model.CityName)</dd>
+    </dl>
+        
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Eliminar" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

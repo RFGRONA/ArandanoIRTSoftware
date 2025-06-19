@@ -1,0 +1,53 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.DeviceDetailsDto
+@{
+    ViewData["Title"] = "Eliminar Dispositivo";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (Model == null)
+{
+    <div class="alert alert-warning">Dispositivo no encontrado.</div>
+    <p><a asp-action="Index" class="btn btn-secondary">Volver al listado de dispositivos</a></p>
+    return; // Detiene la renderización si el modelo es null
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<h3>¿Estás seguro de que quieres eliminar el dispositivo "@Model.Name"?</h3>
+<p class="text-danger"><strong>Advertencia:</strong> Esta acción eliminará el dispositivo y todos sus datos asociados (activación, tokens, logs, datos ambientales y capturas térmicas/RGB) debido a las relaciones de clave foránea con `ON DELETE CASCADE`.</p>
+<p class="text-danger">Esta acción no se puede deshacer.</p>
+
+<div>
+    <h4>Detalles del Dispositivo</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-4">@Html.DisplayNameFor(model => model.Name)</dt>
+        <dd class = "col-sm-8">@Html.DisplayFor(model => model.Name)</dd>
+
+        <dt class = "col-sm-4">@Html.DisplayNameFor(model => model.PlantName)</dt>
+        <dd class = "col-sm-8">@Html.DisplayFor(model => model.PlantName)</dd>
+
+        <dt class = "col-sm-4">@Html.DisplayNameFor(model => model.DeviceStatusName)</dt>
+        <dd class = "col-sm-8">@Html.DisplayFor(model => model.DeviceStatusName)</dd>
+
+        @if (!string.IsNullOrEmpty(Model.ActivationCode))
+        {
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationCode)</dt>
+            <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationCode)</dd>
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationStatusName)</dt>
+            <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationStatusName)</dd>
+        }
+    </dl>
+
+    <form asp-action="Delete" method="post"> @* Asegúrate que el método sea POST *@
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Eliminar Definitivamente" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

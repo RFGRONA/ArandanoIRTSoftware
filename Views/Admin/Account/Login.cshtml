@@ -1,0 +1,35 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.AdminLoginDto
+@{
+    ViewData["Title"] = "Inicio de sesión";
+    Layout = "_LayoutAdminLogin"; // Un layout simple para la página de login
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <section>
+            <form asp-area="Admin" asp-controller="Account" asp-action="Login" asp-route-returnurl="@Model.ReturnUrl" method="post">
+                <h2>@ViewData["Title"]</h2>
+                <hr />
+                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Username" class="form-control" autocomplete="username" aria-required="true" placeholder="usuario" />
+                    <label asp-for="Username" class="form-label"></label>
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="contraseña" />
+                    <label asp-for="Password" class="form-label"></label>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                @* Podrías añadir un "Recordarme?" si IsPersistent no es suficiente *@
+                <div>
+                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Iniciar Sesión</button>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

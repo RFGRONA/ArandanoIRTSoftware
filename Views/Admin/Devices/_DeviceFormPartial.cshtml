@@ -1,0 +1,41 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.IDeviceFormData
+@{
+    // Para acceder a AvailablePlants y AvailableStatuses si no están en la interfaz
+    var concreteModel = Model as dynamic;
+}
+
+<div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+<div class="mb-3">
+    <label asp-for="Name" class="form-label"></label>
+    <input asp-for="Name" class="form-control" />
+    <span asp-validation-for="Name" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Description" class="form-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    <span asp-validation-for="Description" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="PlantId" class="form-label"></label>
+    <select asp-for="PlantId" class="form-select" asp-items="concreteModel.AvailablePlants">
+        <option value="">-- Seleccione una Planta --</option>
+    </select>
+    <span asp-validation-for="PlantId" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="DataCollectionTimeMinutes" class="form-label"></label>
+    <input asp-for="DataCollectionTimeMinutes" type="number" class="form-control" />
+    <span asp-validation-for="DataCollectionTimeMinutes" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="StatusId" class="form-label"></label>
+    <select asp-for="StatusId" class="form-select" asp-items="concreteModel.AvailableStatuses">
+        <option value="">-- Seleccione un Estado --</option>
+    </select>
+    <span asp-validation-for="StatusId" class="text-danger"></span>
+</div>

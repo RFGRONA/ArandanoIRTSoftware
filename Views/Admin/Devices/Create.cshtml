@@ -1,0 +1,21 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.DeviceCreateDto
+@{
+    ViewData["Title"] = "Registrar Nuevo Dispositivo";
+    Layout = "_AdminLayout";
+}
+<h1>@ViewData["Title"]</h1>
+<hr />
+<div class="row">
+    <div class="col-md-8"> @* Un poco más ancho para el formulario *@
+        <form asp-action="Create">
+            <partial name="_DeviceFormPartial" model="Model" />
+            <div class="form-group mt-3">
+                <input type="submit" value="Registrar Dispositivo" class="btn btn-success" />
+                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

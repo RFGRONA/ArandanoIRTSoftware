@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="fbbd329b-ab61-4e1c-bfdd-87c3e8a0fd8e" name="somee" url=" http://airtprovisional.somee.com">
+        <fileTransfer rootFolder="/www.airtprovisional.somee.com" host="192.52.242.121" port="21">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

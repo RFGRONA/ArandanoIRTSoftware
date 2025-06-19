@@ -1,0 +1,185 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.ThermalCaptureDetailsDto
+@using System.Text.Json 
+@{
+    ViewData["Title"] = "Detalle de Captura";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (Model == null)
+{
+    <div class="alert alert-warning">Captura no encontrada.</div>
+    <p><a asp-action="Index" class="btn btn-secondary">Volver al listado de capturas</a></p>
+    return;
+}
+@if (ViewData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">@ViewData["ErrorMessage"]</div>
+}
+
+<div class="row">
+    <div class="col-md-7">
+        <h4>Información de la Captura</h4>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DeviceName)</dt>
+            <dd class="col-sm-8">@Html.DisplayFor(model => model.DeviceName) (ID: @Model.DeviceId)</dd>
+
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.PlantName)</dt>
+            <dd class="col-sm-8">@Html.DisplayFor(model => model.PlantName)</dd>
+
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.CropName)</dt>
+            <dd class="col-sm-8">@Html.DisplayFor(model => model.CropName)</dd>
+
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.RecordedAt)</dt>
+            <dd class="col-sm-8">@Model.RecordedAt.ToString("F")</dd>
+
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.MaxTemp)</dt>
+            <dd class="col-sm-8">@Model.MaxTemp.ToString("0.00") °C</dd>
+
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.MinTemp)</dt>
+            <dd class="col-sm-8">@Model.MinTemp.ToString("0.00") °C</dd>
+
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.AvgTemp)</dt>
+            <dd class="col-sm-8">@Model.AvgTemp.ToString("0.00") °C</dd>
+        </dl>
+    </div>
+    <div class="col-md-5">
+        <h4>@Html.DisplayNameFor(model => model.RgbImagePath)</h4>
+        <hr />
+        @if (!string.IsNullOrEmpty(Model.RgbImagePath))
+        {
+            <img src="@Model.RgbImagePath" alt="Imagen RGB de la captura" class="img-fluid rounded shadow-sm" style="max-height: 400px;" />
+        }
+        else
+        {
+            <p class="text-muted">No hay imagen RGB disponible para esta captura (podría ser una captura nocturna o un error en la subida).</p>
+        }
+    </div>
+</div>
+
+<hr class="my-4"/>
+
+@if (Model.Temperatures != null && Model.Temperatures.Any())
+{
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>Heatmap de Temperaturas</h4>
+            <p><small>Pasa el cursor sobre el heatmap para ver la temperatura por píxel.</small></p>
+            <div class="d-flex justify-content-center">
+                 @* Ajusta el tamaño del contenedor multiplicando por un factor para visualización *@
+                <div id="heatmapContainerWrapper" style="width: @(Model.ThermalImageWidth*15 + 40)px; padding:10px; border:1px solid #eee; background-color: #f9f9f9;">
+                     <div id="heatmapContainer" style="width: @(Model.ThermalImageWidth*15)px; height: @(Model.ThermalImageHeight*15)px; border:1px solid #ccc; position:relative; margin:auto;">
+                     </div>
+                </div>
+            </div>
+            <div id="tooltip" style="position:absolute; display:none; padding:5px; background:rgba(0,0,0,0.8); color:white; border-radius:3px; font-size:0.85em; pointer-events:none; z-index:1000;"></div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script src="~/lib/heatmap/dist/heatmap.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const temperatures = @Html.Raw(JsonSerializer.Serialize(Model.Temperatures));
+                const width = @Model.ThermalImageWidth;    // ej. 32
+                const height = @Model.ThermalImageHeight;  // ej. 24
+                const pointSize = 15; // Tamaño de cada "píxel" en el heatmap renderizado
+
+                const container = document.getElementById('heatmapContainer');
+                const tooltip = document.getElementById('tooltip');
+
+                if (!temperatures || temperatures.length === 0 || temperatures.length !== width * height) {
+                    console.error('Datos de temperatura para heatmap inválidos o incompletos.');
+                    container.innerHTML = '<p class="text-danger p-3">Datos de temperatura para heatmap no disponibles o corruptos.</p>';
+                    return;
+                }
+
+                let validTemps = temperatures.filter(t => t !== null);
+                let minTemp = validTemps.length > 0 ? Math.min(...validTemps) : 20; // Default min si no hay datos válidos
+                let maxTemp = validTemps.length > 0 ? Math.max(...validTemps) : 30; // Default max
+
+                if (minTemp === maxTemp && validTemps.length > 0) { // Si todas las temperaturas válidas son iguales
+                    minTemp -= 1;
+                    maxTemp += 1;
+                } else if (validTemps.length === 0) { // Si todas son null
+                     minTemp = 20; maxTemp = 30; // Asegurar un rango para el gradiente
+                }
+
+
+                const dataPoints = [];
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const tempValue = temperatures[y * width + x];
+                        if (tempValue !== null) {
+                            dataPoints.push({
+                                x: x * pointSize + Math.floor(pointSize / 2), // Centrar el punto
+                                y: y * pointSize + Math.floor(pointSize / 2),
+                                value: tempValue
+                            });
+                        }
+                    }
+                }
+
+                const heatmapInstance = h337.create({
+                    container: container,
+                    radius: pointSize * 0.8, // Ajusta el radio según el pointSize
+                    maxOpacity: 0.8,
+                    minOpacity: 0.1,
+                    blur: .90,
+                    gradient: {
+                        '.1': 'rgba(0,0,255,0.7)',    // Azul
+                        '.25': 'rgba(0,255,255,0.7)',  // Cyan
+                        '.5': 'rgba(0,255,0,0.7)',    // Verde
+                        '.75': 'rgba(255,255,0,0.7)', // Amarillo
+                        '.95': 'rgba(255,0,0,0.7)'     // Rojo
+                    }
+                });
+
+                heatmapInstance.setData({
+                    max: maxTemp,
+                    min: minTemp,
+                    data: dataPoints
+                });
+
+                container.onmousemove = function(e) {
+                    const rect = container.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+
+                    const x = Math.floor(mouseX / pointSize);
+                    const y = Math.floor(mouseY / pointSize);
+
+                    if (x >= 0 && x < width && y >= 0 && y < height) {
+                        const tempValue = temperatures[y * width + x];
+                        if (tempValue !== null) {
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (e.pageX + 10) + 'px';
+                            tooltip.style.top = (e.pageY + 10) + 'px';
+                            tooltip.innerHTML = `Temp: <b>${tempValue.toFixed(2)}°C</b><br/>Coord: (x:${x}, y:${y})`;
+                        } else {
+                            tooltip.textContent = `N/A (x:${x}, y:${y})`;
+                            tooltip.style.display = 'block'; // Mostrar N/A
+                            tooltip.style.left = (e.pageX + 10) + 'px';
+                            tooltip.style.top = (e.pageY + 10) + 'px';
+                        }
+                    } else {
+                        tooltip.style.display = 'none';
+                    }
+                };
+                container.onmouseout = function() {
+                    tooltip.style.display = 'none';
+                };
+            });
+        </script>
+    }
+}
+else
+{
+    <div class="alert alert-warning mt-4">No hay datos de temperaturas disponibles para generar el heatmap para esta captura.</div>
+}
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-secondary">Volver al Listado de Capturas</a>
+</div>

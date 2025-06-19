@@ -1,0 +1,45 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.CropDetailsDto
+@{
+    ViewData["Title"] = "Detalles del Cultivo";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (Model == null)
+{
+    <div class="alert alert-warning">Cultivo no encontrado.</div>
+    <p><a asp-action="Index">Volver al listado</a></p>
+    return;
+}
+@if (ViewData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @ViewData["ErrorMessage"]
+    </div>
+}
+
+<div>
+    <h4>@Model.Name</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.Name)</dt>
+        <dd class = "col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
+
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.Address)</dt>
+        <dd class = "col-sm-9">@Html.DisplayFor(model => model.Address)</dd>
+            
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.CityName)</dt>
+        <dd class = "col-sm-9">@Html.DisplayFor(model => model.CityName)</dd>
+            
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.CreatedAt)</dt>
+        <dd class = "col-sm-9">@Model.CreatedAt.ToString("g")</dd>
+            
+        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.UpdatedAt)</dt>
+        <dd class = "col-sm-9">@Model.UpdatedAt.ToString("g")</dd>
+    </dl>
+</div>
+<div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar</a> |
+    <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>
+</div>

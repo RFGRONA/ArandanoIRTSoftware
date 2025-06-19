@@ -1,0 +1,32 @@
+@model ArandanoIRT.Web.Data.DTOs.Admin.IPlantFormData
+@* Usamos la interfaz para el modelo de este parcial *@
+@* El DTO concreto (PlantCreateDto o PlantEditDto) debe tener las propiedades AvailableCrops y AvailableStatuses *@
+
+@{
+    var concreteModel = Model as dynamic; // Para acceder a AvailableCrops/Statuses si no están en la interfaz
+    // O mejor, pasar ViewBag/ViewData para los SelectList
+}
+
+<div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+<div class="mb-3">
+    <label asp-for="Name" class="form-label"></label>
+    <input asp-for="Name" class="form-control" />
+    <span asp-validation-for="Name" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="CropId" class="form-label"></label>
+    <select asp-for="CropId" class="form-select" asp-items="@concreteModel.AvailableCrops">
+        <option value="">-- Seleccione un Cultivo --</option>
+    </select>
+    <span asp-validation-for="CropId" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="StatusId" class="form-label"></label>
+    <select asp-for="StatusId" class="form-select" asp-items="@concreteModel.AvailableStatuses">
+        <option value="">-- Seleccione un Estado --</option>
+    </select>
+    <span asp-validation-for="StatusId" class="text-danger"></span>
+</div>

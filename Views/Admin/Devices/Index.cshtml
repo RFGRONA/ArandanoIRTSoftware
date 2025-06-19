@@ -1,0 +1,43 @@
+@model IEnumerable<ArandanoIRT.Web.Data.DTOs.Admin.DeviceSummaryDto>
+@{
+    ViewData["Title"] = "Gestión de Dispositivos";
+    Layout = "_AdminLayout";
+}
+<h1>@ViewData["Title"]</h1>
+@if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
+@if (ViewData["ErrorMessage"] != null) { <div class="alert alert-danger">@ViewData["ErrorMessage"]</div> }
+<p><a asp-action="Create" class="btn btn-primary">Registrar Nuevo Dispositivo</a></p>
+@if (!Model.Any()) {
+    <div class="alert alert-info">No hay dispositivos registrados.</div>
+} else {
+<table class="table table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.First().Name)</th>
+            <th>@Html.DisplayNameFor(model => model.First().PlantName)</th>
+            <th>@Html.DisplayNameFor(model => model.First().CropName)</th>
+            <th>@Html.DisplayNameFor(model => model.First().DeviceStatusName)</th>
+            <th>@Html.DisplayNameFor(model => model.First().ActivationStatusName)</th>
+            <th>@Html.DisplayNameFor(model => model.First().RegisteredAt)</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>@Html.DisplayFor(modelItem => item.Name)</td>
+            <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
+            <td>@Html.DisplayFor(modelItem => item.CropName)</td>
+            <td>@Html.DisplayFor(modelItem => item.DeviceStatusName)</td>
+            <td>@Html.DisplayFor(modelItem => item.ActivationStatusName)</td>
+            <td>@item.RegisteredAt.ToString("g")</td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a>
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Detalles</a>
+                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Eliminar</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+}
