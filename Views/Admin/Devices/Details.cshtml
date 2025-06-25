@@ -1,4 +1,4 @@
-@model ArandanoIRT.Web.Data.DTOs.Admin.DeviceDetailsDto
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.DeviceDetailsDto
 @{
     ViewData["Title"] = "Detalles del Dispositivo";
     Layout = "_AdminLayout";
@@ -40,24 +40,24 @@
     </dl>
 
     <h5 class="mt-4">Información de Activación</h5>
-    @if (Model.ActivationId.HasValue)
+    @if (Model.ActivationDevices != null && Model.ActivationDevices.ActivationId.HasValue)
     {
     <dl class="row">
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationCode)</dt>
-        <dd class="col-sm-8"><strong>@Html.DisplayFor(model => model.ActivationCode)</strong></dd>
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCode)</dt>
+        <dd class="col-sm-8"><strong>@Html.DisplayFor(model => model.ActivationDevices.ActivationCode)</strong></dd>
 
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationStatusName)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationStatusName)</dd>
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationStatusName)</dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationDevices.ActivationStatusName)</dd>
 
-        @if (Model.ActivationCodeExpiresAt.HasValue)
+        @if (Model.ActivationDevices.ActivationCodeExpiresAt.HasValue)
         {
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationCodeExpiresAt)</dt>
-        <dd class="col-sm-8">@Model.ActivationCodeExpiresAt.Value.ToString("F")</dd>
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCodeExpiresAt)</dt>
+        <dd class="col-sm-8">@Model.ActivationDevices.ActivationCodeExpiresAt.Value.ToString("F")</dd>
         }
-        @if (Model.DeviceActivatedAt.HasValue)
+        @if (Model.ActivationDevices.DeviceActivatedAt.HasValue)
         {
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DeviceActivatedAt)</dt>
-        <dd class="col-sm-8">@Model.DeviceActivatedAt.Value.ToString("F")</dd>
+        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.DeviceActivatedAt)</dt>
+        <dd class="col-sm-8">@Model.ActivationDevices.DeviceActivatedAt.Value.ToString("F")</dd>
         }
     </dl>
     }

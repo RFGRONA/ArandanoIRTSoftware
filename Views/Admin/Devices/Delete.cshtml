@@ -1,4 +1,4 @@
-@model ArandanoIRT.Web.Data.DTOs.Admin.DeviceDetailsDto
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.DeviceDetailsDto
 @{
     ViewData["Title"] = "Eliminar Dispositivo";
     Layout = "_AdminLayout";
@@ -36,12 +36,12 @@
         <dt class = "col-sm-4">@Html.DisplayNameFor(model => model.DeviceStatusName)</dt>
         <dd class = "col-sm-8">@Html.DisplayFor(model => model.DeviceStatusName)</dd>
 
-        @if (!string.IsNullOrEmpty(Model.ActivationCode))
+        @if (Model.ActivationDevices != null && !string.IsNullOrEmpty(Model.ActivationDevices.ActivationCode))
         {
-            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationCode)</dt>
-            <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationCode)</dd>
-            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationStatusName)</dt>
-            <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationStatusName)</dd>
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCode)</dt>
+            <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationDevices.ActivationCode)</dd>
+            <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationStatusName)</dt>
+            <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationDevices.ActivationStatusName)</dd>
         }
     </dl>
 
