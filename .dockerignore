@@ -1,0 +1,14 @@
+# Ignorar todos los directorios de binarios y objetos de compilación
+**/bin/
+**/obj/
+
+# Ignorar archivos de configuración de IDEs y de usuario
+.idea/
+*.user
+*.sln.docstates
+
+# Ignorar archivos de configuración de lanzamiento que no se usan en el contenedor
+Properties/launchSettings.json
+
+# Ignorar la carpeta de logs local
+logs/
