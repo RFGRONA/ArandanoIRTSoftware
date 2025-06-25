@@ -62,10 +62,8 @@ public static class DateTimeExtensions
         {
             return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, ColombiaTimeZone);
         }
-        catch (Exception ex) // Captura más general por si ColombiaTimeZone no se inicializó bien.
+        catch (Exception) // Captura más general por si ColombiaTimeZone no se inicializó bien.
         {
-            // Loggear el error
-            // Console.WriteLine($"Error converting '{utcDateTime:o}' (UTC) to Colombia Time: {ex.Message}. Returning original UTC DateTime.");
             return utcDateTime; // Fallback: devuelve la fecha UTC que se intentó convertir.
         }
     }
