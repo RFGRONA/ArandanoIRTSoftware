@@ -1,7 +1,8 @@
-@model ArandanoIRT.Web.Data.DTOs.Admin.IDeviceFormData
+@using ArandanoIRT.Web._0_Domain.Enums
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.IDeviceFormData
 @{
-    // Para acceder a AvailablePlants y AvailableStatuses si no están en la interfaz
-    var concreteModel = Model as dynamic;
+    // Convertimos el modelo a un tipo concreto para acceder a las listas de los dropdowns
+    var concreteModel = (dynamic)Model;
 }
 
 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
@@ -13,6 +14,11 @@
 </div>
 
 <div class="mb-3">
+    <label for="MacAddress" class="form-label">Dirección MAC (Opcional)</label>
+    <input name="MacAddress" id="MacAddress" class="form-control" value="@concreteModel.MacAddress" />
+</div>
+
+<div class="mb-3">
     <label asp-for="Description" class="form-label"></label>
     <textarea asp-for="Description" class="form-control" rows="3"></textarea>
     <span asp-validation-for="Description" class="text-danger"></span>
@@ -20,22 +26,25 @@
 
 <div class="mb-3">
     <label asp-for="PlantId" class="form-label"></label>
+    @* El dropdown ahora muestra todas las plantas disponibles, con el nombre del cultivo como referencia *@
     <select asp-for="PlantId" class="form-select" asp-items="concreteModel.AvailablePlants">
         <option value="">-- Seleccione una Planta --</option>
     </select>
     <span asp-validation-for="PlantId" class="text-danger"></span>
 </div>
 
+
 <div class="mb-3">
-    <label asp-for="DataCollectionTimeMinutes" class="form-label"></label>
-    <input asp-for="DataCollectionTimeMinutes" type="number" class="form-control" />
-    <span asp-validation-for="DataCollectionTimeMinutes" class="text-danger"></span>
+    <label asp-for="DataCollectionIntervalMinutes" class="form-label"></label>
+    <input asp-for="DataCollectionIntervalMinutes" type="number" class="form-control" />
+    <span asp-validation-for="DataCollectionIntervalMinutes" class="text-danger"></span>
 </div>
 
 <div class="mb-3">
-    <label asp-for="StatusId" class="form-label"></label>
-    <select asp-for="StatusId" class="form-select" asp-items="concreteModel.AvailableStatuses">
+    <label asp-for="Status" class="form-label"></label>
+    @* El asp-for ahora apunta a la propiedad "Status" del enum *@
+    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<DeviceStatus>()">
         <option value="">-- Seleccione un Estado --</option>
     </select>
-    <span asp-validation-for="StatusId" class="text-danger"></span>
+    <span asp-validation-for="Status" class="text-danger"></span>
 </div>

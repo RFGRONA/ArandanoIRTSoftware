@@ -1,98 +1,68 @@
-using ArandanoIRT.Web.Authentication;
+using ArandanoIRT.Web._2_Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Serilog;
-using ArandanoIRT.Web.Configuration;
-using ArandanoIRT.Web.Services.Contracts;
-using ArandanoIRT.Web.Services.Implementation;
-using Microsoft.Extensions.Options; // Para tus clases de settings
+using ArandanoIRT.Web._2_Infrastructure.Settings;
+using ArandanoIRT.Web._1_Application.Services.Contracts;
+using ArandanoIRT.Web._1_Application.Services.Implementation;
+using ArandanoIRT.Web._2_Infrastructure.Data;
+using ArandanoIRT.Web._2_Infrastructure.Middleware;
+using ArandanoIRT.Web._2_Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Serilog.Formatting.Json;
 
 // 0. Configuración de Serilog (antes de crear el builder)
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.File(
-        path: "logs/ThermalAppLog-.txt", // Crea una carpeta 'logs' en la raíz del proyecto
-        rollingInterval: RollingInterval.Day, // Nuevo archivo cada día
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-    )
-    .CreateBootstrapLogger(); // Para loguear problemas durante el inicio
+    .Enrich.FromLogContext() // Enriquece los logs con datos del contexto (ej. en un request)
+    .Enrich.WithMachineName() // Añade el nombre del host (útil en contenedores)
+    .WriteTo.Console(new JsonFormatter()) // Escribe en la consola usando formato JSON
+    .CreateBootstrapLogger(); // Lo crea como un logger de "arranque"
 
 try
 {
-    Log.Information("Iniciando la aplicación ThermalDataApp...");
+    Log.Information("Iniciando la aplicación...");
 
     var builder = WebApplication.CreateBuilder(args);
 
     // Cargar configuración de Serilog desde appsettings.json y variables de entorno
-    builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
-        // .ReadFrom.Configuration(context.Configuration) // Podrías omitir esto si todo es programático
-        .MinimumLevel.Debug() // Nivel mínimo global
-        .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning) // Silenciar logs de Microsoft
-        .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
-        .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
-        // Nivel específico para tu aplicación si es necesario (aunque .Debug() global ya lo cubriría)
-        // .MinimumLevel.Override("AIRTProvisional", Serilog.Events.LogEventLevel.Debug) 
-        .Enrich.FromLogContext()
-        .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug) // Nivel para la consola
-        .WriteTo.File(
-            path: builder.Configuration.GetValue<string>("SerilogFileSink:Path") ?? "logs/ThermalAppLog-.txt", // Considera una sección de config más simple
-            rollingInterval: RollingInterval.Day,
-            outputTemplate: builder.Configuration.GetValue<string>("SerilogFileSink:OutputTemplate") ??
-                            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
-            restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug // Nivel para el archivo
-        )
-    );
+    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+    {
+        loggerConfiguration
+            // Lee la configuración adicional desde appsettings.json si es necesario.
+            .ReadFrom.Configuration(context.Configuration)
 
+            // Establece el nivel mínimo de log. Es bueno ponerlo en Debug para desarrollo.
+            .MinimumLevel.Debug()
+
+            // Suprime el ruido de los logs internos de .NET y EF Core. 
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+
+            // Enriquece los logs con información útil.
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName() 
+            
+            .WriteTo.Console(
+                formatter: new JsonFormatter(), // Formato JSON para Promtail/Loki.
+                restrictedToMinimumLevel: Serilog.Events.LogEventLevel
+                    .Information // Loguea de Information para arriba en consola.
+            );
+    });
+    
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
 
     // 1. Configuración de Servicios
     // Mapear secciones de appsettings.json a clases de opciones
-    builder.Services.Configure<SupabaseSettings>(
-        builder.Configuration.GetSection(SupabaseSettings.SectionName));
     builder.Services.Configure<AdminCredentialsSettings>(
         builder.Configuration.GetSection(AdminCredentialsSettings.SectionName));
     builder.Services.Configure<WeatherApiSettings>(
         builder.Configuration.GetSection(WeatherApiSettings.SectionName));
     builder.Services.Configure<TokenSettings>(
         builder.Configuration.GetSection(TokenSettings.SectionName));
-
-    // Registrar el cliente de Supabase para Inyección de Dependencias
-    builder.Services.AddSingleton(provider =>
-    {
-        // Recupera SupabaseSettings a través de IOptions<T> del proveedor de servicios
-        var supabaseSettings = provider.GetRequiredService<IOptions<SupabaseSettings>>().Value;
-
-        var options = new Supabase.SupabaseOptions
-        {
-            AutoRefreshToken = true,
-            AutoConnectRealtime = false, // Ajusta según necesites Realtime
-            // Otras opciones...
-        };
-
-        // Añadir el header de autorización con la ServiceRoleKey a las opciones
-        options.Headers ??= new Dictionary<string, string>(); // Asegura que el diccionario no sea null
-
-        if (!string.IsNullOrEmpty(supabaseSettings.ServiceRoleKey))
-        {
-            options.Headers["Authorization"] = $"Bearer {supabaseSettings.ServiceRoleKey}";
-            // Nota: No puedes usar _logger aquí porque no está inyectado en este contexto DI
-            // Puedes loguear usando Serilog estático si es crucial, pero la configuración silenciosa es común.
-            // Log.Information("Configurando ServiceRoleKey para Supabase client.");
-        }
-        else
-        {
-            Log.Warning("ServiceRoleKey no está configurada. Las operaciones de Postgrest pueden fallar si RLS lo requiere.");
-        }
-
-        // Crea el cliente Supabase con la URL, PublicApiKey y las opciones configuradas
-        var client = new Supabase.Client(
-            supabaseSettings.Url,
-            supabaseSettings.PublicApiKey, // Usa la Public (anon) Key aquí
-            options); // Pasa las opciones que ahora incluyen el header si aplica
-
-        Log.Information("Cliente de Supabase inicializado con URL: {SupabaseUrl}", supabaseSettings.Url);
-        return client;
-    });
-
-
+    builder.Services.Configure<MinioSettings>(
+        builder.Configuration.GetSection(MinioSettings.SectionName));
+    
     // Configuración de Autenticación por Cookies para el Admin Web
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
         .AddCookie(options =>
@@ -147,19 +117,15 @@ try
     builder.Services.AddScoped<IPlantService, PlantService>();
     builder.Services.AddScoped<IDeviceAdminService, DeviceAdminService>();
     builder.Services.AddScoped<IDataQueryService, DataQueryService>();
+    builder.Services.AddScoped<IFileStorageService, MinioStorageService>();
     
     builder.Services.AddControllersWithViews()
         .AddRazorOptions(options =>
         {
-            // {2} es el nombre del Controlador
-            // {1} es el nombre del Área
-            // {0} es el nombre de la Vista
-            options.AreaViewLocationFormats.Clear(); // Limpiamos las convenciones por defecto si es necesario
-            options.AreaViewLocationFormats.Add("/Views/{2}/{1}/{0}.cshtml");         // Para vistas específicas del controlador de área
-            options.AreaViewLocationFormats.Add("/Views/{2}/Shared/{0}.cshtml");     // Para vistas compartidas dentro del área
-            options.AreaViewLocationFormats.Add("/Views/Shared/{0}.cshtml");         // Para vistas compartidas globales (ya debería estar)
-            // Si también usas Layouts específicos para áreas que no están en Shared global:
-            // options.AreaPageViewLocationFormats.Add("/Views/{1}/Shared/{0}.cshtml"); // Para layouts de área
+            options.AreaViewLocationFormats.Clear();
+            options.AreaViewLocationFormats.Add("/Views/{2}/{1}/{0}.cshtml");
+            options.AreaViewLocationFormats.Add("/Views/{2}/Shared/{0}.cshtml");
+            options.AreaViewLocationFormats.Add("/Views/Shared/{0}.cshtml");
         });
 
     var app = builder.Build();
@@ -180,10 +146,12 @@ try
 
     app.UseRouting();
 
-    app.UseSerilogRequestLogging(); // Loguea cada petición HTTP
+    app.UseSerilogRequestLogging(); 
 
     app.UseAuthentication(); // Importante: ANTES de UseAuthorization
     app.UseAuthorization();
+    
+    app.UseMiddleware<UserAuditingMiddleware>();
 
     // Ruta para el área de Admin (ejemplo)
     app.MapControllerRoute(
@@ -202,7 +170,7 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "La aplicación ThermalDataApp falló al iniciar.");
+    Log.Fatal(ex, "La aplicación falló al iniciar.");
 }
 finally
 {
