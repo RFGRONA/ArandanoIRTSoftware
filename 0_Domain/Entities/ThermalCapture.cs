@@ -1,19 +1,25 @@
-using System.ComponentModel.DataAnnotations.Schema;
+﻿namespace ArandanoIRT.Web._0_Domain.Entities;
 
-namespace ArandanoIRT.Web._0_Domain.Entities;
-
-[Table("thermal_capture")]
-public class ThermalCapture
+/// <summary>
+/// Stores thermographic captures. Statistics are stored in JSONB, the image path in Object Storage.
+/// </summary>
+public partial class ThermalCapture
 {
     public long Id { get; set; }
+
     public int DeviceId { get; set; }
+
     public int? PlantId { get; set; }
-    public int? CropId { get; set; }
-    public string ThermalImageData { get; set; } = string.Empty; 
-    public string? RgbImagePath { get; set; } 
-    public DateTime RecordedAt { get; set; }
-    
-    // Navigation Properties
-    public virtual Device Device { get; set; }
+
+    public string ThermalDataStats { get; set; } = null!;
+
+    public string? RgbImagePath { get; set; }
+
+    public DateTime RecordedAtServer { get; set; }
+
+    public DateTime? RecordedAtDevice { get; set; }
+
+    public virtual Device Device { get; set; } = null!;
+
     public virtual Plant? Plant { get; set; }
 }
