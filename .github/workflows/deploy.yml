@@ -35,6 +35,8 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ steps.repo_lowercase.outputs.NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           
   deploy:
     name: Deploy to VPS
@@ -51,6 +53,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
           script: |
             cd /home/${{ secrets.SSH_USERNAME }}/ArandanoProject/ArandanoIRTOps
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
