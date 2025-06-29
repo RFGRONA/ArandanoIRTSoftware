@@ -56,7 +56,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
           script: |
             cd /home/${{ secrets.SSH_USERNAME }}/ArandanoProject/ArandanoIRTOps
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
