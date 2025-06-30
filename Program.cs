@@ -101,12 +101,12 @@ try
         {
             client.BaseAddress = new Uri(weatherApiSettings.BaseUrl);
         }
-        else { Log.Warning("BaseUrl para WeatherAPI no configurada."); } 
+        else { Log.Warning("BaseUrl para WeatherAPI no configurada."); }
     });
 
     // Add services to the container.
     builder.Services.AddControllersWithViews();
-    builder.Services.AddHttpContextAccessor(); 
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IWeatherService, WeatherService>();
     builder.Services.AddScoped<IDeviceService, DeviceService>();
     builder.Services.AddScoped<IDataSubmissionService, DataSubmissionService>();
