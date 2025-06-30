@@ -47,7 +47,7 @@ public class DashboardController : Controller
         {
             viewModel.AvailableCrops = cropsResult.Value
                 .Select(c => new SelectListItem
-                    { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId })
+                { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId })
                 .OrderBy(s => s.Text)
                 .ToList(); // Convertir a List<SelectListItem>
         }
@@ -63,7 +63,7 @@ public class DashboardController : Controller
             {
                 viewModel.AvailablePlants = plantsResult.Value
                     .Select(p => new SelectListItem
-                        { Value = p.Id.ToString(), Text = p.Name, Selected = p.Id == selectedPlantId })
+                    { Value = p.Id.ToString(), Text = p.Name, Selected = p.Id == selectedPlantId })
                     .OrderBy(s => s.Text)
                     .ToList(); // Convertir a List<SelectListItem>
             }
@@ -142,21 +142,27 @@ public class DashboardController : Controller
                     DataSetLabel = "Temperatura Amb. (°C)",
                     Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
                     Values = data.Select(d => (float?)d.Temperature).ToList(),
-                    BorderColor = "rgb(255, 99, 132)", BackgroundColor = "rgba(255, 99, 132, 0.2)", PointRadius = 2
+                    BorderColor = "rgb(255, 99, 132)",
+                    BackgroundColor = "rgba(255, 99, 132, 0.2)",
+                    PointRadius = 2
                 };
                 viewModel.HumidityChartData = new TimeSeriesChartDataDto
                 {
                     DataSetLabel = "Humedad Amb. (%)",
                     Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
                     Values = data.Select(d => (float?)d.Humidity).ToList(),
-                    BorderColor = "rgb(54, 162, 235)", BackgroundColor = "rgba(54, 162, 235, 0.2)", PointRadius = 2
+                    BorderColor = "rgb(54, 162, 235)",
+                    BackgroundColor = "rgba(54, 162, 235, 0.2)",
+                    PointRadius = 2
                 };
                 viewModel.LightChartData = new TimeSeriesChartDataDto
                 {
                     DataSetLabel = "Luz Amb. (lx)",
                     Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
                     Values = data.Select(d => d.Light).ToList(),
-                    BorderColor = "rgb(255, 205, 86)", BackgroundColor = "rgba(255, 205, 86, 0.2)", PointRadius = 2
+                    BorderColor = "rgb(255, 205, 86)",
+                    BackgroundColor = "rgba(255, 205, 86, 0.2)",
+                    PointRadius = 2
                 };
 
                 // Calcular promedios, máximos y mínimos ambientales
@@ -172,8 +178,8 @@ public class DashboardController : Controller
                 if (lightValues.Any())
                 {
                     viewModel.AverageAmbientLight24h = lightValues.Average();
-                    viewModel.MaxAmbientLight24h = lightValues.Max(); 
-                    viewModel.MinAmbientLight24h = lightValues.Min(); 
+                    viewModel.MaxAmbientLight24h = lightValues.Max();
+                    viewModel.MinAmbientLight24h = lightValues.Min();
                 }
             }
         }

@@ -64,7 +64,7 @@ public class WeatherService : IWeatherService
             // aunque JsonPropertyName lo maneja bien.
             var weatherApiResponse = await response.Content.ReadFromJsonAsync<WeatherApiResponse>();
 
-            if (weatherApiResponse?.Current == null || weatherApiResponse.Current.Condition == null) 
+            if (weatherApiResponse?.Current == null || weatherApiResponse.Current.Condition == null)
             {
                 _logger.LogWarning("Respuesta de WeatherAPI no contenía datos 'current' o 'condition' válidos para {CityQuery}.", cityQuery);
                 return Result.Failure<WeatherInfo>("Datos del clima (current o condition) no disponibles en la respuesta de la API.");
@@ -76,7 +76,7 @@ public class WeatherService : IWeatherService
                 TemperatureCelsius = current.TempC,
                 HumidityPercentage = current.Humidity,
                 IsNight = (current.IsDay == 0),
-                ConditionText = current.Condition.Text 
+                ConditionText = current.Condition.Text
             };
 
             _logger.LogInformation("Clima obtenido para {CityQuery}: Temp={TempC}, Hum={Humidity}%, IsNight={IsNight}, Condición='{ConditionText}'",

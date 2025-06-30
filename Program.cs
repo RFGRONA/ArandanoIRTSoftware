@@ -40,15 +40,15 @@ try
 
             // Enriquece los logs con información útil.
             .Enrich.FromLogContext()
-            .Enrich.WithMachineName() 
-            
+            .Enrich.WithMachineName()
+
             .WriteTo.Console(
                 formatter: new JsonFormatter(), // Formato JSON para Promtail/Loki.
                 restrictedToMinimumLevel: Serilog.Events.LogEventLevel
                     .Information // Loguea de Information para arriba en consola.
             );
     });
-    
+
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
 
@@ -62,7 +62,7 @@ try
         builder.Configuration.GetSection(TokenSettings.SectionName));
     builder.Services.Configure<MinioSettings>(
         builder.Configuration.GetSection(MinioSettings.SectionName));
-    
+
     // Configuración de Autenticación por Cookies para el Admin Web
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
         .AddCookie(options =>
@@ -89,7 +89,7 @@ try
             policy.RequireRole("Device"); // Opcional: requerir el rol "Device" que asignamos en el handler
         });
     });
-    
+
     builder.Services.AddHttpClient("WeatherApi", client =>
     {
         // La BaseUrl se obtiene de la configuración inyectada en el servicio,
@@ -101,15 +101,12 @@ try
         {
             client.BaseAddress = new Uri(weatherApiSettings.BaseUrl);
         }
-        // else { Log.Warning("BaseUrl para WeatherAPI no configurada."); } // No puedes usar ILogger aquí
+        else { Log.Warning("BaseUrl para WeatherAPI no configurada."); } 
     });
 
     // Add services to the container.
     builder.Services.AddControllersWithViews();
-    builder.Services.AddHttpContextAccessor(); // Útil para acceder a HttpContext desde servicios
-
-
-    // TODO: Registrar tus propios servicios (ej: DeviceService, ThermalDataService, etc.)
+    builder.Services.AddHttpContextAccessor(); 
     builder.Services.AddScoped<IWeatherService, WeatherService>();
     builder.Services.AddScoped<IDeviceService, DeviceService>();
     builder.Services.AddScoped<IDataSubmissionService, DataSubmissionService>();
@@ -118,7 +115,7 @@ try
     builder.Services.AddScoped<IDeviceAdminService, DeviceAdminService>();
     builder.Services.AddScoped<IDataQueryService, DataQueryService>();
     builder.Services.AddScoped<IFileStorageService, MinioStorageService>();
-    
+
     builder.Services.AddControllersWithViews()
         .AddRazorOptions(options =>
         {
@@ -146,11 +143,11 @@ try
 
     app.UseRouting();
 
-    app.UseSerilogRequestLogging(); 
+    app.UseSerilogRequestLogging();
 
     app.UseAuthentication(); // Importante: ANTES de UseAuthorization
     app.UseAuthorization();
-    
+
     app.UseMiddleware<UserAuditingMiddleware>();
 
     // Ruta para el área de Admin (ejemplo)

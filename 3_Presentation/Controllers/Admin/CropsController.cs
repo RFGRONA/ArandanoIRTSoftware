@@ -121,7 +121,7 @@ public class CropsController : Controller
                 return RedirectToAction(nameof(Index));
             }
             ModelState.AddModelError(string.Empty, result.ErrorMessage);
-             _logger.LogWarning("Fallo al actualizar cultivo ID: {CropId}. Error: {Error}", cropDto.Id, result.ErrorMessage);
+            _logger.LogWarning("Fallo al actualizar cultivo ID: {CropId}. Error: {Error}", cropDto.Id, result.ErrorMessage);
         }
         return View(cropDto);
     }
@@ -156,7 +156,7 @@ public class CropsController : Controller
         var result = await _cropService.DeleteCropAsync(id);
         if (result.IsSuccess)
         {
-             TempData["SuccessMessage"] = $"Cultivo eliminado exitosamente.";
+            TempData["SuccessMessage"] = $"Cultivo eliminado exitosamente.";
             return RedirectToAction(nameof(Index));
         }
         // Si falla, podríamos redirigir a una página de error o a la vista de detalles con un mensaje.

@@ -85,7 +85,7 @@ public class DataQueryService : IDataQueryService
             return null;
         }
     }
-    
+
     #endregion
 
     public async Task<Result<PagedResultDto<SensorDataDisplayDto>>> GetSensorDataAsync(DataQueryFilters filters)
@@ -171,7 +171,7 @@ public class DataQueryService : IDataQueryService
                 query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
             if (filters.CropId.HasValue)
                 query = query.Where(tc => tc.Device.CropId == filters.CropId.Value);
-            
+
             query = query.ApplyDateFilters(filters, tc => tc.RecordedAtServer);
 
             var totalCount = await query.CountAsync();
@@ -212,32 +212,33 @@ public class DataQueryService : IDataQueryService
 
             // NOTA: El mapeo anterior es ineficiente porque carga entidades enteras. Una proyección directa es mejor.
             // Versión optimizada con proyección:
-             var optimizedSummaries = await query
-                .OrderByDescending(tc => tc.RecordedAtServer)
-                .Skip((filters.PageNumber - 1) * filters.PageSize)
-                .Take(filters.PageSize)
-                .Select(tc => new 
-                {
-                    Capture = tc,
-                    DeviceName = tc.Device.Name,
-                    PlantName = tc.Plant != null ? tc.Plant.Name : "N/A"
-                })
-                .ToListAsync();
+            var optimizedSummaries = await query
+               .OrderByDescending(tc => tc.RecordedAtServer)
+               .Skip((filters.PageNumber - 1) * filters.PageSize)
+               .Take(filters.PageSize)
+               .Select(tc => new
+               {
+                   Capture = tc,
+                   DeviceName = tc.Device.Name,
+                   PlantName = tc.Plant != null ? tc.Plant.Name : "N/A"
+               })
+               .ToListAsync();
 
-            var finalSummaries = optimizedSummaries.Select(res => {
+            var finalSummaries = optimizedSummaries.Select(res =>
+            {
                 var thermalStats = DeserializeThermalStats(res.Capture.ThermalDataStats, res.Capture.Id);
-                 return new ThermalCaptureSummaryDto
-                    {
-                        Id = res.Capture.Id,
-                        DeviceId = res.Capture.DeviceId,
-                        DeviceName = res.DeviceName,
-                        PlantName = res.PlantName,
-                        MaxTemp = thermalStats?.Max_Temp ?? 0,
-                        MinTemp = thermalStats?.Min_Temp ?? 0,
-                        AvgTemp = thermalStats?.Avg_Temp ?? 0,
-                        RgbImagePath = res.Capture.RgbImagePath,
-                        RecordedAt = ToColombiaTime(res.Capture.RecordedAtServer)
-                    };
+                return new ThermalCaptureSummaryDto
+                {
+                    Id = res.Capture.Id,
+                    DeviceId = res.Capture.DeviceId,
+                    DeviceName = res.DeviceName,
+                    PlantName = res.PlantName,
+                    MaxTemp = thermalStats?.Max_Temp ?? 0,
+                    MinTemp = thermalStats?.Min_Temp ?? 0,
+                    AvgTemp = thermalStats?.Avg_Temp ?? 0,
+                    RgbImagePath = res.Capture.RgbImagePath,
+                    RecordedAt = ToColombiaTime(res.Capture.RecordedAtServer)
+                };
             }).ToList();
 
 
@@ -340,7 +341,7 @@ public class DataQueryService : IDataQueryService
                     IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
                     RecordedAt = ToColombiaTime(er.RecordedAtServer)
                 }).ToListAsync();
-            
+
             _logger.LogInformation("Datos ambientales para dashboard recuperados: {Count} puntos.", data.Count);
             return Result.Success<IEnumerable<SensorDataDisplayDto>>(data);
         }
@@ -385,10 +386,10 @@ public class DataQueryService : IDataQueryService
 
             if (!thermalStatsList.Any())
             {
-                 _logger.LogInformation("No se pudieron deserializar datos térmicos válidos para el dashboard.");
+                _logger.LogInformation("No se pudieron deserializar datos térmicos válidos para el dashboard.");
                 return Result.Success(new ThermalStatsDto());
             }
-            
+
             var latestCapture = allCapturesInRange.OrderByDescending(x => x.RecordedAtServer).First();
             var latestStats = DeserializeThermalStats(latestCapture.ThermalDataStats, latestCapture.Id);
 
@@ -402,7 +403,7 @@ public class DataQueryService : IDataQueryService
                 LatestAvgTemp = latestStats?.Avg_Temp ?? 0,
                 LatestThermalReadingTimestamp = ToColombiaTime(latestCapture.RecordedAtServer)
             };
-            
+
             return Result.Success(dashboardStats);
         }
         catch (Exception ex)
@@ -423,7 +424,7 @@ public class DataQueryService : IDataQueryService
                 query = query.Where(d => d.PlantId == plantId.Value);
             else if (cropId.HasValue)
                 query = query.Where(d => d.CropId == cropId.Value);
-            
+
             var count = await query.CountAsync();
             _logger.LogInformation("Conteo de dispositivos activos (CropId: {CropId}, PlantId: {PlantId}): {Count}", cropId, plantId, count);
             return Result.Success(count);
@@ -448,7 +449,7 @@ public class DataQueryService : IDataQueryService
 
             // Contar solo las plantas que tienen algún dispositivo en estado ACTIVO.
             var count = await query.CountAsync(p => p.Devices.Any(d => d.Status == DeviceStatus.ACTIVE));
-            
+
             _logger.LogInformation("Conteo de plantas monitoreadas (CropId: {CropId}): {Count}", cropId, count);
             return Result.Success(count);
         }
@@ -458,7 +459,7 @@ public class DataQueryService : IDataQueryService
             return Result.Failure<int>($"Error interno al contar plantas monitoreadas: {ex.Message}");
         }
     }
-    
+
     public async Task<Result<SensorDataDisplayDto?>> GetLatestAmbientDataAsync(int? cropId, int? plantId, int? deviceId)
     {
         _logger.LogInformation("Obteniendo última lectura ambiental para CropId: {CropId}, etc.", cropId);
@@ -473,7 +474,7 @@ public class DataQueryService : IDataQueryService
                 query = query.Where(er => er.PlantId == plantId.Value);
             else if (cropId.HasValue)
                 query = query.Where(er => er.Device.CropId == cropId.Value);
-            
+
             var result = await query
                 .OrderByDescending(er => er.RecordedAtServer)
                 .Select(er => new SensorDataDisplayDto // Proyectar directamente a DTO
@@ -498,7 +499,7 @@ public class DataQueryService : IDataQueryService
             {
                 _logger.LogInformation("No se encontró última lectura ambiental para los filtros aplicados.");
             }
-            
+
             return Result.Success(result);
         }
         catch (Exception ex)

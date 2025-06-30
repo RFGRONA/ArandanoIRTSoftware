@@ -3,7 +3,7 @@ using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web.Common;
 using ArandanoIRT.Web._2_Infrastructure.Data;
-using Microsoft.EntityFrameworkCore; 
+using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
@@ -47,7 +47,7 @@ public class CropService : ICropService
         try
         {
             _logger.LogInformation("Intentando eliminar cultivo con ID: {CropId}", cropId);
-            
+
             var cropToDelete = await _context.Crops.FindAsync(cropId);
 
             if (cropToDelete == null)
@@ -62,7 +62,7 @@ public class CropService : ICropService
             _logger.LogInformation("Cultivo con ID: {CropId} eliminado exitosamente.", cropId);
             return Result.Success();
         }
-        catch (DbUpdateException ex) 
+        catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Error de base de datos al eliminar el cultivo con ID: {CropId}. Puede deberse a restricciones de clave externa.", cropId);
             return Result.Failure($"Error de base de datos al eliminar el cultivo. Verifique que no tenga entidades dependientes.");
@@ -129,7 +129,7 @@ public class CropService : ICropService
             return Result.Failure<CropDetailsDto?>($"Error interno al obtener el cultivo: {ex.Message}");
         }
     }
-     public async Task<Result<CropEditDto?>> GetCropForEditByIdAsync(int cropId)
+    public async Task<Result<CropEditDto?>> GetCropForEditByIdAsync(int cropId)
     {
         try
         {
@@ -147,9 +147,9 @@ public class CropService : ICropService
 
             if (cropEditDto == null)
             {
-                 _logger.LogWarning("Cultivo con ID: {CropId} no encontrado para edición.", cropId);
+                _logger.LogWarning("Cultivo con ID: {CropId} no encontrado para edición.", cropId);
             }
-               
+
             return Result.Success<CropEditDto?>(cropEditDto);
         }
         catch (Exception ex)
@@ -170,14 +170,14 @@ public class CropService : ICropService
                 _logger.LogWarning("No se encontró el cultivo con ID: {CropId} para actualizar.", cropDto.Id);
                 return Result.Failure("Cultivo no encontrado para actualizar.");
             }
-            
+
             existingCrop.Name = cropDto.Name;
             existingCrop.Address = cropDto.Address;
             existingCrop.CityName = cropDto.CityName;
             existingCrop.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Cultivo con ID: {CropId} actualizado exitosamente.", cropDto.Id);
             return Result.Success();
         }

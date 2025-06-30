@@ -18,8 +18,8 @@ public class DeviceAdminService : IDeviceAdminService
     private readonly TokenSettings _tokenSettings;
 
     public DeviceAdminService(
-        ApplicationDbContext context, 
-        IOptions<TokenSettings> tokenSettingsOptions, 
+        ApplicationDbContext context,
+        IOptions<TokenSettings> tokenSettingsOptions,
         ILogger<DeviceAdminService> logger)
     {
         _context = context;
@@ -41,7 +41,7 @@ public class DeviceAdminService : IDeviceAdminService
                 Description = deviceDto.Description,
                 PlantId = deviceDto.PlantId > 0 ? deviceDto.PlantId : null,
                 DataCollectionIntervalMinutes = deviceDto.DataCollectionIntervalMinutes,
-                Status = deviceDto.Status, 
+                Status = deviceDto.Status,
                 RegisteredAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -59,9 +59,11 @@ public class DeviceAdminService : IDeviceAdminService
                     await transaction.RollbackAsync();
                     return Result.Failure<DeviceCreationResultDto>("La planta seleccionada no existe.");
                 }
-            } else {
-                 await transaction.RollbackAsync();
-                 return Result.Failure<DeviceCreationResultDto>("El dispositivo debe estar asociado al menos a un cultivo.");
+            }
+            else
+            {
+                await transaction.RollbackAsync();
+                return Result.Failure<DeviceCreationResultDto>("El dispositivo debe estar asociado al menos a un cultivo.");
             }
 
             _context.Devices.Add(newDevice);
@@ -135,7 +137,7 @@ public class DeviceAdminService : IDeviceAdminService
             return Result.Failure<IEnumerable<DeviceSummaryDto>>($"Error interno: {ex.Message}");
         }
     }
-    
+
     public async Task<Result<DeviceDetailsDto?>> GetDeviceByIdAsync(int deviceId)
     {
         try
@@ -159,7 +161,8 @@ public class DeviceAdminService : IDeviceAdminService
                     // Sub-consulta para obtener datos de la activación más reciente
                     ActivationDevices = d.DeviceActivations
                                     .OrderByDescending(a => a.CreatedAt)
-                                    .Select(a => new DeviceDetailsDto.DeviceActivationDetailsDto() {
+                                    .Select(a => new DeviceDetailsDto.DeviceActivationDetailsDto()
+                                    {
                                         ActivationId = a.Id,
                                         ActivationCode = a.ActivationCode,
                                         ActivationStatusName = a.Status.ToString(),
@@ -190,7 +193,7 @@ public class DeviceAdminService : IDeviceAdminService
         {
             var device = await _context.Devices.FindAsync(deviceId);
             if (device == null) return Result.Success<DeviceEditDto?>(null);
-            
+
             return Result.Success<DeviceEditDto?>(new DeviceEditDto
             {
                 Id = device.Id,
@@ -206,7 +209,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
         catch (Exception ex)
         {
-             _logger.LogError(ex, "Excepción al obtener dispositivo para editar ID: {DeviceId}", deviceId);
+            _logger.LogError(ex, "Excepción al obtener dispositivo para editar ID: {DeviceId}", deviceId);
             return Result.Failure<DeviceEditDto?>($"Error interno: {ex.Message}");
         }
     }
@@ -231,7 +234,7 @@ public class DeviceAdminService : IDeviceAdminService
                 var plant = await _context.Plants
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.Id == existingDevice.PlantId.Value);
-                existingDevice.CropId = plant?.CropId ?? 0; 
+                existingDevice.CropId = plant?.CropId ?? 0;
             }
             else
             {
@@ -256,7 +259,7 @@ public class DeviceAdminService : IDeviceAdminService
             // La base de datos está configurada con ON DELETE CASCADE para las tablas relacionadas.
             // EF Core respetará esta configuración al eliminar el dispositivo.
             var deviceToDelete = await _context.Devices.FindAsync(deviceId);
-            if(deviceToDelete == null)
+            if (deviceToDelete == null)
             {
                 _logger.LogWarning("Se intentó eliminar un dispositivo inexistente con ID: {DeviceId}", deviceId);
                 return Result.Success(); // Es idempotente, si no existe, la operación es "exitosa".
@@ -281,7 +284,7 @@ public class DeviceAdminService : IDeviceAdminService
     }
 
     // --- Métodos para SelectList (Dropdowns) ---
-    
+
     public async Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync()
     {
         try
@@ -290,10 +293,10 @@ public class DeviceAdminService : IDeviceAdminService
                 .AsNoTracking()
                 .Include(p => p.Crop) // Incluimos el cultivo para acceder a su nombre
                 .OrderBy(p => p.Name)
-                .Select(p => new SelectListItem 
-                { 
-                    Value = p.Id.ToString(), 
-                    Text = $"{p.Name} (Cultivo: {p.Crop.Name})" 
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Id.ToString(),
+                    Text = $"{p.Name} (Cultivo: {p.Crop.Name})"
                 })
                 .ToListAsync();
         }

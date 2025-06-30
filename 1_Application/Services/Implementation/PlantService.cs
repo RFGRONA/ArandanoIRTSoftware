@@ -63,7 +63,7 @@ public class PlantService : IPlantService
                 RegisteredAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             _context.Plants.Add(newPlant);
             await _context.SaveChangesAsync();
 
@@ -91,7 +91,7 @@ public class PlantService : IPlantService
             // La configuración ON DELETE SET NULL en la DB se encargará de los dispositivos asociados.
             _context.Plants.Remove(plantToDelete);
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Planta ID: {PlantId} eliminada.", plantId);
             return Result.Success();
         }
@@ -199,7 +199,7 @@ public class PlantService : IPlantService
             existingPlant.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Planta ID: {PlantId} actualizada.", plantDto.Id);
             return Result.Success();
         }

@@ -152,7 +152,7 @@ public class PlantsController : Controller
         var result = await _plantService.DeletePlantAsync(id);
         if (result.IsSuccess)
         {
-             TempData["SuccessMessage"] = $"Planta eliminada exitosamente.";
+            TempData["SuccessMessage"] = $"Planta eliminada exitosamente.";
             return RedirectToAction(nameof(Index));
         }
         TempData["ErrorMessage"] = result.ErrorMessage;

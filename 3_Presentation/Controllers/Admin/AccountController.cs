@@ -58,7 +58,7 @@ public class AccountController : Controller
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, model.Username),
-                new Claim(ClaimTypes.NameIdentifier, foundUser.Id.ToString()), 
+                new Claim(ClaimTypes.NameIdentifier, foundUser.Id.ToString()),
                 new Claim(ClaimTypes.Role, "Admin") // Asignar el rol de Admin
                 // Puedes añadir más claims si es necesario
             };

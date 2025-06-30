@@ -97,7 +97,7 @@ public class AmbientDataController : Controller
 
         _logger.LogWarning("Error al obtener datos ambientales: {ErrorMessage}", result.ErrorMessage);
         ViewData["ErrorMessage"] = result.ErrorMessage ?? "Error desconocido al obtener datos.";
-        
+
         // Devolver una vista con un modelo vacío pero con los filtros para que el formulario funcione
         var emptyPagedResult = new PagedResultDto<SensorDataDisplayDto>
         {

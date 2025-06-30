@@ -33,7 +33,7 @@ public class SensorDataDisplayDto
     [Display(Name = "¿Noche?")]
     public bool? IsNight { get; set; }
 
-    [Display(Name = "Condición Ciudad")] 
+    [Display(Name = "Condición Ciudad")]
     public string? CityWeatherCondition { get; set; }
 
     [Display(Name = "Registrado")]

@@ -15,7 +15,7 @@ public class DeviceLogDisplayDto
     public string LogMessage { get; set; } = string.Empty;
     [Display(Name = "Timestamp (Servidor)")]
     public DateTime LogTimestampServer { get; set; }
-    
+
     [Display(Name = "Temp. (°C)")]
     public float? InternalDeviceTemperature { get; set; }
 

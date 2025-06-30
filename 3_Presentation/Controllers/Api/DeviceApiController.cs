@@ -24,7 +24,7 @@ public class DeviceApiController : ControllerBase
         _dataSubmissionService = dataSubmissionService;
         _logger = logger;
     }
-    
+
     // --- Endpoints de Activación y Tokens ---
 
     [HttpPost("activate")]
@@ -34,7 +34,7 @@ public class DeviceApiController : ControllerBase
         {
             return BadRequest("Solicitud inválida.");
         }
-        
+
         var result = await _deviceService.ActivateDeviceAsync(requestDto);
 
         if (result.IsSuccess)
@@ -42,7 +42,7 @@ public class DeviceApiController : ControllerBase
             _logger.LogInformation("Dispositivo DeviceId: {DeviceId} activado exitosamente.", requestDto.DeviceId);
             return Ok(result.Value);
         }
-        
+
         _logger.LogWarning("Fallo en la activación para DeviceId: {DeviceId}. Error: {ErrorMessage}", requestDto.DeviceId, result.ErrorMessage);
         // Devolver un error genérico al cliente para no dar pistas sobre la lógica interna.
         return BadRequest("Código de activación inválido, expirado, o la MAC ya está en uso.");
@@ -62,21 +62,21 @@ public class DeviceApiController : ControllerBase
         {
             return Ok(result.Value);
         }
-        
+
         _logger.LogWarning("Fallo en refresco de token. Error: {ErrorMessage}", result.ErrorMessage);
         return Unauthorized("Refresh token inválido o expirado.");
     }
-    
+
     // --- Endpoint de Health Check ---
 
     [HttpGet("health")]
     public IActionResult HealthCheck()
     {
         _logger.LogDebug("Health check solicitado.");
-        return Ok(new 
-        { 
-            Status = "Healthy", 
-            Timestamp = DateTime.UtcNow 
+        return Ok(new
+        {
+            Status = "Healthy",
+            Timestamp = DateTime.UtcNow
         });
     }
 
@@ -131,7 +131,7 @@ public class DeviceApiController : ControllerBase
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Error procesando identidad del dispositivo.");
         }
-        
+
         var recordedAtServer = DateTime.UtcNow;
         var result = await _dataSubmissionService.SaveCaptureDataAsync(deviceContext, thermalDataDto, thermalDataJsonString, imageFile!, recordedAtServer);
 
@@ -157,16 +157,16 @@ public class DeviceApiController : ControllerBase
         var logLevel = logEntryDto.LogType?.ToUpper() switch
         {
             "WARNING" => LogLevel.Warning,
-            "ERROR"   => LogLevel.Error,
-            "FATAL"   => LogLevel.Critical,
-            _         => LogLevel.Information // INFO y otros tipos por defecto a Information
+            "ERROR" => LogLevel.Error,
+            "FATAL" => LogLevel.Critical,
+            _ => LogLevel.Information // INFO y otros tipos por defecto a Information
         };
 
         // Crear un diccionario para los datos extra
         var extraData = new Dictionary<string, object?>();
-        if(logEntryDto.InternalDeviceTemperature.HasValue) extraData["InternalDeviceTemperature"] = logEntryDto.InternalDeviceTemperature;
-        if(logEntryDto.InternalDeviceHumidity.HasValue) extraData["InternalDeviceHumidity"] = logEntryDto.InternalDeviceHumidity;
-        
+        if (logEntryDto.InternalDeviceTemperature.HasValue) extraData["InternalDeviceTemperature"] = logEntryDto.InternalDeviceTemperature;
+        if (logEntryDto.InternalDeviceHumidity.HasValue) extraData["InternalDeviceHumidity"] = logEntryDto.InternalDeviceHumidity;
+
         // Loguear usando el ILogger, que Serilog capturará. Incluir el DeviceId para el contexto.
         // Usamos un scope para enriquecer el log con datos adicionales si es necesario.
         using (_logger.BeginScope(extraData))
@@ -178,7 +178,7 @@ public class DeviceApiController : ControllerBase
     }
 
     // --- Método Helper ---
-    
+
     private DeviceIdentityContext? GetDeviceIdentityFromClaims()
     {
         var deviceIdClaim = User.FindFirstValue("DeviceId");

@@ -129,7 +129,7 @@ public class DataSubmissionService : IDataSubmissionService
         {
             _logger.LogInformation("Es de día, procediendo a subir imagen RGB para DeviceId: {DeviceId}", deviceContext.DeviceId);
             var fileNameInBucket = $"{deviceContext.DeviceId}_{recordedAtServer:yyyyMMddHHmmssfff}{Path.GetExtension(imageFile.FileName)}";
-            
+
             // Usamos el nuevo servicio de almacenamiento
             var uploadResult = await _fileStorageService.UploadFileAsync(imageFile, RgbImageBucketName, fileNameInBucket);
 
@@ -143,9 +143,9 @@ public class DataSubmissionService : IDataSubmissionService
                 _logger.LogError("Error al subir imagen a través de IFileStorageService: {Error}", uploadResult.ErrorMessage);
             }
         }
-        else if(isNight == true)
+        else if (isNight == true)
         {
-             _logger.LogInformation("Es de noche. No se subirá la imagen RGB para DeviceId: {DeviceId}.", deviceContext.DeviceId);
+            _logger.LogInformation("Es de noche. No se subirá la imagen RGB para DeviceId: {DeviceId}.", deviceContext.DeviceId);
         }
 
         var thermalDataRecord = new ThermalCapture
@@ -162,7 +162,7 @@ public class DataSubmissionService : IDataSubmissionService
         {
             _context.ThermalCaptures.Add(thermalDataRecord);
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Datos de captura guardados exitosamente para DeviceId {DeviceId}. Nuevo ID: {NewId}.",
                 deviceContext.DeviceId, thermalDataRecord.Id);
             return Result.Success();

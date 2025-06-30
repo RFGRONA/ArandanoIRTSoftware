@@ -22,6 +22,6 @@ public interface IDeviceAdminService
     Task<Result> DeleteDeviceAsync(int deviceId); // Cuidado con las dependencias
 
     // Métodos para poblar dropdowns
-    IEnumerable<SelectListItem> GetDeviceStatusesForSelection(); 
-    Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync(); 
+    IEnumerable<SelectListItem> GetDeviceStatusesForSelection();
+    Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync();
 }

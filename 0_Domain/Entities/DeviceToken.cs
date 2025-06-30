@@ -22,7 +22,7 @@ public partial class DeviceToken
     public DateTime RefreshTokenExpiresAt { get; set; }
 
     public DateTime? RevokedAt { get; set; }
-    
+
     public TokenStatus Status { get; set; }
 
     public virtual Device Device { get; set; } = null!;

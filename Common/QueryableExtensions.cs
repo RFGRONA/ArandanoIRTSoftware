@@ -24,11 +24,11 @@ public static class QueryableExtensions
         if (filters.StartDate.HasValue)
         {
             var startDateUtc = filters.StartDate.Value.ToUniversalTime();
-            
+
             // Creamos dinámicamente la expresión: e.Fecha >= startDateUtc
             var startDateBody = Expression.GreaterThanOrEqual(dateSelector.Body, Expression.Constant(startDateUtc));
             var startDateLambda = Expression.Lambda<Func<T, bool>>(startDateBody, parameter);
-            
+
             query = query.Where(startDateLambda);
         }
 

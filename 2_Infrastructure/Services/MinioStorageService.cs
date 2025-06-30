@@ -71,7 +71,7 @@ public class MinioStorageService : IFileStorageService
 
             // 4. Construir y devolver la URL pública del archivo.
             string publicUrl = $"{(_settings.UseSsl ? "https" : "http")}://{_settings.Endpoint}/{containerName}/{fileName}";
-            
+
             return Result.Success(publicUrl);
         }
         catch (MinioException minEx)

@@ -18,6 +18,6 @@ public class AmbientDataDto
     [Required(ErrorMessage = "La humedad es requerida.")]
     [Range(0, 100, ErrorMessage = "La humedad debe estar entre 0 y 100.")]
     public float Humidity { get; set; }
-    
+
     public DateTime? RecordedAtDevice { get; set; }
 }

@@ -1,4 +1,4 @@
-namespace ArandanoIRT.Web.Common; 
+namespace ArandanoIRT.Web.Common;
 
 public class Result
 {
@@ -21,12 +21,12 @@ public class Result
     public static Result Failure(string errorMessage) => new(false, errorMessage);
 
     public static Result<T> Success<T>(T value) => new(value, true, string.Empty);
-    public static Result<T> Failure<T>(string errorMessage) => new(default, false, errorMessage); 
+    public static Result<T> Failure<T>(string errorMessage) => new(default, false, errorMessage);
 }
 
 public class Result<T> : Result
 {
-    private readonly T? _value; 
+    private readonly T? _value;
 
     public T Value => IsSuccess ? _value! : throw new InvalidOperationException("Cannot access value of a failed result. Check IsSuccess first.");
 

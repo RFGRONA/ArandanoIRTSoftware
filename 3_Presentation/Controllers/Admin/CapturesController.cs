@@ -100,7 +100,7 @@ public class CapturesController : Controller
 
         _logger.LogWarning("Error al obtener capturas: {ErrorMessage}", result.ErrorMessage);
         ViewData["ErrorMessage"] = result.ErrorMessage ?? "Error desconocido al obtener capturas.";
-        
+
         var emptyResult = new PagedResultDto<ThermalCaptureSummaryDto>
         {
             Items = new List<ThermalCaptureSummaryDto>(),
@@ -133,7 +133,7 @@ public class CapturesController : Controller
             }
             return View(result.Value);
         }
-        
+
         _logger.LogError("Error al obtener detalles de captura ID {CaptureId}: {ErrorMessage}", id.Value, result.ErrorMessage);
         TempData["ErrorMessage"] = $"No se pudieron cargar los detalles de la captura ID {id.Value}: {result.ErrorMessage}";
         return RedirectToAction(nameof(Index));

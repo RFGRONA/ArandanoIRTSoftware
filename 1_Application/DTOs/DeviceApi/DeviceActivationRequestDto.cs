@@ -9,7 +9,7 @@ public class DeviceActivationRequestDto
 
     [Required]
     public string ActivationCode { get; set; } = string.Empty;
-    
+
     [Required]
     public string MacAddress { get; set; } = string.Empty;
 }

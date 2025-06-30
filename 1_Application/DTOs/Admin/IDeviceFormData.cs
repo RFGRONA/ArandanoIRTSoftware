@@ -25,5 +25,5 @@ public interface IDeviceFormData
 
     [Required(ErrorMessage = "Debe seleccionar un estado.")]
     [Display(Name = "Estado del Dispositivo")]
-    DeviceStatus Status { get; set; } 
+    DeviceStatus Status { get; set; }
 }

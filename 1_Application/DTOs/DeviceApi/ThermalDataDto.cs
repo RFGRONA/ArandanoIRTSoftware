@@ -23,6 +23,6 @@ public class ThermalDataDto
     // Validación para el tamaño del array si siempre se espera
     // Podríamos añadir una validación personalizada si es necesario, por ejemplo, que si no es null, debe tener 768 elementos.
     // [EnsureThermalArraySize(ErrorMessage = "El array de temperaturas debe contener 768 elementos.")]
-    
+
     public DateTime? RecordedAtDevice { get; set; }
 }

@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
 // Para los datos de gráficos de series temporales
-public class TimeSeriesChartDataDto 
+public class TimeSeriesChartDataDto
 {
     public List<string> Labels { get; set; } = new List<string>();
     public List<float?> Values { get; set; } = new List<float?>();
     public string? DataSetLabel { get; set; }
-    
+
     // Propiedades añadidas para personalización del gráfico
     public string? BorderColor { get; set; }
     public string? BackgroundColor { get; set; }
@@ -54,7 +54,7 @@ public class DashboardViewModel
     // Podríamos añadir otros KPIs, como número de dispositivos activos, alertas, etc.
     public int ActiveDevicesCount { get; set; }
     public int PlantsMonitoredCount { get; set; }
-    
+
     // Datos ambientales
     public SensorDataDisplayDto? LatestAmbientData { get; set; }
     public float? AverageAmbientTemperature24h { get; set; }
@@ -64,9 +64,9 @@ public class DashboardViewModel
     public float? AverageAmbientHumidity24h { get; set; }
     public float? MaxAmbientHumidity24h { get; set; } // NUEVO
     public float? MinAmbientHumidity24h { get; set; } // NUEVO
-    
+
     public float? AverageAmbientLight24h { get; set; }
     public float? MaxAmbientLight24h { get; set; } // NUEVO
     public float? MinAmbientLight24h { get; set; } // NUEVO
-    
+
 }
