@@ -1,5 +1,5 @@
 @{
-    // Esto se utilza para que no utilice un marco, sino que este sea independiente
+    // Esto se utiliza para que no utilice un marco, sino que este sea independiente
     Layout = null; 
 }
 @model ArandanoIRT.Web._1_Application.DTOs.Admin.AdminLoginDto
@@ -17,9 +17,11 @@
 <body>
 
     <div class="login-card">
+        <a href="#" class="btn-help">?</a>
+
         <div class="login-header">
             <span class="emoji">🫐</span>
-            <h1>Inicio de sesión</h1>
+            <h1>Inicio de Sesión</h1>
         </div>
         
         <form method="post">
@@ -31,18 +33,19 @@
                 <span asp-validation-for="Username" class="text-danger"></span>
             </div>
             
-            <div class="form-group mb-4">
+            <div class="form-group mb-3">
                 <label asp-for="Password" class="form-label">Contraseña</label>
                 <input asp-for="Password" type="password" class="form-control" placeholder="Escribe tu contraseña" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
             
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-lg w-100">Iniciar Sesión</button>
+            <div class="turnstile-container mb-4">
+                <p class="text-muted small">Cargando verificación...</p>
             </div>
-
-            <div class="text-center mt-3">
-                <a href="#">He olvidado mi contraseña</a>
+            
+            <div class="action-buttons">
+                <a href="#" class="btn btn-secondary w-100">Registrarse</a>
+                <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
             </div>
         </form>
     </div>
