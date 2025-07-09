@@ -150,8 +150,9 @@ try
 
     app.UseAuthentication(); // Importante: ANTES de UseAuthorization
     app.UseAuthorization();
-    
-    app.UseMiddleware<UserAuditingMiddleware>();
+
+    // Linea comentada para realizar pruebas, se debe revertir para el despliegue.
+    // app.UseMiddleware<UserAuditingMiddleware>();
 
     // Ruta para el área de Admin (ejemplo)
     app.MapControllerRoute(

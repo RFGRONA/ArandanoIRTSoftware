@@ -1,0 +1,109 @@
+:root {
+  --color-primario: #6a4f9a;
+  --color-primario-hover: #5b4383;
+  --fondo-pagina: #f0f2f5;
+  --fondo-tarjeta: #ffffff;
+  --color-texto: #333;
+  --radio-borde: 12px;
+  --sombra-tarjeta: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+body {
+  background-color: var(--fondo-pagina);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--color-texto);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.login-card {
+  background-color: var(--fondo-tarjeta);
+  padding: 2.5rem;
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-tarjeta);
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.login-header .emoji {
+  font-size: 2rem;
+}
+
+.login-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  border: 1px solid #ced4da;
+}
+
+.form-control:focus {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(106, 79, 154, 0.2);
+}
+
+.btn-primary {
+  background-color: var(--color-primario);
+  border-color: var(--color-primario);
+  border-radius: 8px;
+  padding: 0.8rem;
+  font-weight: bold;
+  transition: background-color 0.2s ease-in-out; 
+}
+
+
+.btn-primary:hover {
+  background-color: var(--color-primario-hover);
+  border-color: var(--color-primario-hover);
+}
+
+.login-card a {
+  color: #555;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+/* --- SECCIÓN RESPONSIVE --- */
+
+/* Estilos que se aplicarán SÓLO en pantallas de 576px de ancho o menos */
+@media (max-width: 576px) {
+  
+  /* El padding se ajusta con medidas rem */
+  .login-card {
+    padding: 1.5rem;
+  }
+
+  /* Se adapta con medidas rem */
+  .login-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .login-header .emoji {
+    font-size: 1.8rem;
+  }
+
+  /*texto del botón un poco más pequeño */
+  .btn-primary {
+    font-size: 0.9rem;
+  }
+}

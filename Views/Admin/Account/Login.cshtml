@@ -1,35 +1,54 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.AdminLoginDto
 @{
-    ViewData["Title"] = "Inicio de sesión";
-    Layout = "_LayoutAdminLogin"; 
+    // Esto se utilza para que no utilice un marco, sino que este sea independiente
+    Layout = null; 
 }
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.AdminLoginDto
 
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <section>
-            <form asp-area="Admin" asp-controller="Account" asp-action="Login" asp-route-returnurl="@Model.ReturnUrl" method="post">
-                <h2>@ViewData["Title"]</h2>
-                <hr />
-                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Username" class="form-control" autocomplete="username" aria-required="true" placeholder="usuario" />
-                    <label asp-for="Username" class="form-label"></label>
-                    <span asp-validation-for="Username" class="text-danger"></span>
-                </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="contraseña" />
-                    <label asp-for="Password" class="form-label"></label>
-                    <span asp-validation-for="Password" class="text-danger"></span>
-                </div>
-                @* Podrías añadir un "Recordarme?" si IsPersistent no es suficiente *@
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Iniciar Sesión</button>
-                </div>
-            </form>
-        </section>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inicio de sesión - Arandano IRT</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header">
+            <span class="emoji">🫐</span>
+            <h1>Inicio de sesión</h1>
+        </div>
+        
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Username" class="form-label">Usuario</label>
+                <input asp-for="Username" class="form-control" placeholder="Escribe tu usuario" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-4">
+                <label asp-for="Password" class="form-label">Contraseña</label>
+                <input asp-for="Password" type="password" class="form-control" placeholder="Escribe tu contraseña" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg w-100">Iniciar Sesión</button>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="#">He olvidado mi contraseña</a>
+            </div>
+        </form>
     </div>
-</div>
 
-@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
-}
+
+</body>
+</html>
