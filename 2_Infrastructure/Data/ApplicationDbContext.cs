@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ArandanoIRT.Web._0_Domain.Entities;
+﻿using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -119,7 +117,6 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
             entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
             entity.Property(e => e.Status).HasColumnName("status");
-
             entity.HasOne(d => d.Device).WithMany(p => p.DeviceActivations)
                 .HasForeignKey(d => d.DeviceId)
                 .HasConstraintName("device_activations_device_id_fkey");
@@ -146,7 +143,6 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.RefreshTokenExpiresAt).HasColumnName("refresh_token_expires_at");
             entity.Property(e => e.RevokedAt).HasColumnName("revoked_at");
             entity.Property(e => e.Status).HasColumnName("status");
-
             entity.HasOne(d => d.Device).WithMany(p => p.DeviceTokens)
                 .HasForeignKey(d => d.DeviceId)
                 .HasConstraintName("device_tokens_device_id_fkey");
@@ -209,6 +205,9 @@ public partial class ApplicationDbContext : DbContext
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
             entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.IsAdmin)
+                .HasDefaultValue(false)
+                .HasColumnName("is_admin");
             entity.Property(e => e.IsUsed)
                 .HasDefaultValue(false)
                 .HasColumnName("is_used");
@@ -261,6 +260,9 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.RegisteredAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("registered_at");
+            entity.Property(e => e.ThermalMaskData)
+                .HasColumnType("jsonb")
+                .HasColumnName("thermal_mask_data");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");

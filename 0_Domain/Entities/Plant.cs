@@ -15,6 +15,8 @@ public partial class Plant
 
     public DateTime UpdatedAt { get; set; }
 
+    public string? ThermalMaskData { get; set; }
+
     public virtual Crop Crop { get; set; } = null!;
 
     public virtual ICollection<Device> Devices { get; set; } = new List<Device>();
