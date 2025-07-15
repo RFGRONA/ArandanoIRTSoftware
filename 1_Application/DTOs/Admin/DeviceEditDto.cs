@@ -20,11 +20,11 @@ public class DeviceEditDto : IDeviceFormData
     [Required(ErrorMessage = "Debe asociar el dispositivo a una planta.")]
     [Range(1, int.MaxValue, ErrorMessage = "El ID de la planta no es válido.")]
     public int PlantId { get; set; }
-    
+
     [Required(ErrorMessage = "El intervalo de recolección es obligatorio.")]
     [Range(1, 1440, ErrorMessage = "El intervalo debe estar entre 1 y 1440 minutos.")]
     public short DataCollectionIntervalMinutes { get; set; } = 15;
-    
+
     public DeviceStatus Status { get; set; }
 
     [RegularExpression("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", ErrorMessage = "El formato de la dirección MAC no es válido.")]

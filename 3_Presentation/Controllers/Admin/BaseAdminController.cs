@@ -36,7 +36,7 @@ public abstract class BaseAdminController : Controller
             return View(modelForFailure);
         }
     }
-    
+
     /// <summary>
     /// Overload for delete operations or actions that don't return a model on failure.
     /// </summary>

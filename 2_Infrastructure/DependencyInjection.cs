@@ -26,12 +26,12 @@ public static class DependencyInjection
         // Database Context
         var connectionString = configuration.GetConnectionString("PostgresConnection");
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-        
+
         dataSourceBuilder.MapEnum<DeviceStatus>();
         dataSourceBuilder.MapEnum<ActivationStatus>();
         dataSourceBuilder.MapEnum<TokenStatus>();
         var dataSource = dataSourceBuilder.Build();
-        
+
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(dataSource, o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
                 .UseSnakeCaseNamingConvention());
@@ -64,7 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IPlantService, PlantService>();
         services.AddScoped<IDeviceAdminService, DeviceAdminService>();
         services.AddScoped<IDataQueryService, DataQueryService>();
-        
+
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
 
@@ -103,14 +103,14 @@ public static class DependencyInjection
 
         return services;
     }
-    
+
     /// <summary>
     /// Adds presentation layer services like Controllers and Views.
     /// </summary>
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
-        
+
         services.AddControllersWithViews()
             .AddRazorOptions(options =>
             {
@@ -120,7 +120,7 @@ public static class DependencyInjection
                 options.AreaViewLocationFormats.Add("/Views/{2}/Shared/{0}.cshtml");
                 options.AreaViewLocationFormats.Add("/Views/Shared/{0}.cshtml");
             });
-            
+
         return services;
     }
 }

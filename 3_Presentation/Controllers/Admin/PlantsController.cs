@@ -105,7 +105,7 @@ public class PlantsController : BaseAdminController
         }
 
         var result = await _plantService.UpdatePlantAsync(plantDto);
-        
+
         // CORREGIDO: Si falla la actualización, repoblar la lista.
         if (!result.IsSuccess)
         {
@@ -113,7 +113,7 @@ public class PlantsController : BaseAdminController
         }
         return HandleServiceResult(result, nameof(Index), plantDto);
     }
-    
+
     public async Task<IActionResult> Delete(int id)
     {
         if (!ModelState.IsValid)
@@ -121,7 +121,7 @@ public class PlantsController : BaseAdminController
             TempData[ErrorMessageKey] = InvalidRequestDataMessage;
             return RedirectToAction(nameof(Index));
         }
-        
+
         var result = await _plantService.GetPlantByIdAsync(id);
         if (!result.IsSuccess || result.Value == null)
         {

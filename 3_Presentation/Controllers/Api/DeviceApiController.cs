@@ -139,7 +139,7 @@ public class DeviceApiController : ControllerBase
         }
 
         // The service signature expects: DeviceContext, DTO, JSON string, Image File, and Server Time.
-        
+
         if (imageFile == null)
         {
             _logger.LogWarning("No image file provided for DeviceId: {DeviceId}", deviceContext.DeviceId);
