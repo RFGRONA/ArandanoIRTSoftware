@@ -14,7 +14,7 @@ public class DeviceSummaryDto
     [Display(Name = "Estado Dispositivo")]
     public string DeviceStatusName { get; set; } = string.Empty;
     [Display(Name = "Estado Activación")]
-    public string ActivationStatusName { get; set; } = "N/A"; // Ej: PENDIENTE_ACTIVATION, ACTIVE
+    public string ActivationStatusName { get; set; } = "N/A"; // Ej: PENDING, COMPLETED, EXPIRED
     [Display(Name = "Fecha de Registro")]
     public DateTime RegisteredAt { get; set; }
 }
