@@ -1,162 +1,146 @@
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ArandanoIRT.Web.Controllers.Admin;
+namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
-public class PlantsController : Controller
+public class PlantsController : BaseAdminController
 {
     private readonly IPlantService _plantService;
-    private readonly ILogger<PlantsController> _logger;
 
-    public PlantsController(IPlantService plantService, ILogger<PlantsController> logger)
+    public PlantsController(IPlantService plantService)
     {
         _plantService = plantService;
-        _logger = logger;
     }
 
-    // GET: Admin/Plants
     public async Task<IActionResult> Index()
     {
-        _logger.LogInformation("Accediendo al listado de plantas.");
         var result = await _plantService.GetAllPlantsAsync();
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            return View(result.Value);
+            TempData[ErrorMessageKey] = result.ErrorMessage;
+            return View(new List<PlantSummaryDto>());
         }
-        ViewData["ErrorMessage"] = result.ErrorMessage;
-        return View(new List<PlantSummaryDto>());
+        return View(result.Value);
     }
 
-    // GET: Admin/Plants/Details/5
-    public async Task<IActionResult> Details(int? id)
+    public async Task<IActionResult> Details(int id)
     {
-        if (id == null) return NotFound();
-        _logger.LogInformation("Viendo detalles de planta ID: {PlantId}", id.Value);
-        var result = await _plantService.GetPlantByIdAsync(id.Value);
-        if (result.IsSuccess)
+        if (!ModelState.IsValid)
         {
-            if (result.Value == null) return NotFound();
-            return View(result.Value);
+            TempData[ErrorMessageKey] = InvalidRequestDataMessage;
+            return RedirectToAction(nameof(Index));
         }
-        ViewData["ErrorMessage"] = result.ErrorMessage;
-        return View("Error");
+        var result = await _plantService.GetPlantByIdAsync(id);
+        if (!result.IsSuccess || result.Value == null)
+        {
+            TempData[ErrorMessageKey] = result.ErrorMessage ?? "Plant not found.";
+            return RedirectToAction(nameof(Index));
+        }
+        return View(result.Value);
     }
 
-    // GET: Admin/Plants/Create
+    // CORREGIDO: Instanciar y poblar el DTO para la vista.
     public async Task<IActionResult> Create()
     {
-        var dto = new PlantCreateDto
+        var model = new PlantCreateDto
         {
-            AvailableCrops = await _plantService.GetCropsForSelectionAsync(),
-            AvailableStatuses = await _plantService.GetStatusesForSelectionAsync()
+            AvailableCrops = await _plantService.GetCropsForSelectionAsync()
         };
-        return View(dto);
+        return View(model);
     }
 
-    // POST: Admin/Plants/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(PlantCreateDto plantDto)
     {
-        // Repopular listas si ModelState es inválido
+        // CORREGIDO: Si el modelo no es válido, repoblar la lista de cultivos en el DTO.
         if (!ModelState.IsValid)
         {
             plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
-            plantDto.AvailableStatuses = await _plantService.GetStatusesForSelectionAsync();
             return View(plantDto);
         }
 
-        _logger.LogInformation("Intentando crear planta: {PlantName}", plantDto.Name);
         var result = await _plantService.CreatePlantAsync(plantDto);
-        if (result.IsSuccess)
+
+        // CORREGIDO: Si falla el servicio, también repoblar la lista.
+        if (!result.IsSuccess)
         {
-            TempData["SuccessMessage"] = $"Planta '{plantDto.Name}' creada exitosamente.";
+            plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
+        }
+        return HandleServiceResult(result, nameof(Index), plantDto);
+    }
+
+    // CORREGIDO: La lógica que poblaba el ViewBag era redundante, el servicio ya lo hace.
+    public async Task<IActionResult> Edit(int id)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData[ErrorMessageKey] = InvalidRequestDataMessage;
             return RedirectToAction(nameof(Index));
         }
-        ModelState.AddModelError(string.Empty, result.ErrorMessage);
-        _logger.LogWarning("Fallo al crear planta: {PlantName}. Error: {Error}", plantDto.Name, result.ErrorMessage);
-        plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
-        plantDto.AvailableStatuses = await _plantService.GetStatusesForSelectionAsync();
-        return View(plantDto);
-    }
 
-    // GET: Admin/Plants/Edit/5
-    public async Task<IActionResult> Edit(int? id)
-    {
-        if (id == null) return NotFound();
-        _logger.LogInformation("Editando planta ID: {PlantId}", id.Value);
-        var result = await _plantService.GetPlantForEditByIdAsync(id.Value);
-        if (result.IsSuccess)
+        var result = await _plantService.GetPlantForEditByIdAsync(id);
+        if (!result.IsSuccess || result.Value == null)
         {
-            if (result.Value == null) return NotFound();
-            // GetPlantForEditByIdAsync ya debería poblar AvailableCrops y AvailableStatuses
-            return View(result.Value);
+            TempData[ErrorMessageKey] = result.ErrorMessage ?? "Plant not found.";
+            return RedirectToAction(nameof(Index));
         }
-        ViewData["ErrorMessage"] = result.ErrorMessage;
-        return View("Error");
+        // El DTO (result.Value) ya viene con AvailableCrops poblado desde el servicio.
+        return View(result.Value);
     }
 
-    // POST: Admin/Plants/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, PlantEditDto plantDto)
     {
-        if (id != plantDto.Id) return NotFound();
+        if (id != plantDto.Id) return BadRequest();
 
+        // CORREGIDO: Si el modelo no es válido, repoblar la lista de cultivos.
         if (!ModelState.IsValid)
         {
             plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
-            plantDto.AvailableStatuses = await _plantService.GetStatusesForSelectionAsync();
             return View(plantDto);
         }
 
-        _logger.LogInformation("Intentando actualizar planta ID: {PlantId}", plantDto.Id);
         var result = await _plantService.UpdatePlantAsync(plantDto);
-        if (result.IsSuccess)
+        
+        // CORREGIDO: Si falla la actualización, repoblar la lista.
+        if (!result.IsSuccess)
         {
-            TempData["SuccessMessage"] = $"Planta '{plantDto.Name}' actualizada exitosamente.";
+            plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
+        }
+        return HandleServiceResult(result, nameof(Index), plantDto);
+    }
+    
+    public async Task<IActionResult> Delete(int id)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData[ErrorMessageKey] = InvalidRequestDataMessage;
             return RedirectToAction(nameof(Index));
         }
-        ModelState.AddModelError(string.Empty, result.ErrorMessage);
-        _logger.LogWarning("Fallo al actualizar planta ID: {PlantId}. Error: {Error}", plantDto.Id, result.ErrorMessage);
-        plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
-        plantDto.AvailableStatuses = await _plantService.GetStatusesForSelectionAsync();
-        return View(plantDto);
-    }
-
-    // GET: Admin/Plants/Delete/5
-    public async Task<IActionResult> Delete(int? id)
-    {
-        if (id == null) return NotFound();
-        _logger.LogInformation("Confirmando eliminación de planta ID: {PlantId}", id.Value);
-        var result = await _plantService.GetPlantByIdAsync(id.Value);
-        if (result.IsSuccess)
+        
+        var result = await _plantService.GetPlantByIdAsync(id);
+        if (!result.IsSuccess || result.Value == null)
         {
-            if (result.Value == null) return NotFound();
-            return View(result.Value);
+            TempData[ErrorMessageKey] = result.ErrorMessage ?? "Plant not found.";
+            return RedirectToAction(nameof(Index));
         }
-        ViewData["ErrorMessage"] = result.ErrorMessage;
-        return View("Error");
+        return View(result.Value);
     }
 
-    // POST: Admin/Plants/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        _logger.LogInformation("Confirmada eliminación de planta ID: {PlantId}", id);
-        var result = await _plantService.DeletePlantAsync(id);
-        if (result.IsSuccess)
+        if (!ModelState.IsValid)
         {
-            TempData["SuccessMessage"] = $"Planta eliminada exitosamente.";
+            TempData[ErrorMessageKey] = InvalidRequestDataMessage;
             return RedirectToAction(nameof(Index));
         }
-        TempData["ErrorMessage"] = result.ErrorMessage;
-        _logger.LogWarning("Fallo al eliminar planta ID: {PlantId}. Error: {Error}", id, result.ErrorMessage);
-        return RedirectToAction(nameof(Delete), new { id = id });
+        var result = await _plantService.DeletePlantAsync(id);
+        return HandleServiceResult(result, nameof(Index), nameof(Delete));
     }
 }
