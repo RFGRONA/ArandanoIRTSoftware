@@ -13,13 +13,13 @@ using Serilog;
 namespace ArandanoIRT.Web._2_Infrastructure;
 
 /// <summary>
-/// Extension methods for setting up services in the IServiceCollection.
+///     Extension methods for setting up services in the IServiceCollection.
 /// </summary>
 public static class DependencyInjection
 {
     /// <summary>
-    /// Adds infrastructure services to the container.
-    /// This includes database, application services, and external service clients.
+    ///     Adds infrastructure services to the container.
+    ///     This includes database, application services, and external service clients.
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
@@ -30,6 +30,7 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<DeviceStatus>();
         dataSourceBuilder.MapEnum<ActivationStatus>();
         dataSourceBuilder.MapEnum<TokenStatus>();
+        dataSourceBuilder.MapEnum<PlantStatus>();
         var dataSource = dataSourceBuilder.Build();
 
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -47,13 +48,9 @@ public static class DependencyInjection
         {
             var weatherApiSettings = configuration.GetSection(WeatherApiSettings.SectionName).Get<WeatherApiSettings>();
             if (weatherApiSettings != null && !string.IsNullOrEmpty(weatherApiSettings.BaseUrl))
-            {
                 client.BaseAddress = new Uri(weatherApiSettings.BaseUrl);
-            }
             else
-            {
                 Log.Warning("BaseUrl for WeatherAPI is not configured.");
-            }
         });
 
         // Application Services
@@ -64,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<IPlantService, PlantService>();
         services.AddScoped<IDeviceAdminService, DeviceAdminService>();
         services.AddScoped<IDataQueryService, DataQueryService>();
+        services.AddScoped<IUserService, UserService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
@@ -72,7 +70,7 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Adds custom authentication and authorization services.
+    ///     Adds custom authentication and authorization services.
     /// </summary>
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services)
     {
@@ -105,7 +103,7 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Adds presentation layer services like Controllers and Views.
+    ///     Adds presentation layer services like Controllers and Views.
     /// </summary>
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {

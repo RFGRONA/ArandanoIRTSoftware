@@ -1,9 +1,9 @@
 ﻿namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Stores web application users and their credentials.
+///     Stores web application users and their credentials.
 /// </summary>
-public partial class User
+public class User
 {
     public int Id { get; set; }
 
@@ -32,4 +32,6 @@ public partial class User
     public virtual ICollection<InvitationCode> InvitationCodes { get; set; } = new List<InvitationCode>();
 
     public virtual ICollection<Observation> Observations { get; set; } = new List<Observation>();
+
+    public virtual ICollection<PlantStatusHistory> PlantStatusHistories { get; set; }
 }
