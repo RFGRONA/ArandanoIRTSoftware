@@ -1,10 +1,12 @@
 ﻿using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Data;
 
-public partial class ApplicationDbContext : DbContext
+public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationRole, int>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -31,10 +33,18 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<ThermalCapture> ThermalCaptures { get; set; }
 
-    public virtual DbSet<User> Users { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>(entity => { entity.ToTable("users"); });
+        modelBuilder.Entity<ApplicationRole>(entity => { entity.ToTable("roles"); });
+        modelBuilder.Entity<IdentityUserRole<int>>(entity => { entity.ToTable("user_roles"); });
+        modelBuilder.Entity<IdentityUserClaim<int>>(entity => { entity.ToTable("user_claims"); });
+        modelBuilder.Entity<IdentityUserLogin<int>>(entity => { entity.ToTable("user_logins"); });
+        modelBuilder.Entity<IdentityRoleClaim<int>>(entity => { entity.ToTable("role_claims"); });
+        modelBuilder.Entity<IdentityUserToken<int>>(entity => { entity.ToTable("user_tokens"); });
+
         modelBuilder
             .HasPostgresEnum<ActivationStatus>()
             .HasPostgresEnum<DeviceStatus>()
@@ -354,41 +364,34 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("users_pkey");
-
-            entity.ToTable("users", tb => tb.HasComment("Stores web application users and their credentials."));
-
-            entity.HasIndex(e => e.CropId, "idx_users_crop_id");
-
-            entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
-            entity.Property(e => e.CropId).HasColumnName("crop_id");
-            entity.Property(e => e.Email)
-                .HasMaxLength(75)
-                .HasColumnName("email");
+            entity.ToTable("users");
             entity.Property(e => e.FirstName)
                 .HasMaxLength(40)
                 .HasColumnName("first_name");
-            entity.Property(e => e.IsAdmin)
-                .HasDefaultValue(false)
-                .HasColumnName("is_admin");
-            entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
             entity.Property(e => e.LastName)
                 .HasMaxLength(40)
                 .HasColumnName("last_name");
-            entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
+            entity.Property(e => e.CropId).HasColumnName("crop_id");
+            entity.Property(e => e.AccountSettings)
+                .HasColumnType("jsonb")
+                .HasColumnName("account_settings");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
 
             entity.HasOne(d => d.Crop).WithMany(p => p.Users)
                 .HasForeignKey(d => d.CropId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("users_crop_id_fkey");
+        });
+
+        modelBuilder.Entity<ApplicationRole>(entity =>
+        {
+            entity.ToTable("roles"); // Opcional: para usar 'roles' en vez de 'AspNetRoles'
         });
 
         OnModelCreatingPartial(modelBuilder);

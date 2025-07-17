@@ -1,57 +1,57 @@
 @{
     // Esto se utiliza para que no utilice un marco, sino que este sea independiente
-    Layout = null; 
+    Layout = null;
 }
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.AdminLoginDto
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.LoginDto
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Inicio de sesión - Arandano IRT</title>
-    
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true"/>
 </head>
 <body>
 
-    <div class="login-card">
-        <a href="#" class="btn-help">?</a>
+<div class="login-card">
+    <a href="#" class="btn-help">?</a>
 
-        <div class="login-header">
-            <span class="emoji">🫐</span>
-            <h1>Inicio de Sesión</h1>
-        </div>
-        
-        <form method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
-            
-            <div class="form-group mb-3">
-                <label asp-for="Username" class="form-label">Usuario</label>
-                <input asp-for="Username" class="form-control" placeholder="Escribe tu usuario" />
-                <span asp-validation-for="Username" class="text-danger"></span>
-            </div>
-            
-            <div class="form-group mb-3">
-                <label asp-for="Password" class="form-label">Contraseña</label>
-                <input asp-for="Password" type="password" class="form-control" placeholder="Escribe tu contraseña" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-            
-            <div class="turnstile-container mb-4">
-                <p class="text-muted small">Cargando verificación...</p>
-            </div>
-            
-            <div class="action-buttons">
-                <a href="#" class="btn btn-secondary w-100">Registrarse</a>
-                <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
-            </div>
-        </form>
+    <div class="login-header">
+        <span class="emoji">🫐</span>
+        <h1>Inicio de Sesión</h1>
     </div>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <partial name="_ValidationScriptsPartial" />
+    <form method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" placeholder="Escribe tu correo"/>
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Password" class="form-label">Contraseña</label>
+            <input asp-for="Password" type="password" class="form-control" placeholder="Escribe tu contraseña"/>
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="turnstile-container mb-4">
+            <p class="text-muted small">Cargando verificación...</p>
+        </div>
+
+        <div class="action-buttons">
+            <a asp-area="Admin" asp-controller="Account" asp-action="Register" class="btn btn-secondary w-100">Registrarse</a>
+            <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+        </div>
+    </form>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<partial name="_ValidationScriptsPartial"/>
 
 </body>
 </html>

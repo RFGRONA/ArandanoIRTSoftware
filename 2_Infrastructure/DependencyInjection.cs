@@ -1,3 +1,4 @@
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._1_Application.Services.Implementation;
@@ -6,6 +7,7 @@ using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Services;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Serilog;
@@ -31,6 +33,7 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<ActivationStatus>();
         dataSourceBuilder.MapEnum<TokenStatus>();
         dataSourceBuilder.MapEnum<PlantStatus>();
+        dataSourceBuilder.EnableDynamicJson();
         var dataSource = dataSourceBuilder.Build();
 
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -42,6 +45,7 @@ public static class DependencyInjection
         services.Configure<WeatherApiSettings>(configuration.GetSection(WeatherApiSettings.SectionName));
         services.Configure<TokenSettings>(configuration.GetSection(TokenSettings.SectionName));
         services.Configure<MinioSettings>(configuration.GetSection(MinioSettings.SectionName));
+        services.Configure<BrevoSettings>(configuration.GetSection(BrevoSettings.SectionName));
 
         // HTTP Client for Weather API
         services.AddHttpClient("WeatherApi", (serviceProvider, client) =>
@@ -62,9 +66,12 @@ public static class DependencyInjection
         services.AddScoped<IDeviceAdminService, DeviceAdminService>();
         services.AddScoped<IDataQueryService, DataQueryService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IInvitationService, InvitationService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
+        services.AddScoped<IEmailService, BrevoEmailService>();
+        services.AddScoped<IRazorViewToStringRenderer, RazorViewToStringRenderer>();
 
         return services;
     }
@@ -74,28 +81,46 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services)
     {
+        // 1. CONFIGURAR LA AUTENTICACIÓN Y LA COOKIE PRIMERO
+        // Esto registra el manejador para el esquema "Cookies" que el BootstrapController necesita.
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
-                options.LoginPath = "/Admin/Login";
-                options.LogoutPath = "/Admin/Logout";
+                options.LoginPath = "/Admin/Account/Login";
+                options.LogoutPath = "/Admin/Account/Logout";
                 options.AccessDeniedPath = "/Admin/Account/AccessDenied";
                 options.ExpireTimeSpan = TimeSpan.FromDays(1);
                 options.SlidingExpiration = true;
             })
+            // Mantenemos el esquema para dispositivos
             .AddScheme<DeviceAuthenticationOptions, DeviceAuthenticationHandler>(
                 DeviceAuthenticationOptions.DefaultScheme,
                 options => { }
             );
 
+        // 2. AÑADIR IDENTITY
+        // Identity se construirá sobre la configuración de autenticación que ya hemos definido.
+        services.AddIdentity<User, ApplicationRole>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.User.RequireUniqueEmail = true;
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
+
+        // 3. CONFIGURAR AUTORIZACIÓN (Se mantiene igual)
         services.AddAuthorization(options =>
         {
             options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+            options.AddPolicy("BootstrapOnly", policy => policy.RequireRole("BootstrapAdmin"));
             options.AddPolicy("DeviceAuthenticated", policy =>
             {
                 policy.AddAuthenticationSchemes(DeviceAuthenticationOptions.DefaultScheme);
                 policy.RequireAuthenticatedUser();
-                policy.RequireRole("Device");
             });
         });
 

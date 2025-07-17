@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Generar Códigos de Invitación";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>Usa los siguientes botones para generar un nuevo código de invitación de un solo uso.</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <strong>¡Éxito!</strong> @TempData["SuccessMessage"]
+        <p>Copia este código y envíalo al nuevo usuario para que pueda registrarse.</p>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <strong>Error:</strong> @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="card p-3">
+    <form asp-action="Generate" method="post" class="row g-3 align-items-end">
+        <div class="col-md-6">
+            <label for="email" class="form-label">Correo Electrónico del Invitado</label>
+            <input type="email" name="email" id="email" class="form-control" required/>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tipo de Rol</label>
+            <select name="isAdmin" class="form-select">
+                <option value="false">Usuario Estándar</option>
+                <option value="true">Administrador</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Enviar Invitación</button>
+        </div>
+    </form>
+</div>
