@@ -1,0 +1,57 @@
+@* El modelo será una tupla: (AuthenticatedHelpRequestDto Request, User RequestingUser) *@
+@model (ArandanoIRT.Web._1_Application.DTOs.Admin.AuthenticatedHelpRequestDto Request, User RequestingUser)
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .container {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 600px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        b {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h3>Nueva Solicitud de Ayuda (Usuario Registrado)</h3>
+    </div>
+    <h4>Asunto: @Model.Request.Subject</h4>
+    <hr>
+    <p>Se ha recibido una nueva solicitud de ayuda de un usuario autenticado:</p>
+    <ul>
+        <li><b>Nombre:</b> @Model.RequestingUser.FirstName @Model.RequestingUser.LastName</li>
+        <li><b>Email:</b> @Model.RequestingUser.Email</li>
+        <li><b>ID de Usuario:</b> @Model.RequestingUser.Id</li>
+    </ul>
+    <p><b>Mensaje:</b></p>
+    <p>@Model.Request.Message</p>
+</div>
+</body>
+</html>
