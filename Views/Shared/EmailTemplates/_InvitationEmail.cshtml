@@ -1,0 +1,35 @@
+@model InvitationCode
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .code {
+            background-color: #f2f2f2;
+            padding: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>¡Has sido invitado a Arandano IRT!</h2>
+    <p>Hola,</p>
+    <p>Has recibido una invitación para unirte a la plataforma de monitoreo Arandano IRT.</p>
+    <p>Usa el siguiente código de un solo uso para completar tu registro:</p>
+    <p class="code">@Model.Code</p>
+    <p>Este código expirará el <strong>@Model.ExpiresAt.ToString("f") (UTC)</strong>.</p>
+    <p>Para registrarte, ve a la página de registro y proporciona este código.</p>
+    <p>Gracias,<br>El equipo de Arandano IRT</p>
+</div>
+</body>
+</html>

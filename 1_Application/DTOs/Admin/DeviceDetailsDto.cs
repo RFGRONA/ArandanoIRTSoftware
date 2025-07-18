@@ -5,8 +5,8 @@ namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 public class DeviceDetailsDto
 {
     public int Id { get; set; }
-    [Display(Name = "Nombre Dispositivo")] public string? MacAddress { get; set; }
-    [Display(Name = "Dirección MAC")] public string Name { get; set; } = string.Empty;
+    [Display(Name = "Nombre Dispositivo")] public string Name { get; set; } = string.Empty;
+    [Display(Name = "Dirección MAC")] public string? MacAddress { get; set; }
     [Display(Name = "Descripción")] public string? Description { get; set; }
     [Display(Name = "Planta Asociada")] public string PlantName { get; set; } = string.Empty;
     [Display(Name = "Cultivo")] public string CropName { get; set; } = string.Empty;

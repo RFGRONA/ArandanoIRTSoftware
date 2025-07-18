@@ -1,0 +1,32 @@
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.AuthenticatedHelpRequestDto
+@{
+    ViewData["Title"] = "Solicitar Ayuda";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>Si tienes algún problema o duda, llena el siguiente formulario y un administrador se pondrá en contacto contigo a tu
+    correo registrado.</p>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="AuthenticatedHelp" method="post">
+            <div class="card">
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="mb-3">
+                        <label asp-for="Subject" class="form-label"></label>
+                        <input asp-for="Subject" class="form-control"/>
+                        <span asp-validation-for="Subject" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Message" class="form-label"></label>
+                        <textarea asp-for="Message" class="form-control" rows="6"></textarea>
+                        <span asp-validation-for="Message" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enviar Solicitud de Ayuda</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

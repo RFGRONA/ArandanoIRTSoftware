@@ -1,0 +1,68 @@
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.Admin.ObservationListDto>
+@{
+    ViewData["Title"] = "Bitácora de Observaciones";
+    Layout = "_AdminLayout";
+    var currentFilters = ViewBag.CurrentFilters as ArandanoIRT.Web._1_Application.DTOs.Admin.ObservationQueryFilters;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p>Historial de todas las observaciones de campo registradas en el sistema.</p>
+    <a asp-action="Create" class="btn btn-primary">Registrar Nueva Observación</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.Items.First().CreatedAt)</th>
+            <th>@Html.DisplayNameFor(model => model.Items.First().PlantName)</th>
+            <th>@Html.DisplayNameFor(model => model.Items.First().UserName)</th>
+            <th>@Html.DisplayNameFor(model => model.Items.First().Description)</th>
+            <th>@Html.DisplayNameFor(model => model.Items.First().SubjectiveRating)</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Items.Any())
+        {
+            <tr>
+                <td colspan="5" class="text-center">No hay observaciones registradas.</td>
+            </tr>
+        }
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>@item.CreatedAt.ToString("g")</td>
+                <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
+                <td>@Html.DisplayFor(modelItem => item.UserName)</td>
+                <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                <td>@Html.DisplayFor(modelItem => item.SubjectiveRating)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                <a class="page-link" asp-action="Index" asp-all-route-data="@(new Dictionary<string, string> { { "pageNumber", (Model.PageNumber - 1).ToString() } })">Anterior</a>
+            </li>
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-all-route-data="@(new Dictionary<string, string> { { "pageNumber", i.ToString() } })">@i</a>
+                </li>
+            }
+            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                <a class="page-link" asp-action="Index" asp-all-route-data="@(new Dictionary<string, string> { { "pageNumber", (Model.PageNumber + 1).ToString() } })">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}

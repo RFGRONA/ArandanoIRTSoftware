@@ -22,11 +22,3 @@
     </select>
     <span asp-validation-for="CropId" class="text-danger"></span>
 </div>
-
-<div class="mb-3">
-    <label asp-for="StatusId" class="form-label"></label>
-    <select asp-for="StatusId" class="form-select" asp-items="@concreteModel.AvailableStatuses">
-        <option value="">-- Seleccione un Estado --</option>
-    </select>
-    <span asp-validation-for="StatusId" class="text-danger"></span>
-</div>

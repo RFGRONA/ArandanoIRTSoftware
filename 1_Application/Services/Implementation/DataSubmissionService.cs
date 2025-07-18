@@ -135,7 +135,7 @@ public class DataSubmissionService : IDataSubmissionService
 
             if (uploadResult.IsSuccess)
             {
-                uploadedImagePath = uploadResult.ToString();
+                uploadedImagePath = uploadResult.Value;
                 _logger.LogInformation("Imagen subida exitosamente. URL: {ImageUrl}", uploadedImagePath);
             }
             else

@@ -24,7 +24,14 @@
         <dd class="col-sm-8">@Html.DisplayFor(model => model.PlantName)</dd>
 
         <dt class="col-sm-4">@Html.DisplayNameFor(model => model.CropName)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.CropName) (@Html.DisplayFor(model => model.CropCityName))</dd>
+        <dd class="col-sm-8">
+            @Html.DisplayFor(model => model.CropName)
+            @* Solo muestra la ciudad si el nombre no es nulo o vacío *@
+            @if (!string.IsNullOrWhiteSpace(Model.CropCityName))
+            {
+                <span>(@Html.DisplayFor(model => model.CropCityName))</span>
+            }
+        </dd>
 
         <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DataCollectionTimeMinutes)</dt>
         <dd class="col-sm-8">@Html.DisplayFor(model => model.DataCollectionTimeMinutes) minutos</dd>

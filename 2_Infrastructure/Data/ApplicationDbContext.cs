@@ -1,10 +1,12 @@
 ﻿using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Data;
 
-public partial class ApplicationDbContext : DbContext
+public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationRole, int>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -27,22 +29,34 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<Plant> Plants { get; set; }
 
-    public virtual DbSet<ThermalCapture> ThermalCaptures { get; set; }
+    public virtual DbSet<PlantStatusHistory> PlantStatusHistories { get; set; }
 
-    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<ThermalCapture> ThermalCaptures { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>(entity => { entity.ToTable("users"); });
+        modelBuilder.Entity<ApplicationRole>(entity => { entity.ToTable("roles"); });
+        modelBuilder.Entity<IdentityUserRole<int>>(entity => { entity.ToTable("user_roles"); });
+        modelBuilder.Entity<IdentityUserClaim<int>>(entity => { entity.ToTable("user_claims"); });
+        modelBuilder.Entity<IdentityUserLogin<int>>(entity => { entity.ToTable("user_logins"); });
+        modelBuilder.Entity<IdentityRoleClaim<int>>(entity => { entity.ToTable("role_claims"); });
+        modelBuilder.Entity<IdentityUserToken<int>>(entity => { entity.ToTable("user_tokens"); });
+
         modelBuilder
             .HasPostgresEnum<ActivationStatus>()
             .HasPostgresEnum<DeviceStatus>()
-            .HasPostgresEnum<TokenStatus>();
+            .HasPostgresEnum<TokenStatus>()
+            .HasPostgresEnum<PlantStatus>();
 
         modelBuilder.Entity<Crop>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("crops_pkey");
 
-            entity.ToTable("crops", tb => tb.HasComment("Stores information about crops. Acts as the main grouping entity (tenant)."));
+            entity.ToTable("crops",
+                tb => tb.HasComment("Stores information about crops. Acts as the main grouping entity (tenant)."));
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Address).HasColumnName("address");
@@ -104,7 +118,8 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("device_activations_pkey");
 
-            entity.ToTable("device_activations", tb => tb.HasComment("Stores single-use codes to activate new devices."));
+            entity.ToTable("device_activations",
+                tb => tb.HasComment("Stores single-use codes to activate new devices."));
 
             entity.HasIndex(e => e.ActivationCode, "device_activations_activation_code_key").IsUnique();
 
@@ -152,11 +167,14 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("environmental_readings_pkey");
 
-            entity.ToTable("environmental_readings", tb => tb.HasComment("Stores environmental data collected by device sensors."));
+            entity.ToTable("environmental_readings",
+                tb => tb.HasComment("Stores environmental data collected by device sensors."));
 
-            entity.HasIndex(e => new { e.DeviceId, e.RecordedAtServer }, "idx_readings_device_id_recorded_at_server").IsDescending(false, true);
+            entity.HasIndex(e => new { e.DeviceId, e.RecordedAtServer }, "idx_readings_device_id_recorded_at_server")
+                .IsDescending(false, true);
 
-            entity.HasIndex(e => new { e.PlantId, e.RecordedAtServer }, "idx_readings_plant_id_recorded_at_server").IsDescending(false, true);
+            entity.HasIndex(e => new { e.PlantId, e.RecordedAtServer }, "idx_readings_plant_id_recorded_at_server")
+                .IsDescending(false, true);
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CityHumidity).HasColumnName("city_humidity");
@@ -190,7 +208,8 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("invitation_codes_pkey");
 
-            entity.ToTable("invitation_codes", tb => tb.HasComment("Stores single-use invitation codes for user registration."));
+            entity.ToTable("invitation_codes",
+                tb => tb.HasComment("Stores single-use invitation codes for user registration."));
 
             entity.HasIndex(e => e.CreatedByUserId, "idx_invitation_codes_created_by_user_id");
 
@@ -221,7 +240,8 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("observations_pkey");
 
-            entity.ToTable("observations", tb => tb.HasComment("Stores manual observations made by an agronomist or expert user."));
+            entity.ToTable("observations",
+                tb => tb.HasComment("Stores manual observations made by an agronomist or expert user."));
 
             entity.HasIndex(e => e.PlantId, "idx_observations_plant_id");
 
@@ -254,9 +274,14 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.CropId, "idx_plants_crop_id");
 
+            entity.HasIndex(e => e.Status, "idx_plants_status");
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CropId).HasColumnName("crop_id");
             entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.Status)
+                .HasDefaultValue(PlantStatus.UNKNOWN)
+                .HasColumnName("status");
             entity.Property(e => e.RegisteredAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("registered_at");
@@ -272,15 +297,46 @@ public partial class ApplicationDbContext : DbContext
                 .HasConstraintName("plants_crop_id_fkey");
         });
 
+        modelBuilder.Entity<PlantStatusHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("plant_status_histories_pkey");
+            entity.ToTable("plant_status_histories",
+                tb => tb.HasComment("Stores the history of status changes for each plant."));
+            entity.HasIndex(e => e.PlantId, "idx_plant_status_histories_plant_id");
+            entity.HasIndex(e => e.ChangedAt, "idx_plant_status_histories_changed_at").IsDescending();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PlantId).HasColumnName("plant_id");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.Observation).HasColumnName("observation");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ChangedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("changed_at");
+
+            entity.HasOne(d => d.Plant).WithMany(p => p.PlantStatusHistories)
+                .HasForeignKey(d => d.PlantId)
+                .HasConstraintName("plant_status_histories_plant_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PlantStatusHistories)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("plant_status_histories_user_id_fkey");
+        });
+
         modelBuilder.Entity<ThermalCapture>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("thermal_captures_pkey");
 
-            entity.ToTable("thermal_captures", tb => tb.HasComment("Stores thermographic captures. Statistics are stored in JSONB, the image path in Object Storage."));
+            entity.ToTable("thermal_captures",
+                tb => tb.HasComment(
+                    "Stores thermographic captures. Statistics are stored in JSONB, the image path in Object Storage."));
 
-            entity.HasIndex(e => new { e.DeviceId, e.RecordedAtServer }, "idx_captures_device_id_recorded_at_server").IsDescending(false, true);
+            entity.HasIndex(e => new { e.DeviceId, e.RecordedAtServer }, "idx_captures_device_id_recorded_at_server")
+                .IsDescending(false, true);
 
-            entity.HasIndex(e => new { e.PlantId, e.RecordedAtServer }, "idx_captures_plant_id_recorded_at_server").IsDescending(false, true);
+            entity.HasIndex(e => new { e.PlantId, e.RecordedAtServer }, "idx_captures_plant_id_recorded_at_server")
+                .IsDescending(false, true);
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
@@ -308,41 +364,34 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("users_pkey");
-
-            entity.ToTable("users", tb => tb.HasComment("Stores web application users and their credentials."));
-
-            entity.HasIndex(e => e.CropId, "idx_users_crop_id");
-
-            entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
-            entity.Property(e => e.CropId).HasColumnName("crop_id");
-            entity.Property(e => e.Email)
-                .HasMaxLength(75)
-                .HasColumnName("email");
+            entity.ToTable("users");
             entity.Property(e => e.FirstName)
                 .HasMaxLength(40)
                 .HasColumnName("first_name");
-            entity.Property(e => e.IsAdmin)
-                .HasDefaultValue(false)
-                .HasColumnName("is_admin");
-            entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
             entity.Property(e => e.LastName)
                 .HasMaxLength(40)
                 .HasColumnName("last_name");
-            entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
+            entity.Property(e => e.CropId).HasColumnName("crop_id");
+            entity.Property(e => e.AccountSettings)
+                .HasColumnType("jsonb")
+                .HasColumnName("account_settings");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
 
             entity.HasOne(d => d.Crop).WithMany(p => p.Users)
                 .HasForeignKey(d => d.CropId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("users_crop_id_fkey");
+        });
+
+        modelBuilder.Entity<ApplicationRole>(entity =>
+        {
+            entity.ToTable("roles"); // Opcional: para usar 'roles' en vez de 'AspNetRoles'
         });
 
         OnModelCreatingPartial(modelBuilder);

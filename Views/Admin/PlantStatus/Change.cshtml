@@ -1,0 +1,46 @@
+@using ArandanoIRT.Web._0_Domain.Enums
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.PlantStatusUpdateDto
+@{
+    ViewData["Title"] = "Cambiar Estado de Planta";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+<h4>Planta: @Model.PlantName</h4>
+<hr/>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Change" method="post">
+            @* Este campo oculto es crucial para saber qué planta estamos actualizando *@
+            <input type="hidden" asp-for="PlantId"/>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="NewStatus" class="form-label">Nuevo Estado</label>
+                @* Este helper genera un dropdown a partir de tu enum PlantStatus *@
+                <select asp-for="NewStatus" class="form-select" asp-items="Html.GetEnumSelectList<PlantStatus>()">
+                    <option value="">-- Seleccione un nuevo estado --</option>
+                </select>
+                <span asp-validation-for="NewStatus" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Observation" class="form-label"></label>
+                <textarea asp-for="Observation" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Observation" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Guardar Cambio" class="btn btn-success"/>
+                @* El botón Cancelar nos devuelve a los detalles de la planta que estábamos viendo *@
+                <a asp-controller="Plants" asp-action="Details" asp-route-id="@Model.PlantId" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

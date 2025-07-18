@@ -96,6 +96,7 @@ public class DeviceApiController : ControllerBase
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Error procesando identidad del dispositivo.");
         }
+        _logger.LogInformation("Received ambiental data submission from DeviceId: {DeviceId}", deviceContext.DeviceId);
 
         var result = await _dataSubmissionService.SaveAmbientDataAsync(deviceContext, ambientDataDto);
 
@@ -106,75 +107,57 @@ public class DeviceApiController : ControllerBase
     [Authorize(Policy = "DeviceAuthenticated")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> SubmitCaptureData(
-        [FromForm(Name = "thermal")] string thermalDataJsonString,
+        [FromForm(Name = "thermal")] string thermalDataJson,
         [FromForm(Name = "image")] IFormFile? imageFile)
     {
-        if (string.IsNullOrWhiteSpace(thermalDataJsonString))
+        var deviceContext = GetDeviceIdentityFromClaims();
+        if (deviceContext == null)
         {
-            return BadRequest("Falta la parte 'thermal' en los datos.");
+            return StatusCode(StatusCodes.Status500InternalServerError, "Error procesando identidad del dispositivo.");
+        }
+        _logger.LogInformation("Received thermal data submission from DeviceId: {DeviceId}", deviceContext.DeviceId);
+
+        if (string.IsNullOrEmpty(thermalDataJson))
+        {
+            return BadRequest("Thermal data JSON is missing.");
         }
 
         ThermalDataDto? thermalDataDto;
         try
         {
-            thermalDataDto = JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (thermalDataDto == null) throw new JsonException("La deserialización resultó en null.");
+            // Deserialize the JSON string that came in the form data
+            thermalDataDto = JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (thermalDataDto == null)
+            {
+                return BadRequest("Failed to deserialize thermal data.");
+            }
         }
-        catch (JsonException jsonEx)
+        catch (JsonException ex)
         {
-            _logger.LogWarning(jsonEx, "Error al deserializar 'thermalDataJsonString': {JsonString}", thermalDataJsonString);
-            return BadRequest("Formato JSON inválido para la parte 'thermal'.");
-        }
-
-        var deviceContext = GetDeviceIdentityFromClaims();
-        if (deviceContext == null)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, "Error procesando identidad del dispositivo.");
+            _logger.LogError(ex, "Failed to deserialize thermalDataJson.");
+            return BadRequest("Invalid JSON format for thermal data.");
         }
 
-        var recordedAtServer = DateTime.UtcNow;
-        var result = await _dataSubmissionService.SaveCaptureDataAsync(deviceContext, thermalDataDto, thermalDataJsonString, imageFile!, recordedAtServer);
+        // The service signature expects: DeviceContext, DTO, JSON string, Image File, and Server Time.
 
-        return result.IsSuccess ? NoContent() : BadRequest(result.ErrorMessage);
-    }
-
-    [HttpPost("log")]
-    [Authorize(Policy = "DeviceAuthenticated")]
-    public IActionResult SubmitDeviceLog([FromBody] DeviceLogEntryDto logEntryDto)
-    {
-        if (!ModelState.IsValid)
+        if (imageFile == null)
         {
-            return BadRequest("Payload de log inválido.");
+            _logger.LogWarning("No image file provided for DeviceId: {DeviceId}", deviceContext.DeviceId);
         }
 
-        var deviceContext = GetDeviceIdentityFromClaims();
-        if (deviceContext == null)
+        var result = await _dataSubmissionService.SaveCaptureDataAsync(
+            deviceContext,
+            thermalDataDto,
+            thermalDataJson, // Pass the original JSON string for the stats field
+            imageFile,
+            DateTime.UtcNow);
+
+        if (result.IsSuccess)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, "Error procesando identidad del dispositivo.");
+            return Ok(new { message = "Thermal data received and saved successfully." });
         }
 
-        // Determinar el nivel de log
-        var logLevel = logEntryDto.LogType?.ToUpper() switch
-        {
-            "WARNING" => LogLevel.Warning,
-            "ERROR" => LogLevel.Error,
-            "FATAL" => LogLevel.Critical,
-            _ => LogLevel.Information // INFO y otros tipos por defecto a Information
-        };
-
-        // Crear un diccionario para los datos extra
-        var extraData = new Dictionary<string, object?>();
-        if (logEntryDto.InternalDeviceTemperature.HasValue) extraData["InternalDeviceTemperature"] = logEntryDto.InternalDeviceTemperature;
-        if (logEntryDto.InternalDeviceHumidity.HasValue) extraData["InternalDeviceHumidity"] = logEntryDto.InternalDeviceHumidity;
-
-        // Loguear usando el ILogger, que Serilog capturará. Incluir el DeviceId para el contexto.
-        // Usamos un scope para enriquecer el log con datos adicionales si es necesario.
-        using (_logger.BeginScope(extraData))
-        {
-            _logger.Log(logLevel, "Log desde DeviceId {DeviceId}: {Message}", deviceContext.DeviceId, logEntryDto.LogMessage);
-        }
-
-        return NoContent();
+        return StatusCode(500, new { message = "Failed to save thermal data.", error = result.ErrorMessage });
     }
 
     // --- Método Helper ---
@@ -182,7 +165,7 @@ public class DeviceApiController : ControllerBase
     private DeviceIdentityContext? GetDeviceIdentityFromClaims()
     {
         var deviceIdClaim = User.FindFirstValue("DeviceId");
-        if (!int.TryParse(deviceIdClaim, out int deviceId) || deviceId <= 0)
+        if (string.IsNullOrEmpty(deviceIdClaim) || !int.TryParse(deviceIdClaim, out int deviceId) || deviceId <= 0)
         {
             _logger.LogError("Claim 'DeviceId' no encontrado o inválido.");
             return null;

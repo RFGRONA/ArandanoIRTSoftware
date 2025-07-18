@@ -54,7 +54,7 @@ public class DevicesController : Controller
         {
             // Llama a los helpers del servicio que ahora tienen la lógica correcta.
             AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync(),
-            AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value }) // Asegurarse que el DTO maneje el tipo de Status
+            AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection()
         };
         return View(dto);
     }

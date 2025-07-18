@@ -1,0 +1,33 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Solicitud Enviada";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@ViewData["Title"] - Arandano IRT</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+</head>
+<body class="bg-light">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card my-5 text-center">
+                <div class="card-body p-5">
+                    <h3 class="card-title">✔️ Solicitud Enviada</h3>
+                    <p class="text-muted my-4">
+                        Gracias por contactarnos. Hemos enviado tu solicitud a nuestro equipo de administradores. Nos
+                        pondremos en contacto contigo pronto.
+                    </p>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-primary">Volver a la Página
+                        Principal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

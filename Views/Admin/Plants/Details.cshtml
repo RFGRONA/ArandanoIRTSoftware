@@ -10,7 +10,7 @@
 {
     <div class="alert alert-warning">Planta no encontrada.</div>
     <p><a asp-action="Index" class="btn btn-secondary">Volver al listado</a></p>
-    return; // Detiene la renderización si el modelo es null
+    return;
 }
 @if (ViewData["ErrorMessage"] != null)
 {
@@ -21,28 +21,32 @@
 
 <div>
     <h4>@Model.Name</h4>
-    <hr />
+    <hr/>
     <dl class="row">
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.Name)</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Name)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
 
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.CropName)</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.CropName)</dd>
+        <dt class="col-sm-3">Estado Actual</dt>
+        <dd class="col-sm-9">
+            <span class="badge bg-primary">@Model.StatusName</span>
+        </dd>
 
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.CropCityName)</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.CropCityName)</dd>
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CropName)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.CropName)</dd>
 
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.StatusName)</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.StatusName)</dd>
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CropCityName)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.CropCityName)</dd>
 
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.RegisteredAt)</dt>
-        <dd class = "col-sm-9">@Model.RegisteredAt.ToString("g")</dd>
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.RegisteredAt)</dt>
+        <dd class="col-sm-9">@Model.RegisteredAt.ToString("g")</dd>
 
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.UpdatedAt)</dt>
-        <dd class = "col-sm-9">@Model.UpdatedAt.ToString("g")</dd>
+        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.UpdatedAt)</dt>
+        <dd class="col-sm-9">@Model.UpdatedAt.ToString("g")</dd>
     </dl>
 </div>
 <div class="mt-3">
+    <a asp-controller="PlantStatus" asp-action="Change" asp-route-id="@Model.Id" class="btn btn-info">Cambiar Estado</a>
+    |
     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar</a> |
     <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>
 </div>
