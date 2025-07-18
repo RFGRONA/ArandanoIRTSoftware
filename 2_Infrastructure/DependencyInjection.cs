@@ -67,6 +67,8 @@ public static class DependencyInjection
         services.AddScoped<IDataQueryService, DataQueryService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IInvitationService, InvitationService>();
+        services.AddScoped<ISupportService, SupportService>();
+        services.AddScoped<IObservationService, ObservationService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();

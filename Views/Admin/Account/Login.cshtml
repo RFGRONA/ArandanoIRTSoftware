@@ -17,7 +17,7 @@
 <body>
 
 <div class="login-card">
-    <a href="#" class="btn-help">?</a>
+    <a asp-area="Admin" asp-controller="Support" asp-action="PublicHelp" class="btn-help">?</a>
 
     <div class="login-header">
         <span class="emoji">🫐</span>
@@ -41,6 +41,11 @@
 
         <div class="turnstile-container mb-4">
             <p class="text-muted small">Cargando verificación...</p>
+        </div>
+
+        <div class="form-text text-end mb-3">
+            <a asp-area="Admin" asp-controller="Account" asp-action="ForgotPassword" class="text-decoration-underline">¿Olvidaste
+                tu contraseña?</a>
         </div>
 
         <div class="action-buttons">

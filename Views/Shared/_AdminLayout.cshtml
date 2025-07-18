@@ -54,6 +54,10 @@
                         <a class="nav-link text-dark" asp-area="Admin" asp-controller="Captures" asp-action="Index">Capturas
                             (IRT/RGB)</a>
                     </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="Admin" asp-controller="Observation" asp-action="Index">Bitácora</a>
+                    </li>
 
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownAccount" role="button"
@@ -61,17 +65,15 @@
                             Cuenta
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownAccount">
-                            <li><a class="dropdown-item" asp-area="Admin" asp-controller="Invitation"
-                                   asp-action="Index">Gestionar Invitaciones</a></li>
-                            <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
+                            <li><a class="dropdown-item" asp-area="Admin" asp-controller="Manage" asp-action="Index">Mi
+                                    Perfil</a></li>
+                            <li><a class="dropdown-item" asp-area="Admin" asp-controller="Support" asp-action="Index">Solicitar
+                                    Ayuda</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li>
-                                <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post"
-                                      id="logoutForm">
-                                    <button type="submit" class="dropdown-item">Cerrar Sesión</button>
-                                </form>
+                            <li><a class="dropdown-item" asp-area="Admin" asp-controller="Invitation"
+                                   asp-action="Index">Gestionar Invitaciones</a>
                             </li>
                         </ul>
                     </li>
