@@ -88,67 +88,44 @@ public class DataQueryService : IDataQueryService
 
     #endregion
 
-    public async Task<Result<PagedResultDto<SensorDataDisplayDto>>> GetSensorDataAsync(DataQueryFilters filters)
+      public async Task<Result<PagedResultDto<SensorDataDisplayDto>>> GetSensorDataAsync(DataQueryFilters filters)
     {
         _logger.LogInformation("Obteniendo datos de sensores con filtros: {@Filters}", filters);
         try
         {
             var query = _context.EnvironmentalReadings.AsNoTracking();
 
-            // Aplicar filtros
-            if (filters.DeviceId.HasValue)
-                query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
-            if (filters.PlantId.HasValue)
-                query = query.Where(er => er.PlantId == filters.PlantId.Value);
-            if (filters.CropId.HasValue)
-                // EnvironmentalReading no tiene CropId, se filtra a través del Dispositivo
-                query = query.Where(er => er.Device.CropId == filters.CropId.Value);
-
+            // Filtros
+            if (filters.DeviceId.HasValue) query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
+            if (filters.PlantId.HasValue) query = query.Where(er => er.PlantId == filters.PlantId.Value);
+            if (filters.CropId.HasValue) query = query.Where(er => er.Device.CropId == filters.CropId.Value);
             query = query.ApplyDateFilters(filters, er => er.RecordedAtServer);
 
-            // Conteo total para paginación
             var totalCount = await query.CountAsync();
             if (totalCount == 0)
             {
-                return Result.Success(new PagedResultDto<SensorDataDisplayDto>
-                {
-                    Items = new List<SensorDataDisplayDto>(),
-                    PageNumber = filters.PageNumber,
-                    PageSize = filters.PageSize,
-                    TotalCount = 0
-                });
+                return Result.Success(new PagedResultDto<SensorDataDisplayDto> { Items = new List<SensorDataDisplayDto>(), TotalCount = 0, PageNumber = filters.PageNumber, PageSize = filters.PageSize });
             }
 
-            // Aplicar orden y paginación
-            var readings = await query
+            // 1. Traer datos crudos
+            var rawData = await query
                 .OrderByDescending(er => er.RecordedAtServer)
                 .Skip((filters.PageNumber - 1) * filters.PageSize)
                 .Take(filters.PageSize)
-                .Select(er => new SensorDataDisplayDto
-                {
-                    Id = er.Id,
-                    DeviceId = er.DeviceId,
-                    DeviceName = er.Device.Name, // Navegación directa
-                    PlantName = er.Plant != null ? er.Plant.Name : "N/A", // Navegación directa
-                    CropName = er.Device.Crop.Name, // Navegación anidada
-                    Light = GetLightValueFromJson(er.ExtraData), // Extracción desde JSON
-                    Temperature = er.Temperature,
-                    Humidity = er.Humidity,
-                    CityTemperature = er.CityTemperature,
-                    CityHumidity = er.CityHumidity,
-                    CityWeatherCondition = er.CityWeatherCondition,
-                    IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"), // Ejemplo de como extraer un bool
-                    RecordedAt = ToColombiaTime(er.RecordedAtServer)
-                })
+                .Select(er => new { er.Id, er.DeviceId, DeviceName = er.Device.Name, PlantName = er.Plant != null ? er.Plant.Name : "N/A", CropName = er.Device.Crop.Name, er.Temperature, er.Humidity, er.ExtraData, er.CityTemperature, er.CityHumidity, er.CityWeatherCondition, er.RecordedAtServer })
                 .ToListAsync();
 
-            return Result.Success(new PagedResultDto<SensorDataDisplayDto>
+            // 2. Transformar en memoria
+            var finalData = rawData.Select(er => new SensorDataDisplayDto
             {
-                Items = new List<SensorDataDisplayDto>(),
-                PageNumber = filters.PageNumber,
-                PageSize = filters.PageSize,
-                TotalCount = 0
-            });
+                Id = er.Id, DeviceId = er.DeviceId, DeviceName = er.DeviceName, PlantName = er.PlantName, CropName = er.CropName,
+                Light = GetLightValueFromJson(er.ExtraData),
+                Temperature = er.Temperature, Humidity = er.Humidity, CityTemperature = er.CityTemperature, CityHumidity = er.CityHumidity, CityWeatherCondition = er.CityWeatherCondition,
+                IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
+                RecordedAt = ToColombiaTime(er.RecordedAtServer)
+            }).ToList();
+
+            return Result.Success(new PagedResultDto<SensorDataDisplayDto> { Items = finalData, TotalCount = totalCount, PageNumber = filters.PageNumber, PageSize = filters.PageSize });
         }
         catch (Exception ex)
         {
@@ -164,91 +141,58 @@ public class DataQueryService : IDataQueryService
         {
             var query = _context.ThermalCaptures.AsNoTracking();
 
-            // Aplicar filtros
-            if (filters.DeviceId.HasValue)
-                query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
-            if (filters.PlantId.HasValue)
-                query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
-            if (filters.CropId.HasValue)
-                query = query.Where(tc => tc.Device.CropId == filters.CropId.Value);
-
+            // Aplicar filtros (esta lógica no cambia)
+            if (filters.DeviceId.HasValue) query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
+            if (filters.PlantId.HasValue) query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
+            if (filters.CropId.HasValue) query = query.Where(tc => tc.Device.CropId == filters.CropId.Value);
             query = query.ApplyDateFilters(filters, tc => tc.RecordedAtServer);
 
             var totalCount = await query.CountAsync();
             if (totalCount == 0)
             {
-                return Result.Success(new PagedResultDto<ThermalCaptureSummaryDto>
-                {
-                    Items = new List<ThermalCaptureSummaryDto>(),
-                    PageNumber = filters.PageNumber,
-                    PageSize = filters.PageSize,
-                    TotalCount = 0
-                });
+                return Result.Success(new PagedResultDto<ThermalCaptureSummaryDto> { Items = new List<ThermalCaptureSummaryDto>(), TotalCount = 0, PageNumber = filters.PageNumber, PageSize = filters.PageSize });
             }
+            
+            // ================== INICIO DE LA CORRECCIÓN ==================
 
-            var captures = await query
+            // 1. Traer datos crudos de la BD, incluyendo el JSON como texto.
+            var rawData = await query
                 .OrderByDescending(tc => tc.RecordedAtServer)
                 .Skip((filters.PageNumber - 1) * filters.PageSize)
                 .Take(filters.PageSize)
-                .ToListAsync(); // Traemos los datos completos para procesar el JSON en memoria
+                .Select(tc => new 
+                {
+                    tc.Id,
+                    tc.DeviceId,
+                    DeviceName = tc.Device.Name,
+                    PlantName = tc.Plant != null ? tc.Plant.Name : "N/A",
+                    tc.ThermalDataStats, // Se trae el JSON como string
+                    tc.RgbImagePath,
+                    tc.RecordedAtServer
+                })
+                .ToListAsync();
 
-            // Mapeo a DTO, incluyendo deserialización del JSON
-            var summaries = captures.Select(m =>
+            // 2. Transformar los datos en memoria. Ahora sí podemos llamar a los métodos de C#.
+            var finalData = rawData.Select(m =>
             {
-                var thermalStats = DeserializeThermalStats(m.ThermalDataStats, m.Id);
+                var thermalStats = DeserializeThermalStats(m.ThermalDataStats, m.Id); // Llamada segura
                 return new ThermalCaptureSummaryDto
                 {
                     Id = m.Id,
                     DeviceId = m.DeviceId,
-                    DeviceName = m.Device?.Name ?? m.DeviceId.ToString(), // Asume que Device fue cargado (necesitará .Include si no se proyecta)
-                    PlantName = m.Plant?.Name ?? "N/A",
-                    MaxTemp = thermalStats?.Max_Temp ?? 0,
-                    MinTemp = thermalStats?.Min_Temp ?? 0,
-                    AvgTemp = thermalStats?.Avg_Temp ?? 0,
+                    DeviceName = m.DeviceName,
+                    PlantName = m.PlantName,
+                    MaxTemp = thermalStats?.Max_Temp, 
+                    MinTemp = thermalStats?.Min_Temp,
+                    AvgTemp = thermalStats?.Avg_Temp,
                     RgbImagePath = m.RgbImagePath,
-                    RecordedAt = ToColombiaTime(m.RecordedAtServer)
+                    RecordedAt = ToColombiaTime(m.RecordedAtServer) // Llamada segura
                 };
             }).ToList();
 
-            // NOTA: El mapeo anterior es ineficiente porque carga entidades enteras. Una proyección directa es mejor.
-            // Versión optimizada con proyección:
-            var optimizedSummaries = await query
-               .OrderByDescending(tc => tc.RecordedAtServer)
-               .Skip((filters.PageNumber - 1) * filters.PageSize)
-               .Take(filters.PageSize)
-               .Select(tc => new
-               {
-                   Capture = tc,
-                   DeviceName = tc.Device.Name,
-                   PlantName = tc.Plant != null ? tc.Plant.Name : "N/A"
-               })
-               .ToListAsync();
-
-            var finalSummaries = optimizedSummaries.Select(res =>
-            {
-                var thermalStats = DeserializeThermalStats(res.Capture.ThermalDataStats, res.Capture.Id);
-                return new ThermalCaptureSummaryDto
-                {
-                    Id = res.Capture.Id,
-                    DeviceId = res.Capture.DeviceId,
-                    DeviceName = res.DeviceName,
-                    PlantName = res.PlantName,
-                    MaxTemp = thermalStats?.Max_Temp ?? 0,
-                    MinTemp = thermalStats?.Min_Temp ?? 0,
-                    AvgTemp = thermalStats?.Avg_Temp ?? 0,
-                    RgbImagePath = res.Capture.RgbImagePath,
-                    RecordedAt = ToColombiaTime(res.Capture.RecordedAtServer)
-                };
-            }).ToList();
-
-
-            return Result.Success(new PagedResultDto<ThermalCaptureSummaryDto>
-            {
-                Items = new List<ThermalCaptureSummaryDto>(),
-                PageNumber = filters.PageNumber,
-                PageSize = filters.PageSize,
-                TotalCount = 0
-            });
+            // =================== FIN DE LA CORRECCIÓN ====================
+            
+            return Result.Success(new PagedResultDto<ThermalCaptureSummaryDto> { Items = finalData, TotalCount = totalCount, PageNumber = filters.PageNumber, PageSize = filters.PageSize });
         }
         catch (Exception ex)
         {
@@ -311,39 +255,34 @@ public class DataQueryService : IDataQueryService
 
     public async Task<Result<IEnumerable<SensorDataDisplayDto>>> GetAmbientDataForDashboardAsync(TimeSpan duration, int? cropId, int? plantId, int? deviceId)
     {
-        _logger.LogInformation("Obteniendo datos ambientales para dashboard. Duración: {Duration}, CropId: {CropId}, PlantId: {PlantId}, DeviceId: {DeviceId}",
-            duration, cropId, plantId, deviceId);
+        _logger.LogInformation("Obteniendo datos ambientales para dashboard. Duración: {Duration}, etc.", duration);
         try
         {
             var since = DateTime.UtcNow.Subtract(duration);
-            var query = _context.EnvironmentalReadings.AsNoTracking()
-                .Where(er => er.RecordedAtServer >= since);
+            var query = _context.EnvironmentalReadings.AsNoTracking().Where(er => er.RecordedAtServer >= since);
 
-            // Aplicar filtros jerárquicos
-            if (deviceId.HasValue)
-                query = query.Where(er => er.DeviceId == deviceId.Value);
-            else if (plantId.HasValue)
-                query = query.Where(er => er.PlantId == plantId.Value);
-            else if (cropId.HasValue)
-                query = query.Where(er => er.Device.CropId == cropId.Value);
+            if (deviceId.HasValue) query = query.Where(er => er.DeviceId == deviceId.Value);
+            else if (plantId.HasValue) query = query.Where(er => er.PlantId == plantId.Value);
+            else if (cropId.HasValue) query = query.Where(er => er.Device.CropId == cropId.Value);
 
-            var data = await query
+            // 1. Traer datos crudos
+            var rawData = await query
                 .OrderBy(er => er.RecordedAtServer)
-                .Select(er => new SensorDataDisplayDto
-                {
-                    DeviceId = er.DeviceId,
-                    DeviceName = er.Device.Name,
-                    Light = GetLightValueFromJson(er.ExtraData),
-                    Temperature = er.Temperature,
-                    Humidity = er.Humidity,
-                    CityTemperature = er.CityTemperature,
-                    CityHumidity = er.CityHumidity,
-                    IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
-                    RecordedAt = ToColombiaTime(er.RecordedAtServer)
-                }).ToListAsync();
+                .Select(er => new { er.DeviceId, DeviceName = er.Device.Name, er.ExtraData, er.Temperature, er.Humidity, er.CityTemperature, er.CityHumidity, er.RecordedAtServer })
+                .ToListAsync();
 
-            _logger.LogInformation("Datos ambientales para dashboard recuperados: {Count} puntos.", data.Count);
-            return Result.Success<IEnumerable<SensorDataDisplayDto>>(data);
+            // 2. Transformar en memoria
+            var finalData = rawData.Select(er => new SensorDataDisplayDto
+            {
+                DeviceId = er.DeviceId, DeviceName = er.DeviceName,
+                Light = GetLightValueFromJson(er.ExtraData), // Llamada segura
+                Temperature = er.Temperature, Humidity = er.Humidity, CityTemperature = er.CityTemperature, CityHumidity = er.CityHumidity,
+                IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
+                RecordedAt = ToColombiaTime(er.RecordedAtServer) // Llamada segura
+            }).ToList();
+
+            _logger.LogInformation("Datos ambientales para dashboard recuperados: {Count} puntos.", finalData.Count);
+            return Result.Success<IEnumerable<SensorDataDisplayDto>>(finalData);
         }
         catch (Exception ex)
         {
@@ -354,55 +293,58 @@ public class DataQueryService : IDataQueryService
 
     public async Task<Result<ThermalStatsDto>> GetThermalStatsForDashboardAsync(TimeSpan duration, int? cropId, int? plantId, int? deviceId)
     {
-        _logger.LogInformation("Obteniendo estadísticas térmicas para dashboard. Duración: {Duration}, etc.", duration);
+        _logger.LogInformation("Obteniendo estadísticas térmicas para dashboard. Duración: {Duration}", duration);
         try
         {
             var since = DateTime.UtcNow.Subtract(duration);
-            var query = _context.ThermalCaptures.AsNoTracking()
-                .Where(tc => tc.RecordedAtServer >= since);
+            var query = _context.ThermalCaptures.AsNoTracking().Where(tc => tc.RecordedAtServer >= since);
 
-            // Filtros jerárquicos
-            if (deviceId.HasValue)
-                query = query.Where(tc => tc.DeviceId == deviceId.Value);
-            else if (plantId.HasValue)
-                query = query.Where(tc => tc.PlantId == plantId.Value);
-            else if (cropId.HasValue)
-                query = query.Where(tc => tc.Device.CropId == cropId.Value);
+            // Aplicar filtros (esta lógica no cambia)
+            if (deviceId.HasValue) query = query.Where(tc => tc.DeviceId == deviceId.Value);
+            else if (plantId.HasValue) query = query.Where(tc => tc.PlantId == plantId.Value);
+            else if (cropId.HasValue) query = query.Where(tc => tc.Device.CropId == cropId.Value);
 
-            var allCapturesInRange = await query.Select(tc => new { tc.Id, tc.RecordedAtServer, tc.ThermalDataStats }).ToListAsync();
+            // ================== INICIO DE LA CORRECCIÓN ==================
+            
+            // 1. Traer solo el JSON y la fecha, sin procesar nada.
+            var rawCaptures = await query.Select(tc => new { tc.Id, tc.RecordedAtServer, tc.ThermalDataStats }).ToListAsync();
 
-            if (!allCapturesInRange.Any())
+            if (!rawCaptures.Any())
             {
                 _logger.LogInformation("No hay datos térmicos recientes para los filtros del dashboard.");
-                return Result.Success(new ThermalStatsDto());
+                return Result.Success(new ThermalStatsDto()); // Devolver un objeto vacío pero exitoso.
             }
 
+            // 2. Deserializar toda la lista en memoria.
             var thermalStatsList = new List<ThermalDataDto>();
-            foreach (var model in allCapturesInRange)
+            foreach (var model in rawCaptures)
             {
-                var stats = DeserializeThermalStats(model.ThermalDataStats, model.Id);
+                var stats = DeserializeThermalStats(model.ThermalDataStats, model.Id); // Llamada segura
                 if (stats != null) thermalStatsList.Add(stats);
             }
 
             if (!thermalStatsList.Any())
             {
-                _logger.LogInformation("No se pudieron deserializar datos térmicos válidos para el dashboard.");
+                _logger.LogWarning("Se encontraron capturas térmicas pero no se pudieron deserializar sus estadísticas.");
                 return Result.Success(new ThermalStatsDto());
             }
 
-            var latestCapture = allCapturesInRange.OrderByDescending(x => x.RecordedAtServer).First();
-            var latestStats = DeserializeThermalStats(latestCapture.ThermalDataStats, latestCapture.Id);
+            // 3. Calcular estadísticas sobre la lista ya procesada.
+            var latestCapture = rawCaptures.OrderByDescending(x => x.RecordedAtServer).First();
+            var latestStats = thermalStatsList.LastOrDefault(); // El último de la lista ya deserializada
 
             var dashboardStats = new ThermalStatsDto
             {
                 AverageMaxTemp24h = thermalStatsList.Average(s => s.Max_Temp),
                 AverageMinTemp24h = thermalStatsList.Average(s => s.Min_Temp),
                 AverageAvgTemp24h = thermalStatsList.Average(s => s.Avg_Temp),
-                LatestMaxTemp = latestStats?.Max_Temp ?? 0,
-                LatestMinTemp = latestStats?.Min_Temp ?? 0,
-                LatestAvgTemp = latestStats?.Avg_Temp ?? 0,
-                LatestThermalReadingTimestamp = ToColombiaTime(latestCapture.RecordedAtServer)
+                LatestMaxTemp = latestStats?.Max_Temp,
+                LatestMinTemp = latestStats?.Min_Temp,
+                LatestAvgTemp = latestStats?.Avg_Temp,
+                LatestThermalReadingTimestamp = ToColombiaTime(latestCapture.RecordedAtServer) // Llamada segura
             };
+            
+            // =================== FIN DE LA CORRECCIÓN ====================
 
             return Result.Success(dashboardStats);
         }
@@ -468,39 +410,45 @@ public class DataQueryService : IDataQueryService
             var query = _context.EnvironmentalReadings.AsNoTracking();
 
             // Filtros jerárquicos
-            if (deviceId.HasValue)
-                query = query.Where(er => er.DeviceId == deviceId.Value);
-            else if (plantId.HasValue)
-                query = query.Where(er => er.PlantId == plantId.Value);
-            else if (cropId.HasValue)
-                query = query.Where(er => er.Device.CropId == cropId.Value);
+            if (deviceId.HasValue) query = query.Where(er => er.DeviceId == deviceId.Value);
+            else if (plantId.HasValue) query = query.Where(er => er.PlantId == plantId.Value);
+            else if (cropId.HasValue) query = query.Where(er => er.Device.CropId == cropId.Value);
 
-            var result = await query
+            // 1. Traer el último registro crudo
+            var rawResult = await query
                 .OrderByDescending(er => er.RecordedAtServer)
-                .Select(er => new SensorDataDisplayDto // Proyectar directamente a DTO
+                .Select(er => new
                 {
-                    Id = er.Id,
-                    DeviceId = er.DeviceId,
-                    DeviceName = er.Device.Name,
-                    PlantName = er.Plant != null ? er.Plant.Name : "N/A",
-                    CropName = er.Device.Crop.Name,
-                    Light = GetLightValueFromJson(er.ExtraData),
-                    Temperature = er.Temperature,
-                    Humidity = er.Humidity,
-                    CityTemperature = er.CityTemperature,
-                    CityHumidity = er.CityHumidity,
-                    CityWeatherCondition = er.CityWeatherCondition,
-                    IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
-                    RecordedAt = ToColombiaTime(er.RecordedAtServer)
+                    er.Id, er.DeviceId, DeviceName = er.Device.Name, PlantName = er.Plant != null ? er.Plant.Name : "N/A",
+                    CropName = er.Device.Crop.Name, er.Temperature, er.Humidity, er.ExtraData,
+                    er.CityTemperature, er.CityHumidity, er.CityWeatherCondition, er.RecordedAtServer
                 })
-                .FirstOrDefaultAsync(); // Tomar solo el primero
+                .FirstOrDefaultAsync();
 
-            if (result == null)
+            if (rawResult == null)
             {
-                _logger.LogInformation("No se encontró última lectura ambiental para los filtros aplicados.");
+                return Result.Success<SensorDataDisplayDto?>(null);
             }
 
-            return Result.Success(result);
+            // 2. Transformar el objeto en memoria
+            var finalResult = new SensorDataDisplayDto
+            {
+                Id = rawResult.Id,
+                DeviceId = rawResult.DeviceId,
+                DeviceName = rawResult.DeviceName,
+                PlantName = rawResult.PlantName,
+                CropName = rawResult.CropName,
+                Light = GetLightValueFromJson(rawResult.ExtraData), // Llamada segura
+                Temperature = rawResult.Temperature,
+                Humidity = rawResult.Humidity,
+                CityTemperature = rawResult.CityTemperature,
+                CityHumidity = rawResult.CityHumidity,
+                CityWeatherCondition = rawResult.CityWeatherCondition,
+                IsNight = rawResult.ExtraData != null && rawResult.ExtraData.Contains("\"is_night\": true"),
+                RecordedAt = ToColombiaTime(rawResult.RecordedAtServer) // Llamada segura
+            };
+
+            return Result.Success(finalResult);
         }
         catch (Exception ex)
         {

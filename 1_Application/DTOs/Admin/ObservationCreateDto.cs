@@ -15,7 +15,7 @@ public class ObservationCreateDto
     public string Description { get; set; } = string.Empty;
 
     [Range(1, 5, ErrorMessage = "La calificación debe estar entre 1 y 5.")]
-    [Display(Name = "Calificación Subjetiva (1-5, Opcional)")]
+    [Display(Name = "Calificación Subjetiva (1-3, Opcional)")]
     public short? SubjectiveRating { get; set; }
 
     // Propiedad para poblar el dropdown de plantas en la vista

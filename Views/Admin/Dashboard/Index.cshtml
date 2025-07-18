@@ -1,107 +1,177 @@
 @model ArandanoIRT.Web._1_Application.DTOs.Admin.DashboardViewModel
 @using System.Text.Json
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Dashboard Principal";
     Layout = "_AdminLayout";
 
-    var tempDataJson = Model.TemperatureChartData != null ? JsonSerializer.Serialize(Model.TemperatureChartData) : "{\"Labels\":[], \"Values\":[], \"DataSetLabel\":\"Temperatura\"}";
-    var humDataJson = Model.HumidityChartData != null ? JsonSerializer.Serialize(Model.HumidityChartData) : "{\"Labels\":[], \"Values\":[], \"DataSetLabel\":\"Humedad\"}";
+    // Serializar los datos para los gráficos. Si no hay datos, se crea un JSON vacío.
+    var tempDataJson = Model.TemperatureChartData != null ? JsonSerializer.Serialize(Model.TemperatureChartData) : "null";
+    var humDataJson = Model.HumidityChartData != null ? JsonSerializer.Serialize(Model.HumidityChartData) : "null";
+    var lightDataJson = Model.LightChartData != null ? JsonSerializer.Serialize(Model.LightChartData) : "null";
 }
 
 @section Styles {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    @* Estilos de la vista anterior para los detalles de las tarjetas *@
+    <style>
+        .badge-morado { background-color: #6f42c1; color: white; }
+        .badge-rosado { background-color: #e83e8c; color: white; }
+        .badge-naranja-claro { background-color: #fd9843; color: white; }
+        .badge-marron { background-color: #795548; color: white; }
+        .data-row { display: flex; justify-content: space-between; align-items: center; line-height: 1.4; }
+        .data-row > span:first-child { padding-right: 0.5em; white-space: nowrap; font-size: 0.9em; }
+        .card-body h6.small { font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem; }
+    </style>
 }
 
 <div class="dashboard-header">
     <h1>@ViewData["Title"]</h1>
-    <div class="filter-container">
-        <label for="cropFilter" class="form-label">Filtrar por</label>
-        <select id="cropFilter" class="form-select" asp-for="SelectedCropId" asp-items="Model.AvailableCrops" onchange="this.form.submit()">
-        </select>
+</div>
+
+@* Formulario de Filtros Robusto *@
+<form asp-action="Index" asp-controller="Dashboard" asp-area="Admin" method="get" class="mb-4 p-3 border rounded bg-light">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label asp-for="SelectedCropId" class="form-label">Filtrar por Cultivo:</label>
+            <select asp-for="SelectedCropId" asp-items="Model.AvailableCrops" class="form-select" onchange="this.form.submit()">
+            </select>
+        </div>
+        @if (Model.SelectedCropId.HasValue)
+        {
+            <div class="col-md-4">
+                <label asp-for="SelectedPlantId" class="form-label">Filtrar por Planta:</label>
+                <select asp-for="SelectedPlantId" asp-items="Model.AvailablePlants" class="form-select" onchange="this.form.submit()">
+                </select>
+            </div>
+        }
+    </div>
+</form>
+
+<div class="row mb-4">
+    @* Tarjeta: Últimas Lecturas Registradas *@
+    <div class="col-lg-5 col-md-12 mb-3 d-flex">
+        <div class="card h-100 flex-fill">
+            <div class="card-header fw-bold">Últimas Lecturas Registradas</div>
+            <div class="card-body p-3">
+                @if (Model.LatestAmbientData != null || Model.ThermalStatistics?.LatestThermalReadingTimestamp != null)
+                {
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-muted small">Ambiental @if(Model.LatestAmbientData != null){<small class="fw-normal">(@Model.LatestAmbientData.RecordedAt.ToString("M/d h:mm tt"))</small>}</h6>
+                            @if (Model.LatestAmbientData != null)
+                            {
+                                <div class="data-row"><span>T.Amb:</span><span class="badge badge-morado">@Model.LatestAmbientData.Temperature.ToString("0.0")°C</span></div>
+                                <div class="data-row"><span>H.Amb:</span><span class="badge bg-info text-dark">@Model.LatestAmbientData.Humidity.ToString("0")%</span></div>
+                                <div class="data-row"><span>Luz:</span><span class="badge bg-warning text-dark">@Model.LatestAmbientData.Light?.ToString("0") lx</span></div>
+                            } else { <p class="small text-muted mb-0">No hay datos.</p> }
+                        </div>
+                        <div class="col-md-4">
+                             <h6 class="text-muted small">Ciudad</h6>
+                             @if (Model.LatestAmbientData != null && Model.LatestAmbientData.CityTemperature.HasValue)
+                             {
+                                 <div class="data-row"><span>T.Ciu:</span><span class="badge badge-morado">@Model.LatestAmbientData.CityTemperature?.ToString("0.0")°C</span></div>
+                                 <div class="data-row"><span>H.Ciu:</span><span class="badge bg-info text-dark">@Model.LatestAmbientData.CityHumidity?.ToString("0")%</span></div>
+                             } else { <p class="small text-muted mb-0">No hay datos.</p> }
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-muted small">Térmica @if(Model.ThermalStatistics?.LatestThermalReadingTimestamp != null){<small class="fw-normal">(@Model.ThermalStatistics.LatestThermalReadingTimestamp?.ToString("M/d h:mm tt"))</small>}</h6>
+                            @if (Model.ThermalStatistics?.LatestThermalReadingTimestamp != null)
+                            {
+                                <div class="data-row"><span>T.Máx:</span><span class="badge bg-danger">@Model.ThermalStatistics.LatestMaxTemp?.ToString("0.0")°C</span></div>
+                                <div class="data-row"><span>T.Prom:</span><span class="badge bg-secondary">@Model.ThermalStatistics.LatestAvgTemp?.ToString("0.0")°C</span></div>
+                                <div class="data-row"><span>T.Mín:</span><span class="badge bg-primary">@Model.ThermalStatistics.LatestMinTemp?.ToString("0.0")°C</span></div>
+                            } else { <p class="small text-muted mb-0">No hay datos.</p> }
+                        </div>
+                    </div>
+                }
+                else { <p class="small text-muted mb-0">No hay últimas lecturas.</p> }
+            </div>
+        </div>
+    </div>
+    
+    @* Tarjeta: Promedios (Últimas 24 Horas) *@
+    <div class="col-lg-7 col-md-12 mb-3 d-flex">
+        <div class="card h-100 flex-fill">
+            <div class="card-header fw-bold">Promedios (Últimas 24 Horas)</div>
+            <div class="card-body p-3">
+                 @if (Model.AverageAmbientTemperature24h.HasValue || (Model.ThermalStatistics?.AverageAvgTemp24h.HasValue == true))
+                 {
+                     <div class="row">
+                         <div class="col-md-3 mb-2 mb-md-0">
+                             <h6 class="text-muted small">Temp. Amb.</h6>
+                             <div class="data-row"><span>T.Máx:</span><span class="badge bg-danger">@Model.MaxAmbientTemperature24h?.ToString("0.0")°C</span></div>
+                             <div class="data-row"><span>T.Med:</span><span class="badge badge-rosado">@Model.AverageAmbientTemperature24h?.ToString("0.0")°C</span></div>
+                             <div class="data-row"><span>T.Mín:</span><span class="badge badge-morado">@Model.MinAmbientTemperature24h?.ToString("0.0")°C</span></div>
+                         </div>
+                         <div class="col-md-3 mb-2 mb-md-0">
+                             <h6 class="text-muted small">Hum. Amb.</h6>
+                             <div class="data-row"><span>H.Máx:</span><span class="badge bg-success">@Model.MaxAmbientHumidity24h?.ToString("0")%</span></div>
+                             <div class="data-row"><span>H.Med:</span><span class="badge bg-info text-dark">@Model.AverageAmbientHumidity24h?.ToString("0")%</span></div>
+                             <div class="data-row"><span>H.Mín:</span><span class="badge bg-primary">@Model.MinAmbientHumidity24h?.ToString("0")%</span></div>
+                         </div>
+                         <div class="col-md-3 mb-2 mb-md-0">
+                             <h6 class="text-muted small">Luz Amb.</h6>
+                             <div class="data-row"><span>Luz Máx:</span><span class="badge bg-warning text-dark">@Model.MaxAmbientLight24h?.ToString("0") lx</span></div>
+                             <div class="data-row"><span>Luz Med:</span><span class="badge badge-naranja-claro">@Model.AverageAmbientLight24h?.ToString("0") lx</span></div>
+                             <div class="data-row"><span>Luz Mín:</span><span class="badge badge-marron">@Model.MinAmbientLight24h?.ToString("0") lx</span></div>
+                         </div>
+                         <div class="col-md-3">
+                             <h6 class="text-muted small">Térmica</h6>
+                             @if (Model.ThermalStatistics != null && Model.ThermalStatistics.AverageAvgTemp24h.HasValue)
+                             {
+                                 <div class="data-row"><span>T.Máx Med:</span><span class="badge bg-danger">@Model.ThermalStatistics.AverageMaxTemp24h?.ToString("0.0")°C</span></div>
+                                 <div class="data-row"><span>T.Med Med:</span><span class="badge bg-secondary">@Model.ThermalStatistics.AverageAvgTemp24h?.ToString("0.0")°C</span></div>
+                                 <div class="data-row"><span>T.Mín Med:</span><span class="badge bg-primary">@Model.ThermalStatistics.AverageMinTemp24h?.ToString("0.0")°C</span></div>
+                             } else { <p class="small text-muted mb-0">No hay datos.</p> }
+                         </div>
+                     </div>
+                 }
+                 else { <p class="small text-muted mb-0">No hay promedios para mostrar.</p> }
+            </div>
+        </div>
     </div>
 </div>
 
+@* Fila de Gráficos *@
 <div class="row">
-    <div class="col-lg-3 col-md-6 col-12 mb-4">
-        <div class="kpi-card">
-            <div class="kpi-icon icon-temp">
-                <i class="fas fa-thermometer-half"></i>
-            </div>
-            <div class="kpi-content">
-                <span class="kpi-title">Temperatura</span>
-                <span class="kpi-value">@Model.LatestAmbientData?.Temperature.ToString("0.0")°C</span>
-                <span class="kpi-description">Última lectura ambiental</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 col-12 mb-4">
-        <div class="kpi-card">
-            <div class="kpi-icon icon-humidity">
-                <i class="fas fa-tint"></i>
-            </div>
-            <div class="kpi-content">
-                <span class="kpi-title">Humedad</span>
-                <span class="kpi-value">@Model.LatestAmbientData?.Humidity.ToString("0")%</span>
-                <span class="kpi-description">Última lectura ambiental</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 col-12 mb-4">
-        <div class="kpi-card">
-            <div class="kpi-icon icon-light">
-                <i class="fas fa-sun"></i>
-            </div>
-            <div class="kpi-content">
-                <span class="kpi-title">Luminosidad</span>
-                <span class="kpi-value">@Model.LatestAmbientData?.Light?.ToString("0") lx</span>
-                <span class="kpi-description">Última lectura ambiental</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 col-12 mb-4">
-        <div class="kpi-card">
-            <div class="kpi-icon icon-thermal">
-                <i class="fas fa-fire"></i>
-            </div>
-            <div class="kpi-content">
-                <span class="kpi-title">Temp. Máx. Térmica</span>
-                <span class="kpi-value">@Model.ThermalStatistics?.LatestMaxTemp?.ToString("0.0")°C</span>
-                <span class="kpi-description">Última captura térmica</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-8 mb-4">
+    <div class="col-lg-4 mb-4">
         <div class="card chart-card">
+            <div class="card-header">Temperatura Ambiental (°C)</div>
             <div class="card-body">
-                <h5 class="card-title">Resumen de Temperatura</h5>
                 <canvas id="temperatureChart"></canvas>
             </div>
         </div>
     </div>
     <div class="col-lg-4 mb-4">
         <div class="card chart-card">
+            <div class="card-header">Humedad Ambiental (%)</div>
             <div class="card-body">
-                <h5 class="card-title">Humedad Relativa</h5>
                 <canvas id="humidityChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+        <div class="card chart-card">
+            <div class="card-header">Nivel de Luz (lx)</div>
+            <div class="card-body">
+                <canvas id="lightChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
+@* Tabla de Últimas Capturas (Reemplazando los KPI cards originales) *@
 <div class="row">
     <div class="col-12">
         <div class="card table-card">
             <div class="card-body">
-                <h5 class="card-title">Últimas Capturas</h5>
+                <h5 class="card-title">Últimas Capturas Térmicas</h5>
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>ID Planta</th>
+                                <th>Planta</th>
                                 <th>Fecha</th>
                                 <th>Temp. Máx</th>
                                 <th>Temp. Prom</th>
@@ -110,34 +180,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <!--Estos son datos de prueba insertados directamente en el HTML-->
-                                <td>Planta arandano</td>
-                                <td>14/07/2025 14:30</td>
-                                <td>28.5°C</td>
-                                <td>25.1°C</td>
-                                <td>22.9°C</td>
-                                <td><span class="badge status-ok">Normal</span></td>
-                            </tr>
-                             <tr>
-                                <td>Planta de arandano 2</td>
-                                <td>14/07/2025 14:25</td>
-                                <td>31.2°C</td>
-                                <td>29.8°C</td>
-                                <td>28.5°C</td>
-                                <td><span class="badge status-alerta">Alerta</span></td>
-                            </tr>
-                            </tbody>
+                            @if (Model.RecentCaptures != null && Model.RecentCaptures.Any())
+                            {
+                                @foreach (var capture in Model.RecentCaptures)
+                                {
+                                    <tr>
+                                        <td>@capture.PlantName</td>
+                                        <td>@capture.RecordedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@capture.MaxTemp?.ToString("0.0")°C</td>
+                                        <td>@capture.AvgTemp?.ToString("0.0")°C</td>
+                                        <td>@capture.MinTemp?.ToString("0.0")°C</td>
+                                        <td><span class="badge bg-success">Recibido</span></td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center">No hay capturas térmicas recientes.</td>
+                                </tr>
+                            }
+                        </tbody>
                     </table>
                 </div>
-                 <nav class="pagination-container">
-                    <ul class="pagination">
-                        <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">Siguiente</a></li>
-                    </ul>
-                </nav>
             </div>
         </div>
     </div>
@@ -147,10 +212,50 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script>
-        // Aqui ira el codigo Javascript.
+        // Función robusta para crear gráficos, como en la vista anterior
+        function createTimeSeriesChart(canvasId, chartDataJson, yAxisLabel) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) { console.error("Canvas no encontrado: " + canvasId); return; }
+
+            const chartData = JSON.parse(chartDataJson);
+            
+            if (!chartData || !chartData.Values || chartData.Values.length === 0) {
+                const context = ctx.getContext('2d');
+                context.clearRect(0, 0, ctx.width, ctx.height);
+                context.textAlign = 'center';
+                context.fillText('No hay datos disponibles para mostrar.', ctx.width / 2, ctx.height / 2);
+                return;
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.Labels,
+                    datasets: [{
+                        label: chartData.DataSetLabel,
+                        data: chartData.Values,
+                        borderColor: chartData.BorderColor,
+                        backgroundColor: chartData.BackgroundColor,
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Hora (Últimas 24h)' } },
+                        y: { title: { display: true, text: yAxisLabel } }
+                    }
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
-           // Aquí se inicializarían los gráficos 'temperatureChart' y 'humidityChart'
-           // usando la lógica que ya tenías.
+            createTimeSeriesChart('temperatureChart', '@Html.Raw(tempDataJson)', '°C');
+            createTimeSeriesChart('humidityChart', '@Html.Raw(humDataJson)', '%');
+            createTimeSeriesChart('lightChart', '@Html.Raw(lightDataJson)', 'lx');
         });
     </script>
 }
