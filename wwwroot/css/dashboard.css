@@ -1,0 +1,171 @@
+/* =============================================
+   ESTILOS DEL DASHBOARD (VERSIÓN RESPONSIVE-AmbientData) 
+   ============================================= */
+
+:root {
+    --primary-color: #5D3EBF;
+    --primary-light: #f4f2ff;
+    --card-background: #FFFFFF;
+    --text-color: #495057;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem;
+}
+
+/* --- Encabezado --- */
+.dashboard-header {
+    display: flex;
+    flex-direction: column; /* Apilado en móvil por defecto */
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+    font-size: 1.5rem; /* Tamaño base para móvil */
+    font-weight: 600;
+}
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.filter-container .form-label {
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+.filter-container .form-select {
+    max-width: 250px;
+}
+
+/* --- Tarjetas KPI --- */
+.kpi-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%; /* Asegura que todas las tarjetas en una fila tengan la misma altura */
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-icon {
+    font-size: 1.5rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+}
+
+.kpi-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-title {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.kpi-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.kpi-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* --- Tarjetas de Gráficos y Tablas --- */
+.card.chart-card, .card.table-card {
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: none;
+    height: 100%;
+}
+
+.card.chart-card .card-body {
+    min-height: 350px; /* Altura mínima para los gráficos */
+    display: flex;
+    flex-direction: column;
+}
+.card.chart-card .card-body canvas {
+    flex-grow: 1;
+}
+
+/* --- Tabla de Datos --- */
+.table-card .card-title, .chart-card .card-title {
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead th {
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+    padding: 0.8rem;
+}
+
+.badge.status-ok { background-color: #d1fae5; color: #065f46; }
+.badge.status-alerta { background-color: #fee2e2; color: #991b1b; }
+
+/* --- Paginación --- */
+.pagination-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+/* =============================================
+   MEDIA QUERIES PARA RESPONSIVE
+   ============================================= */
+
+/* Para tablets y pantallas más grandes (a partir de 768px) */
+@media (min-width: 768px) {
+    .dashboard-header {
+        flex-direction: row; /* Vuelve a poner el título y el filtro en la misma línea */
+        justify-content: space-between;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.75rem; /* Título más grande en pantallas más grandes */
+    }
+
+    .filter-container {
+        width: auto; /* El filtro ya no ocupa todo el ancho */
+    }
+}
