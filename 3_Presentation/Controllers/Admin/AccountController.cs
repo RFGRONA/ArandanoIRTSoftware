@@ -10,17 +10,26 @@ namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 [Area("Admin")]
 public class AccountController : Controller
 {
+    private readonly IEmailService _emailService; // NUEVO
     private readonly ILogger<AccountController> _logger;
+    private readonly IRazorViewToStringRenderer _renderer; // NUEVO
     private readonly SignInManager<User> _signInManager;
-    private readonly IUserService _userService;
+    private readonly UserManager<User> _userManager;
+    private readonly IUserService _userService; // Ya lo teníamos
 
     public AccountController(
-        IUserService userService,
+        UserManager<User> userManager,
         SignInManager<User> signInManager,
+        IUserService userService,
+        IEmailService emailService, // NUEVO
+        IRazorViewToStringRenderer renderer, // NUEVO
         ILogger<AccountController> logger)
     {
-        _userService = userService;
+        _userManager = userManager;
         _signInManager = signInManager;
+        _userService = userService;
+        _emailService = emailService; // NUEVO
+        _renderer = renderer; // NUEVO
         _logger = logger;
     }
 
@@ -108,5 +117,74 @@ public class AccountController : Controller
     {
         if (Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
         return RedirectToAction("Index", "Dashboard");
+    }
+
+    // --- RECUPERACIÓN DE CONTRASEÑA ---
+
+// GET: /Admin/Account/ForgotPassword
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ForgotPassword()
+    {
+        return View();
+    }
+
+// POST: /Admin/Account/ForgotPassword
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordDto model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await _userService.GeneratePasswordResetAsync(model, Url, Request.Scheme);
+
+        if (result.IsSuccess && !string.IsNullOrEmpty(result.Value.Name))
+        {
+            // Renderizar la plantilla de correo con los datos obtenidos del servicio
+            var emailHtml = await _renderer.RenderViewToStringAsync(
+                "/Views/Shared/EmailTemplates/_ForgotPasswordEmail.cshtml",
+                (result.Value.Name, result.Value.ResetLink)
+            );
+
+            // Enviar el correo
+            await _emailService.SendEmailAsync(
+                model.Email,
+                result.Value.Name,
+                "Restablece tu contraseña",
+                emailHtml
+            );
+        }
+
+        // Por seguridad, siempre mostramos el mismo mensaje, exista o no el correo.
+        return View("ForgotPasswordConfirmation");
+    }
+
+// GET: /Admin/Account/ResetPassword
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ResetPassword(string? token = null, string? email = null)
+    {
+        if (token == null || email == null)
+            ModelState.AddModelError("", "El enlace para restablecer la contraseña no es válido o ha expirado.");
+
+        var model = new ResetPasswordDto { Token = token, Email = email };
+        return View(model);
+    }
+
+// POST: /Admin/Account/ResetPassword
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordDto model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await _userService.ResetPasswordAsync(model);
+
+        if (result.IsSuccess) return View("ResetPasswordConfirmation");
+
+        ModelState.AddModelError("", result.ErrorMessage);
+        return View(model);
     }
 }

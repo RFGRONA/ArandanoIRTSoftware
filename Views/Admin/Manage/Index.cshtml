@@ -1,0 +1,102 @@
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.ManageProfileViewModel
+@{
+    ViewData["Title"] = "Gestionar Perfil";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Información del Perfil
+            </div>
+            <div class="card-body">
+                <form asp-action="UpdateProfile" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="mb-3">
+                        <label asp-for="ProfileInfo.FirstName" class="form-label"></label>
+                        <input asp-for="ProfileInfo.FirstName" class="form-control"/>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ProfileInfo.LastName" class="form-label"></label>
+                        <input asp-for="ProfileInfo.LastName" class="form-control"/>
+                    </div>
+                    <hr/>
+                    <h5 class="card-title fs-6">Preferencias de Notificación</h5>
+
+                    @* Opción para TODOS los usuarios *@
+                    <div class="form-check">
+                        <input asp-for="ProfileInfo.AccountSettings.EmailOnMildStressAlert" class="form-check-input"/>
+                        <label asp-for="ProfileInfo.AccountSettings.EmailOnMildStressAlert" class="form-check-label">Recibir
+                            alertas de estrés hídrico inicial por correo.</label>
+                    </div>
+
+                    @* Opciones SOLO PARA ADMINS *@
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="form-check mt-2">
+                            <input asp-for="ProfileInfo.AccountSettings.EmailOnHelpRequest" class="form-check-input"/>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnHelpRequest"
+                                   class="form-check-label">Recibir notificaciones de ayuda.</label>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input asp-for="ProfileInfo.AccountSettings.EmailOnAppFailureAlert"
+                                   class="form-check-input"/>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnAppFailureAlert"
+                                   class="form-check-label">Recibir alertas por fallos de la aplicación.</label>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input asp-for="ProfileInfo.AccountSettings.EmailOnDeviceFailureAlert"
+                                   class="form-check-input"/>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnDeviceFailureAlert"
+                                   class="form-check-label">Recibir alertas por fallos de dispositivos.</label>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input asp-for="ProfileInfo.AccountSettings.EmailOnDeviceInactivity"
+                                   class="form-check-input"/>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnDeviceInactivity"
+                                   class="form-check-label">Recibir alertas por inactividad de dispositivos.</label>
+                        </div>
+                    }
+                    <button type="submit" class="btn btn-primary mt-3">Guardar Cambios</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Cambiar Contraseña
+            </div>
+            <div class="card-body">
+                <form asp-action="ChangePassword" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="mb-3">
+                        <label asp-for="ChangePassword.OldPassword" class="form-label"></label>
+                        <input asp-for="ChangePassword.OldPassword" class="form-control"/>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ChangePassword.NewPassword" class="form-label"></label>
+                        <input asp-for="ChangePassword.NewPassword" class="form-control"/>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ChangePassword.ConfirmNewPassword" class="form-label"></label>
+                        <input asp-for="ChangePassword.ConfirmNewPassword" class="form-control"/>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Cambiar Contraseña</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
