@@ -23,7 +23,7 @@
     </div>
 </div>
 
-<div class="collapse" id="filterCollapse">
+<div class="collapse show" id="filterCollapse"> @* Usamos "show" para que esté visible por defecto si se desea *@
     <div class="card filter-card mb-4">
         <form asp-action="Index" method="get">
             <input type="hidden" name="PageNumber" value="1" />
@@ -110,17 +110,84 @@ else
             </table>
         </div>
         <div class="card-footer">
-            <nav class="pagination-container">
-                 <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
-                 <ul class="pagination">
-                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-all-route-data="ViewBag.RouteData">Anterior</a>
+        <nav class="pagination-container" aria-label="Paginación de datos ambientales">
+            <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
+            <ul class="pagination">
+                @* Botón Anterior (sin cambios) *@
+                <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index"
+                    asp-route-CropId="@currentFilters.CropId"
+                    asp-route-PlantId="@currentFilters.PlantId"
+                    asp-route-DeviceId="@currentFilters.DeviceId"
+                    asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
+                    asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
+                    asp-route-pageNumber="@(Model.PageNumber - 1)"
+                    asp-route-pageSize="@currentFilters.PageSize">Anterior</a>
+                </li>
+
+                @* --- INICIO DE LA CORRECCIÓN --- *@
+
+                @* Lógica para mostrar siempre el enlace a la primera página *@
+                @if (Model.PageNumber > 3)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="1"
+                        asp-route-CropId="@currentFilters.CropId" asp-route-PlantId="@currentFilters.PlantId"
+                        asp-route-DeviceId="@currentFilters.DeviceId" asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
+                        asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
+                        asp-route-pageSize="@currentFilters.PageSize">1</a>
                     </li>
-                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-all-route-data="ViewBag.RouteData">Siguiente</a>
+                    @if (Model.PageNumber > 4)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                }
+
+                @* Lógica para el rango de páginas centrales (sin cambios) *@
+                @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@i"
+                        asp-route-CropId="@currentFilters.CropId" asp-route-PlantId="@currentFilters.PlantId"
+                        asp-route-DeviceId="@currentFilters.DeviceId"
+                        asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
+                        asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
+                        asp-route-pageSize="@currentFilters.PageSize">@i</a>
                     </li>
-                </ul>
-            </nav>
-        </div>
+                }
+
+                @* Lógica para mostrar siempre el enlace a la última página (sin cambios) *@
+                @if (Model.PageNumber + 2 < Model.TotalPages)
+                {
+                    @if (Model.PageNumber + 3 < Model.TotalPages)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@Model.TotalPages"
+                        asp-route-CropId="@currentFilters.CropId" asp-route-PlantId="@currentFilters.PlantId"
+                        asp-route-DeviceId="@currentFilters.DeviceId"
+                        asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
+                        asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
+                        asp-route-pageSize="@currentFilters.PageSize">@Model.TotalPages</a>
+                    </li>
+                }
+                
+                @* --- FIN DE LA CORRECCIÓN --- *@
+
+                @* Botón Siguiente (sin cambios) *@
+                <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index"
+                    asp-route-CropId="@currentFilters.CropId"
+                    asp-route-PlantId="@currentFilters.PlantId"
+                    asp-route-DeviceId="@currentFilters.DeviceId"
+                    asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
+                    asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
+                    asp-route-pageNumber="@(Model.PageNumber + 1)"
+                    asp-route-pageSize="@currentFilters.PageSize">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
     </div>
 }
