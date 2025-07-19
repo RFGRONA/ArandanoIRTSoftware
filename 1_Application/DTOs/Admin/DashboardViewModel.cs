@@ -63,10 +63,6 @@ public class DashboardViewModel
     public float? MaxAmbientLight24h { get; set; }
     public float? MinAmbientLight24h { get; set; }
     
-    // ================== PROPIEDAD FALTANTE AÑADIDA AQUÍ ==================
-    /// <summary>
-    /// Almacena las últimas capturas térmicas para mostrar en la tabla del dashboard.
-    /// </summary>
     public List<ThermalCaptureSummaryDto> RecentCaptures { get; set; } = new List<ThermalCaptureSummaryDto>();
     // ======================================================================
 }
