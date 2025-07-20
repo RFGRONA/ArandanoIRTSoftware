@@ -1,6 +1,7 @@
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
+using ArandanoIRT.Web._3_Presentation.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,7 @@ public class ManageController : Controller
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return NotFound("Usuario no encontrado.");
-        
+
         var model = new ManageProfileViewModel
         {
             ProfileInfo = new ProfileInfoDto
@@ -35,7 +36,7 @@ public class ManageController : Controller
                 AccountSettings = user.AccountSettings ?? new AccountSettings()
             }
         };
-        
+
         return View(model);
     }
 
@@ -46,13 +47,9 @@ public class ManageController : Controller
     {
         var result = await _userService.UpdateProfileAsync(User, model.ProfileInfo);
         if (result.IsSuccess)
-        {
             TempData["SuccessMessage"] = "Perfil actualizado exitosamente.";
-        }
         else
-        {
             TempData["ErrorMessage"] = result.ErrorMessage;
-        }
         return RedirectToAction(nameof(Index));
     }
 
@@ -63,13 +60,9 @@ public class ManageController : Controller
     {
         var result = await _userService.ChangePasswordAsync(User, model.ChangePassword);
         if (result.IsSuccess)
-        {
             TempData["SuccessMessage"] = "Contraseña cambiada exitosamente.";
-        }
         else
-        {
             TempData["ErrorMessage"] = result.ErrorMessage;
-        }
         return RedirectToAction(nameof(Index));
     }
 }

@@ -1,5 +1,5 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.DashboardViewModel
 @using System.Text.Json
+@model DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard Principal";
     Layout = "_AdminLayout";
@@ -11,13 +11,14 @@
 
 @section Styles {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true"/>
 }
 
 <div class="page-header">
     <h1>@ViewData["Title"]</h1>
     <div class="header-actions">
-        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+                aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filtros
         </button>
     </div>
@@ -29,19 +30,22 @@
             <div class="row g-3 align-items-end">
                 <div class="col-md-5">
                     <label asp-for="SelectedCropId" class="form-label">Filtrar por Cultivo:</label>
-                    <select asp-for="SelectedCropId" asp-items="Model.AvailableCrops" class="form-select" onchange="this.form.submit()">
+                    <select asp-for="SelectedCropId" asp-items="Model.AvailableCrops" class="form-select"
+                            onchange="this.form.submit()">
                     </select>
                 </div>
                 @if (Model.SelectedCropId.HasValue)
                 {
                     <div class="col-md-5">
                         <label asp-for="SelectedPlantId" class="form-label">Filtrar por Planta:</label>
-                        <select asp-for="SelectedPlantId" asp-items="Model.AvailablePlants" class="form-select" onchange="this.form.submit()">
+                        <select asp-for="SelectedPlantId" asp-items="Model.AvailablePlants" class="form-select"
+                                onchange="this.form.submit()">
                         </select>
                     </div>
                 }
                 <div class="col-md-2">
-                    <a asp-action="Index" asp-controller="Dashboard" asp-area="Admin" class="btn btn-outline-secondary w-100">Limpiar</a>
+                    <a asp-action="Index" asp-controller="Dashboard" asp-area="Admin"
+                       class="btn btn-outline-secondary w-100">Limpiar</a>
                 </div>
             </div>
         </form>
@@ -141,18 +145,18 @@
                 <div class="detail-row">
                     <span class="detail-label">Máx. (última)</span>
                     <span class="detail-value">@(Model.ThermalStatistics?.LatestMaxTemp?.ToString("0.0") ??
-                                                "-")°C</span>
+                                                   "-")°C</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Mín. (última)</span>
                     <span class="detail-value">@(Model.ThermalStatistics?.LatestMinTemp?.ToString("0.0") ??
-                                                "-")°C</span>
+                                                   "-")°C</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Hora Captura</span>
                     <span
                         class="detail-value">@(Model.ThermalStatistics?.LatestThermalReadingTimestamp?.ToString("HH:mm")
-                                                ?? "-")</span>
+                        ?? "-")</span>
                 </div>
             </div>
         </div>
@@ -175,11 +179,12 @@
                 <div class="detail-row">
                     <span class="detail-label">Temp. Ciudad</span>
                     <span class="detail-value">@(Model.LatestAmbientData?.CityTemperature?.ToString("0.0") ??
-                                                "-")°C</span>
+                                                   "-")°C</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Clima Ciudad</span>
-                    <span class="detail-value" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@(Model.LatestAmbientData?.CityWeatherCondition)">
+                    <span class="detail-value" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                          title="@(Model.LatestAmbientData?.CityWeatherCondition)">
                     @(Model.LatestAmbientData?.CityWeatherCondition?.Length > 30 ? Model.LatestAmbientData.CityWeatherCondition.Substring(0, 30) + "..." : Model.LatestAmbientData?.CityWeatherCondition ?? "-") </span>
                 </div>
             </div>
@@ -232,34 +237,34 @@
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
-                            <tr>
-                                <th>Planta</th>
-                                <th>Fecha</th>
-                                <th>Temp. Máx</th>
-                                <th>Temp. Prom</th>
-                                <th>Temp. Mín</th>
-                            </tr>
+                        <tr>
+                            <th>Planta</th>
+                            <th>Fecha</th>
+                            <th>Temp. Máx</th>
+                            <th>Temp. Prom</th>
+                            <th>Temp. Mín</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            @if (Model.RecentCaptures != null && Model.RecentCaptures.Any())
-                            {
-                                @foreach (var capture in Model.RecentCaptures)
-                                {
-                                    <tr>
-                                        <td>@capture.PlantName</td>
-                                        <td>@capture.RecordedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                        <td>@capture.MaxTemp?.ToString("0.0")°C</td>
-                                        <td>@capture.AvgTemp?.ToString("0.0")°C</td>
-                                        <td>@capture.MinTemp?.ToString("0.0")°C</td>
-                                    </tr>
-                                }
-                            }
-                            else
+                        @if (Model.RecentCaptures != null && Model.RecentCaptures.Any())
+                        {
+                            @foreach (var capture in Model.RecentCaptures)
                             {
                                 <tr>
-                                    <td colspan="6" class="text-center">No hay capturas térmicas recientes.</td>
+                                    <td>@capture.PlantName</td>
+                                    <td>@capture.RecordedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@capture.MaxTemp?.ToString("0.0")°C</td>
+                                    <td>@capture.AvgTemp?.ToString("0.0")°C</td>
+                                    <td>@capture.MinTemp?.ToString("0.0")°C</td>
                                 </tr>
                             }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center">No hay capturas térmicas recientes.</td>
+                            </tr>
+                        }
                         </tbody>
                     </table>
                 </div>
@@ -270,14 +275,14 @@
 
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script>
         function createTimeSeriesChart(canvasId, chartDataJson, yAxisLabel) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
 
             const chartData = JSON.parse(chartDataJson);
-            
+
             if (!chartData || !chartData.Values || chartData.Values.length === 0) {
                 const context = ctx.getContext('2d');
                 context.clearRect(0, 0, ctx.width, ctx.height);
@@ -303,10 +308,10 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {legend: {display: false}},
                     scales: {
-                        x: { title: { display: false } },
-                        y: { title: { display: true, text: yAxisLabel } }
+                        x: {title: {display: false}},
+                        y: {title: {display: true, text: yAxisLabel}}
                     }
                 }
             });

@@ -1,4 +1,5 @@
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._3_Presentation.ViewModels;
 using ArandanoIRT.Web.Common;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -22,8 +23,12 @@ public interface IDataQueryService
     Task<Result<ThermalCaptureDetailsDto?>> GetThermalCaptureDetailsAsync(long captureId);
 
     // Para el Dashboard
-    Task<Result<IEnumerable<SensorDataDisplayDto>>> GetAmbientDataForDashboardAsync(TimeSpan duration, int? cropId, int? plantId, int? deviceId);
-    Task<Result<ThermalStatsDto>> GetThermalStatsForDashboardAsync(TimeSpan duration, int? cropId, int? plantId, int? deviceId);
+    Task<Result<IEnumerable<SensorDataDisplayDto>>> GetAmbientDataForDashboardAsync(TimeSpan duration, int? cropId,
+        int? plantId, int? deviceId);
+
+    Task<Result<ThermalStatsDto>> GetThermalStatsForDashboardAsync(TimeSpan duration, int? cropId, int? plantId,
+        int? deviceId);
+
     Task<Result<int>> GetActiveDevicesCountAsync(int? cropId, int? plantId); // Para KPIs
     Task<Result<int>> GetMonitoredPlantsCountAsync(int? cropId); // Para KPIs
     Task<Result<SensorDataDisplayDto?>> GetLatestAmbientDataAsync(int? cropId, int? plantId, int? deviceId);
