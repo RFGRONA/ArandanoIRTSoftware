@@ -58,7 +58,7 @@ public class PlantService : IPlantService
             {
                 Name = plantDto.Name,
                 CropId = plantDto.CropId,
-                // StatusId ya no existe.
+                Status = plantDto.Status ?? PlantStatus.UNKNOWN, 
                 RegisteredAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -169,9 +169,8 @@ public class PlantService : IPlantService
                 Id = plant.Id,
                 Name = plant.Name,
                 CropId = plant.CropId,
-                // StatusId ya no existe.
-                AvailableCrops = await GetCropsForSelectionAsync(),
-                AvailableStatuses = new List<SelectListItem>()
+                Status = plant.Status,
+                AvailableCrops = await GetCropsForSelectionAsync()
             };
             return Result.Success<PlantEditDto?>(editDto);
         }
@@ -191,6 +190,7 @@ public class PlantService : IPlantService
 
             existingPlant.Name = plantDto.Name;
             existingPlant.CropId = plantDto.CropId;
+            existingPlant.Status = plantDto.Status.Value;
             // StatusId ya no existe.
             existingPlant.UpdatedAt = DateTime.UtcNow;
 

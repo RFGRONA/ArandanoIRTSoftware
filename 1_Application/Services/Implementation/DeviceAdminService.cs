@@ -41,7 +41,7 @@ public class DeviceAdminService : IDeviceAdminService
                 Description = deviceDto.Description,
                 PlantId = deviceDto.PlantId > 0 ? deviceDto.PlantId : null,
                 DataCollectionIntervalMinutes = deviceDto.DataCollectionIntervalMinutes,
-                Status = deviceDto.Status,
+                Status = DeviceStatus.PENDING_ACTIVATION,
                 RegisteredAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -312,7 +312,6 @@ public class DeviceAdminService : IDeviceAdminService
         // No se necesita consulta a la DB, se lee directamente del Enum.
         return Enum.GetValues<DeviceStatus>()
             .Cast<DeviceStatus>()
-            .Where(s => s != DeviceStatus.PENDING_ACTIVATION) // Un admin no debería poner un dispositivo en este estado manualmente.
             .Select(s => new SelectListItem
             {
                 Value = s.ToString(),

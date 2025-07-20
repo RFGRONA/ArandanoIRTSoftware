@@ -23,7 +23,5 @@ public interface IDeviceFormData
     [Display(Name = "Intervalo de Recolección (minutos)")]
     short DataCollectionIntervalMinutes { get; set; }
 
-    [Required(ErrorMessage = "Debe seleccionar un estado.")]
-    [Display(Name = "Estado del Dispositivo")]
-    DeviceStatus Status { get; set; }
+    
 }

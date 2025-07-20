@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ArandanoIRT.Web._0_Domain.Enums;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
@@ -10,9 +11,7 @@ public class PlantEditDto : IPlantFormData
 
     public string Name { get; set; } = string.Empty;
     public int CropId { get; set; }
-    public int StatusId { get; set; }
-
-    // Para poblar los DropDownLists en la vista
+    public PlantStatus? Status { get; set; }
+    
     public IEnumerable<SelectListItem> AvailableCrops { get; set; } = new List<SelectListItem>();
-    public IEnumerable<SelectListItem> AvailableStatuses { get; set; } = new List<SelectListItem>();
 }

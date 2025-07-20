@@ -53,8 +53,7 @@ public class DevicesController : Controller
         var dto = new DeviceCreateDto
         {
             // Llama a los helpers del servicio que ahora tienen la lógica correcta.
-            AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync(),
-            AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection()
+            AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync()
         };
         return View(dto);
     }
@@ -157,6 +156,5 @@ public class DevicesController : Controller
     private async Task PopulateDropdownsForDto(DeviceCreateDto dto)
     {
         dto.AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync();
-        dto.AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value });
     }
 }

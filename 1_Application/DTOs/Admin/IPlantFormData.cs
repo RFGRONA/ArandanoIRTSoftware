@@ -1,3 +1,4 @@
+using ArandanoIRT.Web._0_Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
@@ -15,5 +16,5 @@ public interface IPlantFormData
 
     [Required(ErrorMessage = "Debe seleccionar un estado.")]
     [Display(Name = "Estado")]
-    int StatusId { get; set; } // FK a StatusModel
+    PlantStatus? Status { get; set; } // FK a StatusModel
 }

@@ -15,10 +15,19 @@
     <span asp-validation-for="Name" class="text-danger"></span>
 </div>
 
+
 <div class="mb-3">
     <label asp-for="CropId" class="form-label"></label>
     <select asp-for="CropId" class="form-select" asp-items="@concreteModel.AvailableCrops">
         <option value="">-- Seleccione un Cultivo --</option>
     </select>
     <span asp-validation-for="CropId" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Status" class="form-label"></label>
+    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<ArandanoIRT.Web._0_Domain.Enums.PlantStatus>()">
+        <option value="">-- Seleccione un Estado --</option>
+    </select>
+    <span asp-validation-for="Status" class="text-danger"></span>
 </div>
