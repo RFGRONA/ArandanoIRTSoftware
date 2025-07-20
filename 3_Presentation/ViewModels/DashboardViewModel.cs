@@ -1,13 +1,15 @@
+using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Collections.Generic; // Asegúrate de tener este using para List<>
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+// Asegúrate de tener este using para List<>
+
+namespace ArandanoIRT.Web._3_Presentation.ViewModels;
 
 // Para los datos de gráficos de series temporales
 public class TimeSeriesChartDataDto
 {
-    public List<string> Labels { get; set; } = new List<string>();
-    public List<float?> Values { get; set; } = new List<float?>();
+    public List<string> Labels { get; set; } = new();
+    public List<float?> Values { get; set; } = new();
     public string? DataSetLabel { get; set; }
     public string? BorderColor { get; set; }
     public string? BackgroundColor { get; set; }
@@ -36,8 +38,8 @@ public class DashboardViewModel
     public int? SelectedDeviceId { get; set; }
 
     // Listas para filtros
-    public List<SelectListItem> AvailableCrops { get; set; } = new List<SelectListItem>();
-    public List<SelectListItem> AvailablePlants { get; set; } = new List<SelectListItem>();
+    public List<SelectListItem> AvailableCrops { get; set; } = new();
+    public List<SelectListItem> AvailablePlants { get; set; } = new();
 
     // Datos para gráficos
     public TimeSeriesChartDataDto? TemperatureChartData { get; set; }
@@ -62,7 +64,7 @@ public class DashboardViewModel
     public float? AverageAmbientLight24h { get; set; }
     public float? MaxAmbientLight24h { get; set; }
     public float? MinAmbientLight24h { get; set; }
-    
-    public List<ThermalCaptureSummaryDto> RecentCaptures { get; set; } = new List<ThermalCaptureSummaryDto>();
+
+    public List<ThermalCaptureSummaryDto> RecentCaptures { get; set; } = new();
     // ======================================================================
 }

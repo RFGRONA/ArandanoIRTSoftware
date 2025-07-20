@@ -1,4 +1,4 @@
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._3_Presentation.ViewModels;
 
 public class ObservationQueryFilters
 {
