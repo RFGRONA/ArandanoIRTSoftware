@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+using ArandanoIRT.Web._1_Application.DTOs.Admin;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
 public class CropCreateDto : ICropFormData // Implementar la interfaz
 {

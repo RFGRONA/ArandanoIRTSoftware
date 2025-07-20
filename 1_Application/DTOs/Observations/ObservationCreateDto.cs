@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._1_Application.DTOs.Observations;
 
 public class ObservationCreateDto
 {

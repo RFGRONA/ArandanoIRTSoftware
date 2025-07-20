@@ -44,7 +44,7 @@ public class DashboardController : Controller
         if (cropsResult.IsSuccess && cropsResult.Value != null)
             viewModel.AvailableCrops = cropsResult.Value
                 .Select(c => new SelectListItem
-                    { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId })
+                { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId })
                 .OrderBy(s => s.Text).ToList();
         viewModel.AvailableCrops.Insert(0,
             new SelectListItem("Todos los Cultivos", "") { Selected = !selectedCropId.HasValue });
@@ -55,7 +55,7 @@ public class DashboardController : Controller
             if (plantsResult.IsSuccess && plantsResult.Value != null)
                 viewModel.AvailablePlants = plantsResult.Value
                     .Select(p => new SelectListItem
-                        { Value = p.Id.ToString(), Text = p.Name, Selected = p.Id == selectedPlantId })
+                    { Value = p.Id.ToString(), Text = p.Name, Selected = p.Id == selectedPlantId })
                     .OrderBy(s => s.Text).ToList();
         }
 
@@ -100,20 +100,24 @@ public class DashboardController : Controller
                     {
                         DataSetLabel = "Temperatura (°C)",
                         Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
-                        Values = data.Select(d => (float?)d.Temperature).ToList(), BorderColor = "rgb(255, 99, 132)",
+                        Values = data.Select(d => (float?)d.Temperature).ToList(),
+                        BorderColor = "rgb(255, 99, 132)",
                         BackgroundColor = "rgba(255, 99, 132, 0.2)"
                     };
                     viewModel.HumidityChartData = new TimeSeriesChartDataDto
                     {
                         DataSetLabel = "Humedad (%)",
                         Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
-                        Values = data.Select(d => (float?)d.Humidity).ToList(), BorderColor = "rgb(54, 162, 235)",
+                        Values = data.Select(d => (float?)d.Humidity).ToList(),
+                        BorderColor = "rgb(54, 162, 235)",
                         BackgroundColor = "rgba(54, 162, 235, 0.2)"
                     };
                     viewModel.LightChartData = new TimeSeriesChartDataDto
                     {
-                        DataSetLabel = "Luz (lx)", Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
-                        Values = data.Select(d => d.Light).ToList(), BorderColor = "rgb(255, 205, 86)",
+                        DataSetLabel = "Luz (lx)",
+                        Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
+                        Values = data.Select(d => d.Light).ToList(),
+                        BorderColor = "rgb(255, 205, 86)",
                         BackgroundColor = "rgba(255, 205, 86, 0.2)"
                     };
 

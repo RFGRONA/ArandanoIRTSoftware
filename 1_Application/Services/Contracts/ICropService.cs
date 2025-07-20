@@ -1,5 +1,6 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
-using ArandanoIRT.Web.Common;
+using ArandanoIRT.Web._1_Application.DTOs.Crops;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
 

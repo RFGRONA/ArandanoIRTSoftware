@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using ArandanoIRT.Web._0_Domain.Enums;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
 public interface IDeviceFormData
 {
@@ -23,5 +22,5 @@ public interface IDeviceFormData
     [Display(Name = "Intervalo de Recolección (minutos)")]
     short DataCollectionIntervalMinutes { get; set; }
 
-    
+
 }

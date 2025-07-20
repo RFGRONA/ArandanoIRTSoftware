@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
 public class PlantStatusHistoryDto
 {

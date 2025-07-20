@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using ArandanoIRT.Web._0_Domain.Enums;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
 public class PlantStatusUpdateDto
 {

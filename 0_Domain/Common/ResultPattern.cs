@@ -1,4 +1,4 @@
-namespace ArandanoIRT.Web.Common;
+namespace ArandanoIRT.Web._0_Domain.Common;
 
 public class Result
 {

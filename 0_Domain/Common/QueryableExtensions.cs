@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 
-namespace ArandanoIRT.Web.Common;
+namespace ArandanoIRT.Web._0_Domain.Common;
 
 public static class QueryableExtensions
 {

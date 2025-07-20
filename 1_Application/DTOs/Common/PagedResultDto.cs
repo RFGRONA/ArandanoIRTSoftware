@@ -1,4 +1,4 @@
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._1_Application.DTOs.Common;
 
 public class PagedResultDto<T>
 {

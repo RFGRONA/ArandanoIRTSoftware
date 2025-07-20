@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Web;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Weather;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using ArandanoIRT.Web.Common;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,23 +38,23 @@ public class PlantStatusController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-// RECOMENDACIÓN: Activa la autorización para asegurar que solo usuarios logueados lleguen aquí.
-// [Authorize(Roles = "Admin")] 
+    // RECOMENDACIÓN: Activa la autorización para asegurar que solo usuarios logueados lleguen aquí.
+    // [Authorize(Roles = "Admin")] 
     public async Task<IActionResult> Change(PlantStatusUpdateDto model)
     {
         if (!ModelState.IsValid)
         {
             return View(model);
         }
-        
+
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         if (string.IsNullOrEmpty(userIdString))
         {
             ModelState.AddModelError("", "No se pudo identificar al usuario. Por favor, asegúrese de haber iniciado sesión.");
             return View(model);
         }
-        
+
         if (!int.TryParse(userIdString, out var userId) || userId == 0)
         {
             ModelState.AddModelError("", "El identificador del usuario obtenido no es válido.");

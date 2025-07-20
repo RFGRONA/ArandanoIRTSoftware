@@ -1,6 +1,6 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
-using ArandanoIRT.Web.Common;
 using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel.Args;

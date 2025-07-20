@@ -31,6 +31,7 @@
 
     <ItemGroup>
         <Folder Include="1_Application\"/>
+        <Folder Include="Common\" />
         <Folder Include="logs\"/>
     </ItemGroup>
 

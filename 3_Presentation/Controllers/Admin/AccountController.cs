@@ -115,7 +115,7 @@ public class AccountController : Controller
 
     // --- RECUPERACIÓN DE CONTRASEÑA ---
 
-// GET: /Admin/Account/ForgotPassword
+    // GET: /Admin/Account/ForgotPassword
     [HttpGet]
     [AllowAnonymous]
     public IActionResult ForgotPassword()
@@ -123,7 +123,7 @@ public class AccountController : Controller
         return View();
     }
 
-// POST: /Admin/Account/ForgotPassword
+    // POST: /Admin/Account/ForgotPassword
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
@@ -143,7 +143,7 @@ public class AccountController : Controller
         return View("ForgotPasswordConfirmation");
     }
 
-// GET: /Admin/Account/ResetPassword
+    // GET: /Admin/Account/ResetPassword
     [HttpGet]
     [AllowAnonymous]
     public IActionResult ResetPassword(string? token = null, string? email = null)
@@ -155,7 +155,7 @@ public class AccountController : Controller
         return View(model);
     }
 
-// POST: /Admin/Account/ResetPassword
+    // POST: /Admin/Account/ResetPassword
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]

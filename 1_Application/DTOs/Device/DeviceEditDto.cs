@@ -1,11 +1,14 @@
+using System.ComponentModel.DataAnnotations;
 using ArandanoIRT.Web._0_Domain.Enums;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using System.ComponentModel.DataAnnotations;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
-public class DeviceCreateDto : IDeviceFormData
+public class DeviceEditDto : IDeviceFormData
 {
+    [Required]
+    public int Id { get; set; } // El ID del dispositivo a editar
+
     [Required(ErrorMessage = "El nombre del dispositivo es obligatorio.")]
     [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
     public string Name { get; set; } = string.Empty;
@@ -21,10 +24,12 @@ public class DeviceCreateDto : IDeviceFormData
     [Range(1, 1440, ErrorMessage = "El intervalo debe estar entre 1 y 1440 minutos.")]
     public short DataCollectionIntervalMinutes { get; set; } = 15;
 
+    public DeviceStatus Status { get; set; }
+
     [RegularExpression("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", ErrorMessage = "El formato de la dirección MAC no es válido.")]
     public string? MacAddress { get; set; }
 
     // Para poblar los DropDownLists en la vista
     public IEnumerable<SelectListItem> AvailablePlants { get; set; } = new List<SelectListItem>();
-
+    public IEnumerable<SelectListItem> AvailableStatuses { get; set; } = new List<SelectListItem>();
 }

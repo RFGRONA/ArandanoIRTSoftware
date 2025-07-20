@@ -1,4 +1,4 @@
-using ArandanoIRT.Web.Common;
+using ArandanoIRT.Web._0_Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;

@@ -1,9 +1,9 @@
 using ArandanoIRT.Web._0_Domain.Enums;
-using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering; // Para SelectListItem
+using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
+// Para SelectListItem
+
+namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
 public class PlantCreateDto : IPlantFormData
 {

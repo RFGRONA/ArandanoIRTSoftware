@@ -1,8 +1,8 @@
 using System.Security.Claims;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using ArandanoIRT.Web.Common;
 using Microsoft.AspNetCore.Identity;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
@@ -17,7 +17,7 @@ public class SupportService : ISupportService
     {
         _alertService = alertService;
         _userManager = userManager;
-        _userService = userService; 
+        _userService = userService;
     }
 
     public async Task<Result> ProcessPublicHelpRequestAsync(PublicHelpRequestDto model)

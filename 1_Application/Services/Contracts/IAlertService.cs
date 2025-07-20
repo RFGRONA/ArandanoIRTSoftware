@@ -16,7 +16,7 @@ public interface IAlertService
     Task SendInvitationEmailAsync(string recipientEmail, string recipientName, InvitationCode invitation);
 
     // --- Notificaciones de Soporte ---
-// --- CÓDIGO NUEVO ---
+    // --- CÓDIGO NUEVO ---
     Task SendPublicHelpRequestEmailAsync(PublicHelpRequestDto request, List<User> adminsToNotify);
     Task SendAuthenticatedHelpRequestEmailAsync(AuthenticatedHelpRequestDto request, User requestingUser, List<User> adminsToNotify);
 }

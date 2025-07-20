@@ -1,12 +1,14 @@
 using System.Linq.Expressions;
 using System.Text.Json;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
+using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._3_Presentation.ViewModels;
-using ArandanoIRT.Web.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
@@ -51,7 +53,9 @@ public class DataQueryService : IDataQueryService
             if (totalCount == 0)
                 return Result.Success(new PagedResultDto<SensorDataDisplayDto>
                 {
-                    Items = new List<SensorDataDisplayDto>(), TotalCount = 0, PageNumber = filters.PageNumber,
+                    Items = new List<SensorDataDisplayDto>(),
+                    TotalCount = 0,
+                    PageNumber = filters.PageNumber,
                     PageSize = filters.PageSize
                 });
 
@@ -62,28 +66,45 @@ public class DataQueryService : IDataQueryService
                 .Take(filters.PageSize)
                 .Select(er => new
                 {
-                    er.Id, er.DeviceId, DeviceName = er.Device.Name,
-                    PlantName = er.Plant != null ? er.Plant.Name : "N/A", CropName = er.Device.Crop.Name,
-                    er.Temperature, er.Humidity, er.ExtraData, er.CityTemperature, er.CityHumidity,
-                    er.CityWeatherCondition, er.RecordedAtServer
+                    er.Id,
+                    er.DeviceId,
+                    DeviceName = er.Device.Name,
+                    PlantName = er.Plant != null ? er.Plant.Name : "N/A",
+                    CropName = er.Device.Crop.Name,
+                    er.Temperature,
+                    er.Humidity,
+                    er.ExtraData,
+                    er.CityTemperature,
+                    er.CityHumidity,
+                    er.CityWeatherCondition,
+                    er.RecordedAtServer
                 })
                 .ToListAsync();
 
             // 2. Transformar en memoria
             var finalData = rawData.Select(er => new SensorDataDisplayDto
             {
-                Id = er.Id, DeviceId = er.DeviceId, DeviceName = er.DeviceName, PlantName = er.PlantName,
+                Id = er.Id,
+                DeviceId = er.DeviceId,
+                DeviceName = er.DeviceName,
+                PlantName = er.PlantName,
                 CropName = er.CropName,
                 Light = GetLightValueFromJson(er.ExtraData),
-                Temperature = er.Temperature, Humidity = er.Humidity, CityTemperature = er.CityTemperature,
-                CityHumidity = er.CityHumidity, CityWeatherCondition = er.CityWeatherCondition,
+                Temperature = er.Temperature,
+                Humidity = er.Humidity,
+                CityTemperature = er.CityTemperature,
+                CityHumidity = er.CityHumidity,
+                CityWeatherCondition = er.CityWeatherCondition,
                 IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
                 RecordedAt = ToColombiaTime(er.RecordedAtServer)
             }).ToList();
 
             return Result.Success(new PagedResultDto<SensorDataDisplayDto>
             {
-                Items = finalData, TotalCount = totalCount, PageNumber = filters.PageNumber, PageSize = filters.PageSize
+                Items = finalData,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
             });
         }
         catch (Exception ex)
@@ -112,7 +133,9 @@ public class DataQueryService : IDataQueryService
             if (totalCount == 0)
                 return Result.Success(new PagedResultDto<ThermalCaptureSummaryDto>
                 {
-                    Items = new List<ThermalCaptureSummaryDto>(), TotalCount = 0, PageNumber = filters.PageNumber,
+                    Items = new List<ThermalCaptureSummaryDto>(),
+                    TotalCount = 0,
+                    PageNumber = filters.PageNumber,
                     PageSize = filters.PageSize
                 });
 
@@ -157,7 +180,10 @@ public class DataQueryService : IDataQueryService
 
             return Result.Success(new PagedResultDto<ThermalCaptureSummaryDto>
             {
-                Items = finalData, TotalCount = totalCount, PageNumber = filters.PageNumber, PageSize = filters.PageSize
+                Items = finalData,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
             });
         }
         catch (Exception ex)
@@ -239,17 +265,26 @@ public class DataQueryService : IDataQueryService
                 .OrderBy(er => er.RecordedAtServer)
                 .Select(er => new
                 {
-                    er.DeviceId, DeviceName = er.Device.Name, er.ExtraData, er.Temperature, er.Humidity,
-                    er.CityTemperature, er.CityHumidity, er.RecordedAtServer
+                    er.DeviceId,
+                    DeviceName = er.Device.Name,
+                    er.ExtraData,
+                    er.Temperature,
+                    er.Humidity,
+                    er.CityTemperature,
+                    er.CityHumidity,
+                    er.RecordedAtServer
                 })
                 .ToListAsync();
 
             // 2. Transformar en memoria
             var finalData = rawData.Select(er => new SensorDataDisplayDto
             {
-                DeviceId = er.DeviceId, DeviceName = er.DeviceName,
+                DeviceId = er.DeviceId,
+                DeviceName = er.DeviceName,
                 Light = GetLightValueFromJson(er.ExtraData), // Llamada segura
-                Temperature = er.Temperature, Humidity = er.Humidity, CityTemperature = er.CityTemperature,
+                Temperature = er.Temperature,
+                Humidity = er.Humidity,
+                CityTemperature = er.CityTemperature,
                 CityHumidity = er.CityHumidity,
                 IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
                 RecordedAt = ToColombiaTime(er.RecordedAtServer) // Llamada segura
@@ -398,10 +433,18 @@ public class DataQueryService : IDataQueryService
                 .OrderByDescending(er => er.RecordedAtServer)
                 .Select(er => new
                 {
-                    er.Id, er.DeviceId, DeviceName = er.Device.Name,
+                    er.Id,
+                    er.DeviceId,
+                    DeviceName = er.Device.Name,
                     PlantName = er.Plant != null ? er.Plant.Name : "N/A",
-                    CropName = er.Device.Crop.Name, er.Temperature, er.Humidity, er.ExtraData,
-                    er.CityTemperature, er.CityHumidity, er.CityWeatherCondition, er.RecordedAtServer
+                    CropName = er.Device.Crop.Name,
+                    er.Temperature,
+                    er.Humidity,
+                    er.ExtraData,
+                    er.CityTemperature,
+                    er.CityHumidity,
+                    er.CityWeatherCondition,
+                    er.RecordedAtServer
                 })
                 .FirstOrDefaultAsync();
 

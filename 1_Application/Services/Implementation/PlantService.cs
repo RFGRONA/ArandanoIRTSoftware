@@ -1,9 +1,10 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
-using ArandanoIRT.Web.Common;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
@@ -58,7 +59,7 @@ public class PlantService : IPlantService
             {
                 Name = plantDto.Name,
                 CropId = plantDto.CropId,
-                Status = plantDto.Status ?? PlantStatus.UNKNOWN, 
+                Status = plantDto.Status ?? PlantStatus.UNKNOWN,
                 RegisteredAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

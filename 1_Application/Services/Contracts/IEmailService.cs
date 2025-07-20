@@ -1,4 +1,4 @@
-using ArandanoIRT.Web.Common;
+using ArandanoIRT.Web._0_Domain.Common;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
 

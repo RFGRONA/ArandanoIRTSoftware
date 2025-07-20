@@ -8,9 +8,9 @@ public class RegisterDto
     [Display(Name = "Código de Invitación")]
     public string InvitationCode { get; set; } = string.Empty;
 
-    [Required] [EmailAddress] public string Email { get; set; } = string.Empty;
+    [Required][EmailAddress] public string Email { get; set; } = string.Empty;
 
-    [Required] [Display(Name = "Nombre")] public string FirstName { get; set; } = string.Empty;
+    [Required][Display(Name = "Nombre")] public string FirstName { get; set; } = string.Empty;
 
     [Required]
     [Display(Name = "Apellido")]
