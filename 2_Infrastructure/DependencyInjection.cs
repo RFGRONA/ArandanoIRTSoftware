@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<ISupportService, SupportService>();
         services.AddScoped<IObservationService, ObservationService>();
+        services.AddScoped<IAlertService, AlertService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
@@ -110,6 +111,11 @@ public static class DependencyInjection
                 options.Password.RequireUppercase = true;
                 options.Password.RequireLowercase = true;
                 options.User.RequireUniqueEmail = true;
+
+                // Configuración de bloqueo de cuenta
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3); // Tiempo de bloqueo
+                options.Lockout.MaxFailedAccessAttempts = 5; // Intentos fallidos antes de bloquear
+                options.Lockout.AllowedForNewUsers = true;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();

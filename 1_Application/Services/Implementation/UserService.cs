@@ -14,15 +14,13 @@ namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
 public class UserService : IUserService
 {
+    private readonly IAlertService _alertService;
     private readonly ApplicationDbContext _context;
-    private readonly IEmailService _emailService;
     private readonly IInvitationService _invitationService;
     private readonly ILogger<UserService> _logger;
-    private readonly IRazorViewToStringRenderer _renderer;
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
-
 
     public UserService(
         ApplicationDbContext context,
@@ -30,8 +28,7 @@ public class UserService : IUserService
         RoleManager<ApplicationRole> roleManager,
         SignInManager<User> signInManager,
         IInvitationService invitationService,
-        IEmailService emailService,
-        IRazorViewToStringRenderer renderer,
+        IAlertService alertService,
         ILogger<UserService> logger)
     {
         _context = context;
@@ -40,15 +37,34 @@ public class UserService : IUserService
         _signInManager = signInManager;
         _invitationService = invitationService;
         _logger = logger;
-        _emailService = emailService;
-        _renderer = renderer;
+        _alertService = alertService;
     }
 
     public async Task<SignInResult> LoginUserAsync(LoginDto model)
     {
-        // La lógica de login es simple: solo llama al SignInManager
-        return await _signInManager.PasswordSignInAsync(model.Email, model.Password, true,
-            true);
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null)
+            // Usuario no existe, manejamos el fallo de forma estándar.
+            return await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
+
+
+        // 1. Verificamos si el usuario está a UN intento de ser bloqueado.
+        //    Usamos la configuración de Identity en lugar de un número fijo (5).
+        var isAboutToLockOut = user.AccessFailedCount == _userManager.Options.Lockout.MaxFailedAccessAttempts - 1;
+
+        // 2. Realizamos el intento de login.
+        var result = await _signInManager.PasswordSignInAsync(user, model.Password, true, true);
+
+        // 3. Si el intento resultó en un bloqueo Y sabíamos que estaba a punto de ocurrir, enviamos la alerta.
+        if (isAboutToLockOut && result.IsLockedOut)
+        {
+            _logger.LogWarning("La cuenta para {Email} ha sido bloqueada. Enviando alerta.", user.Email);
+
+            // Pasamos la instancia 'user' que ya teníamos, la cual es válida para la notificación.
+            await _alertService.TriggerFailedLoginAlertAsync(user);
+        }
+
+        return result;
     }
 
     public async Task<Result> RegisterUserAsync(RegisterDto model)
@@ -175,10 +191,7 @@ public class UserService : IUserService
         }
 
         // Notificar al usuario que su contraseña ha cambiado
-        var emailHtml =
-            await _renderer.RenderViewToStringAsync("/Views/Shared/EmailTemplates/_PasswordChangedEmail.cshtml",
-                user.FirstName);
-        await _emailService.SendEmailAsync(user.Email, user.FirstName, "Tu Contraseña ha sido Cambiada", emailHtml);
+        await _alertService.SendPasswordChangedEmailAsync(user.Email, user.FirstName);
 
         return Result.Success();
     }
@@ -198,10 +211,7 @@ public class UserService : IUserService
         }
 
         // Notificar al usuario que su contraseña ha cambiado
-        var emailHtml =
-            await _renderer.RenderViewToStringAsync("/Views/Shared/EmailTemplates/_PasswordChangedEmail.cshtml",
-                user.FirstName);
-        await _emailService.SendEmailAsync(user.Email, user.FirstName, "Tu Contraseña ha sido Cambiada", emailHtml);
+        await _alertService.SendPasswordChangedEmailAsync(user.Email, user.FirstName);
 
         // Refrescar la cookie de sesión del usuario para actualizar el sello de seguridad
         await _signInManager.RefreshSignInAsync(user);

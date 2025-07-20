@@ -8,17 +8,15 @@ namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
 public class InvitationService : IInvitationService
 {
+    private readonly IAlertService _alertService;
     private readonly ApplicationDbContext _context;
-    private readonly IEmailService _emailService;
     private readonly ILogger<InvitationService> _logger;
-    private readonly IRazorViewToStringRenderer _renderer;
 
-    public InvitationService(ApplicationDbContext context, IEmailService emailService,
-        IRazorViewToStringRenderer renderer, ILogger<InvitationService> logger)
+    public InvitationService(ApplicationDbContext context, IAlertService alertService,
+        ILogger<InvitationService> logger)
     {
         _context = context;
-        _emailService = emailService;
-        _renderer = renderer;
+        _alertService = alertService;
         _logger = logger;
     }
 
@@ -40,15 +38,7 @@ public class InvitationService : IInvitationService
             _context.InvitationCodes.Add(newInvitation);
             await _context.SaveChangesAsync();
 
-            // Renderizar la plantilla de correo
-            var emailHtml =
-                await _renderer.RenderViewToStringAsync("/Views/Shared/EmailTemplates/_InvitationEmail.cshtml",
-                    newInvitation);
-
-            // Enviar el correo
-            await _emailService.SendEmailAsync(email, "Nuevo Usuario", "Invitación a Arandano IRT", emailHtml);
-
-            _logger.LogInformation("Código de invitación (ID: {Id}) enviado a {Email}", newInvitation.Id, email);
+            await _alertService.SendInvitationEmailAsync(email, "Nuevo Usuario", newInvitation);
             return Result.Success(newInvitation);
         }
         catch (Exception ex)
@@ -79,14 +69,11 @@ public class InvitationService : IInvitationService
     public async Task<Result> MarkCodeAsUsedAsync(int invitationId)
     {
         var invitation = await _context.InvitationCodes.FindAsync(invitationId);
-        if (invitation == null)
-        {
-            return Result.Failure("No se encontró la invitación para marcarla como usada.");
-        }
+        if (invitation == null) return Result.Failure("No se encontró la invitación para marcarla como usada.");
 
         invitation.IsUsed = true;
         await _context.SaveChangesAsync(); // Añadimos el guardado aquí
-    
+
         return Result.Success();
     }
 }

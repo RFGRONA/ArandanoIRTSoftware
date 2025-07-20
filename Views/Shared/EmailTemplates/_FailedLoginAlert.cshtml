@@ -1,0 +1,58 @@
+@model FailedLoginAlertViewModel
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            padding: 25px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #d9534f; /* Un color rojo para indicar alerta */
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>Alerta de Seguridad de la Cuenta</h2>
+    </div>
+    <p>Hola, @Model.UserName,</p>
+    <p>
+        Detectamos múltiples intentos fallidos de inicio de sesión en tu cuenta. Por tu seguridad, <strong>tu cuenta ha
+            sido bloqueada temporalmente</strong>.
+    </p>
+    <p>
+        <strong>Fecha y Hora del bloqueo (UTC):</strong> @Model.AlertTime.ToString("o")
+    </p>
+    <p>
+        Si no reconoces esta actividad, te recomendamos que asegures tu cuenta inmediatamente restableciendo tu
+        contraseña desde la opción "¿Olvidaste tu contraseña?".
+    </p>
+    <div class="footer">
+        <p>Gracias,<br>El equipo de ArandanoIRT</p>
+    </div>
+</div>
+</body>
+</html>

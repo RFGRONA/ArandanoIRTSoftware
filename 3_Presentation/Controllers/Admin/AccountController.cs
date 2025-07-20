@@ -10,26 +10,20 @@ namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 [Area("Admin")]
 public class AccountController : Controller
 {
-    private readonly IEmailService _emailService; // NUEVO
     private readonly ILogger<AccountController> _logger;
-    private readonly IRazorViewToStringRenderer _renderer; // NUEVO
     private readonly SignInManager<User> _signInManager;
-    private readonly UserManager<User> _userManager;
     private readonly IUserService _userService; // Ya lo teníamos
+    private readonly IAlertService _alertService;
 
     public AccountController(
-        UserManager<User> userManager,
         SignInManager<User> signInManager,
         IUserService userService,
-        IEmailService emailService, // NUEVO
-        IRazorViewToStringRenderer renderer, // NUEVO
+        IAlertService alertService,
         ILogger<AccountController> logger)
     {
-        _userManager = userManager;
         _signInManager = signInManager;
         _userService = userService;
-        _emailService = emailService; // NUEVO
-        _renderer = renderer; // NUEVO
+        _alertService = alertService;
         _logger = logger;
     }
 
@@ -141,19 +135,8 @@ public class AccountController : Controller
 
         if (result.IsSuccess && !string.IsNullOrEmpty(result.Value.Name))
         {
-            // Renderizar la plantilla de correo con los datos obtenidos del servicio
-            var emailHtml = await _renderer.RenderViewToStringAsync(
-                "/Views/Shared/EmailTemplates/_ForgotPasswordEmail.cshtml",
-                (result.Value.Name, result.Value.ResetLink)
-            );
-
-            // Enviar el correo
-            await _emailService.SendEmailAsync(
-                model.Email,
-                result.Value.Name,
-                "Restablece tu contraseña",
-                emailHtml
-            );
+            // AlertService se encarga de todo
+            await _alertService.SendPasswordResetEmailAsync(model.Email, result.Value.Name, result.Value.ResetLink);
         }
 
         // Por seguridad, siempre mostramos el mismo mensaje, exista o no el correo.
