@@ -78,7 +78,8 @@ public class AlertService : IAlertService
     {
         if (!adminsToNotify.Any())
         {
-            _logger.LogWarning("Se recibió una solicitud de ayuda pública, pero no hay administradores para notificar.");
+            _logger.LogWarning(
+                "Se recibió una solicitud de ayuda pública, pero no hay administradores para notificar.");
             return;
         }
 
@@ -94,11 +95,13 @@ public class AlertService : IAlertService
         }
     }
 
-    public async Task SendAuthenticatedHelpRequestEmailAsync(AuthenticatedHelpRequestDto request, User requestingUser, List<User> adminsToNotify)
+    public async Task SendAuthenticatedHelpRequestEmailAsync(AuthenticatedHelpRequestDto request, User requestingUser,
+        List<User> adminsToNotify)
     {
         if (!adminsToNotify.Any())
         {
-            _logger.LogWarning("El usuario {UserId} solicitó ayuda, pero no hay administradores para notificar.", requestingUser.Id);
+            _logger.LogWarning("El usuario {UserId} solicitó ayuda, pero no hay administradores para notificar.",
+                requestingUser.Id);
             return;
         }
 
@@ -112,6 +115,24 @@ public class AlertService : IAlertService
             var subject = $"[Ayuda Usuario] {request.Subject}";
             await _emailService.SendEmailAsync(admin.Email, $"{admin.FirstName} {admin.LastName}", subject,
                 htmlContent);
+        }
+    }
+
+    public async Task SendGenericAlertEmailAsync(string email, string name, GenericAlertViewModel model)
+    {
+        try
+        {
+            var emailHtml = await _razorRenderer.RenderViewToStringAsync(
+                "~/Views/Shared/EmailTemplates/_GenericAlertEmail.cshtml",
+                model);
+
+            await _emailService.SendEmailAsync(email, name, model.Title, emailHtml);
+
+            _logger.LogInformation("Alerta genérica '{Title}' enviada a {Email}", model.Title, email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al enviar la alerta genérica a {Email}", email);
         }
     }
 }

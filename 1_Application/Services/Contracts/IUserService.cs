@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Security.Claims;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
@@ -20,5 +21,5 @@ public interface IUserService
     Task<Result> ResetPasswordAsync(ResetPasswordDto model);
     Task<Result> ChangePasswordAsync(ClaimsPrincipal userPrincipal, ChangePasswordDto model);
     Task<Result> UpdateProfileAsync(ClaimsPrincipal userPrincipal, ProfileInfoDto model);
-    Task<List<User>> GetAdminsToNotifyForHelpRequestsAsync();
+    Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate);
 }

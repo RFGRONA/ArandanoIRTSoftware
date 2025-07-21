@@ -46,6 +46,8 @@ public static class DependencyInjection
         services.Configure<TokenSettings>(configuration.GetSection(TokenSettings.SectionName));
         services.Configure<MinioSettings>(configuration.GetSection(MinioSettings.SectionName));
         services.Configure<BrevoSettings>(configuration.GetSection(BrevoSettings.SectionName));
+        services.Configure<AlertingSettings>(configuration.GetSection(AlertingSettings.SectionName));
+        services.Configure<BackgroundJobSettings>(configuration.GetSection(BackgroundJobSettings.SectionName));
 
         // HTTP Client for Weather API
         services.AddHttpClient("WeatherApi", (serviceProvider, client) =>
@@ -70,11 +72,16 @@ public static class DependencyInjection
         services.AddScoped<ISupportService, SupportService>();
         services.AddScoped<IObservationService, ObservationService>();
         services.AddScoped<IAlertService, AlertService>();
+        services.AddScoped<IAlertTriggerService, AlertTriggerService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IRazorViewToStringRenderer, RazorViewToStringRenderer>();
+        services.AddMemoryCache();
+
+        // Background Jobs
+        services.AddHostedService<DeviceInactivityService>();
 
         return services;
     }

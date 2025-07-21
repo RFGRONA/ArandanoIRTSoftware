@@ -22,17 +22,18 @@ public class SupportService : ISupportService
 
     public async Task<Result> ProcessPublicHelpRequestAsync(PublicHelpRequestDto model)
     {
-        var adminsToNotify = await _userService.GetAdminsToNotifyForHelpRequestsAsync();
+        var adminsToNotify = await _userService.GetAdminsToNotifyAsync(s => s.EmailOnHelpRequest);
         await _alertService.SendPublicHelpRequestEmailAsync(model, adminsToNotify);
         return Result.Success();
     }
 
-    public async Task<Result> ProcessAuthenticatedHelpRequestAsync(AuthenticatedHelpRequestDto model, ClaimsPrincipal userPrincipal)
+    public async Task<Result> ProcessAuthenticatedHelpRequestAsync(AuthenticatedHelpRequestDto model,
+        ClaimsPrincipal userPrincipal)
     {
         var currentUser = await _userManager.GetUserAsync(userPrincipal);
         if (currentUser == null) return Result.Failure("Usuario no autenticado.");
 
-        var adminsToNotify = await _userService.GetAdminsToNotifyForHelpRequestsAsync();
+        var adminsToNotify = await _userService.GetAdminsToNotifyAsync(s => s.EmailOnHelpRequest);
         await _alertService.SendAuthenticatedHelpRequestEmailAsync(model, currentUser, adminsToNotify);
 
         return Result.Success();

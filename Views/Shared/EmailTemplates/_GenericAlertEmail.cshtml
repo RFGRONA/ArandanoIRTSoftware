@@ -1,0 +1,13 @@
+@model GenericAlertViewModel
+
+<!DOCTYPE html>
+<html>
+<body>
+<div class="container">
+    <h2 style="color: @(Model.Severity == "Critical" ? "red" : "orange");">@Model.Title</h2>
+    <p>Se ha detectado la siguiente alerta en el sistema:</p>
+    <blockquote>@Model.Message</blockquote>
+    <p><strong>Fecha y Hora (UTC):</strong> @Model.AlertTime</p>
+</div>
+</body>
+</html>

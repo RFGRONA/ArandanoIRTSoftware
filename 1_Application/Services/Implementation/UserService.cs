@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Security.Claims;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
@@ -240,12 +241,10 @@ public class UserService : IUserService
         return Result.Success();
     }
 
-    public async Task<List<User>> GetAdminsToNotifyForHelpRequestsAsync()
+    public async Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate)
     {
-        // Obtenemos todos los usuarios que tienen el rol "Admin"
         var allAdmins = await _userManager.GetUsersInRoleAsync("Admin");
-
-        // Filtramos la lista para quedarnos solo con aquellos que tienen la preferencia activada
-        return allAdmins.Where(u => u.AccountSettings.EmailOnHelpRequest).ToList();
+        var compiledPredicate = predicate.Compile();
+        return allAdmins.Where(u => compiledPredicate(u.AccountSettings)).ToList();
     }
 }
