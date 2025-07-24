@@ -33,6 +33,7 @@ public static class DependencyInjection
         dataSourceBuilder.MapEnum<ActivationStatus>();
         dataSourceBuilder.MapEnum<TokenStatus>();
         dataSourceBuilder.MapEnum<PlantStatus>();
+        dataSourceBuilder.MapEnum<ExperimentalGroupType>();
         dataSourceBuilder.EnableDynamicJson();
         var dataSource = dataSourceBuilder.Build();
 

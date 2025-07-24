@@ -1,4 +1,3 @@
-using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +22,7 @@ public class PlantsController : BaseAdminController
             TempData[ErrorMessageKey] = result.ErrorMessage;
             return View(new List<PlantSummaryDto>());
         }
+
         return View(result.Value);
     }
 
@@ -33,12 +33,14 @@ public class PlantsController : BaseAdminController
             TempData[ErrorMessageKey] = InvalidRequestDataMessage;
             return RedirectToAction(nameof(Index));
         }
+
         var result = await _plantService.GetPlantByIdAsync(id);
         if (!result.IsSuccess || result.Value == null)
         {
             TempData[ErrorMessageKey] = result.ErrorMessage ?? "Plant not found.";
             return RedirectToAction(nameof(Index));
         }
+
         return View(result.Value);
     }
 
@@ -47,7 +49,8 @@ public class PlantsController : BaseAdminController
     {
         var model = new PlantCreateDto
         {
-            AvailableCrops = await _plantService.GetCropsForSelectionAsync()
+            AvailableCrops = await _plantService.GetCropsForSelectionAsync(),
+            AvailableExperimentalGroups = _plantService.GetExperimentalGroupsForSelection()
         };
         return View(model);
     }
@@ -60,15 +63,16 @@ public class PlantsController : BaseAdminController
         if (!ModelState.IsValid)
         {
             plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
+            plantDto.AvailableExperimentalGroups = _plantService.GetExperimentalGroupsForSelection();
             return View(plantDto);
         }
 
         var result = await _plantService.CreatePlantAsync(plantDto);
 
-        // CORREGIDO: Si falla el servicio, también repoblar la lista.
         if (!result.IsSuccess)
         {
             plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
+            plantDto.AvailableExperimentalGroups = _plantService.GetExperimentalGroupsForSelection();
         }
         return HandleServiceResult(result, nameof(Index), plantDto);
     }
@@ -88,6 +92,7 @@ public class PlantsController : BaseAdminController
             TempData[ErrorMessageKey] = result.ErrorMessage ?? "Plant not found.";
             return RedirectToAction(nameof(Index));
         }
+
         // El DTO (result.Value) ya viene con AvailableCrops poblado desde el servicio.
         return View(result.Value);
     }
@@ -102,15 +107,16 @@ public class PlantsController : BaseAdminController
         if (!ModelState.IsValid)
         {
             plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
+            plantDto.AvailableExperimentalGroups = _plantService.GetExperimentalGroupsForSelection();
             return View(plantDto);
         }
 
         var result = await _plantService.UpdatePlantAsync(plantDto);
 
-        // CORREGIDO: Si falla la actualización, repoblar la lista.
         if (!result.IsSuccess)
         {
             plantDto.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
+            plantDto.AvailableExperimentalGroups = _plantService.GetExperimentalGroupsForSelection();
         }
         return HandleServiceResult(result, nameof(Index), plantDto);
     }
@@ -129,10 +135,12 @@ public class PlantsController : BaseAdminController
             TempData[ErrorMessageKey] = result.ErrorMessage ?? "Plant not found.";
             return RedirectToAction(nameof(Index));
         }
+
         return View(result.Value);
     }
 
-    [HttpPost, ActionName("Delete")]
+    [HttpPost]
+    [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
@@ -141,6 +149,7 @@ public class PlantsController : BaseAdminController
             TempData[ErrorMessageKey] = InvalidRequestDataMessage;
             return RedirectToAction(nameof(Index));
         }
+
         var result = await _plantService.DeletePlantAsync(id);
         return HandleServiceResult(result, nameof(Index), nameof(Delete));
     }

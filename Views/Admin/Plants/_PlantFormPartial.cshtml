@@ -1,3 +1,4 @@
+@using ArandanoIRT.Web._0_Domain.Enums
 @model ArandanoIRT.Web._1_Application.DTOs.Plants.IPlantFormData
 @* Usamos la interfaz para el modelo de este parcial *@
 @* El DTO concreto (PlantCreateDto o PlantEditDto) debe tener las propiedades AvailableCrops y AvailableStatuses *@
@@ -11,7 +12,7 @@
 
 <div class="mb-3">
     <label asp-for="Name" class="form-label"></label>
-    <input asp-for="Name" class="form-control" />
+    <input asp-for="Name" class="form-control"/>
     <span asp-validation-for="Name" class="text-danger"></span>
 </div>
 
@@ -26,8 +27,17 @@
 
 <div class="mb-3">
     <label asp-for="Status" class="form-label"></label>
-    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<ArandanoIRT.Web._0_Domain.Enums.PlantStatus>()">
+    <select asp-for="Status" class="form-select"
+            asp-items="Html.GetEnumSelectList<PlantStatus>()">
         <option value="">-- Seleccione un Estado --</option>
     </select>
     <span asp-validation-for="Status" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ExperimentalGroup" class="form-label"></label>
+    <select asp-for="ExperimentalGroup" class="form-select" asp-items="@concreteModel.AvailableExperimentalGroups">
+        <option value="">-- Seleccione un Grupo --</option>
+    </select>
+    <span asp-validation-for="ExperimentalGroup" class="text-danger"></span>
 </div>

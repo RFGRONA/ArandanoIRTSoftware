@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
@@ -15,5 +16,6 @@ public class CropDetailsDto
     public DateTime CreatedAt { get; set; }
     [Display(Name = "Última Actualización")]
     public DateTime UpdatedAt { get; set; }
-    // Más adelante podríamos añadir: List<PlantSummaryDto> AssociatedPlants { get; set; }
+   
+    public CropSettings CropSettings { get; set; } = new();
 }

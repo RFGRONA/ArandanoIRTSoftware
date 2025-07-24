@@ -33,6 +33,8 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
 
     public virtual DbSet<ThermalCapture> ThermalCaptures { get; set; }
 
+    public virtual DbSet<AnalysisResult> AnalysisResults { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -45,12 +47,6 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
         modelBuilder.Entity<IdentityRoleClaim<int>>(entity => { entity.ToTable("role_claims"); });
         modelBuilder.Entity<IdentityUserToken<int>>(entity => { entity.ToTable("user_tokens"); });
 
-        modelBuilder
-            .HasPostgresEnum<ActivationStatus>()
-            .HasPostgresEnum<DeviceStatus>()
-            .HasPostgresEnum<TokenStatus>()
-            .HasPostgresEnum<PlantStatus>();
-
         modelBuilder.Entity<Crop>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("crops_pkey");
@@ -60,7 +56,6 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Address).HasColumnName("address");
-            entity.Property(e => e.AdminUserId).HasColumnName("admin_user_id");
             entity.Property(e => e.CityName).HasColumnName("city_name");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
@@ -70,9 +65,9 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
 
-            entity.HasOne(d => d.AdminUser).WithMany(p => p.Crops)
-                .HasForeignKey(d => d.AdminUserId)
-                .HasConstraintName("fk_crops_admin_user");
+            entity.Property(e => e.CropSettings)
+                .HasColumnType("jsonb")
+                .HasColumnName("crop_settings");
         });
 
         modelBuilder.Entity<Device>(entity =>
@@ -282,6 +277,9 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
             entity.Property(e => e.Status)
                 .HasDefaultValue(PlantStatus.UNKNOWN)
                 .HasColumnName("status");
+            entity.Property(e => e.ExperimentalGroup)
+                .HasColumnName("experimental_group")
+                .HasDefaultValue(ExperimentalGroupType.MONITORED);
             entity.Property(e => e.RegisteredAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("registered_at");
@@ -371,7 +369,6 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
             entity.Property(e => e.LastName)
                 .HasMaxLength(40)
                 .HasColumnName("last_name");
-            entity.Property(e => e.CropId).HasColumnName("crop_id");
             entity.Property(e => e.AccountSettings)
                 .HasColumnType("jsonb")
                 .HasColumnName("account_settings");
@@ -382,16 +379,38 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
-
-            entity.HasOne(d => d.Crop).WithMany(p => p.Users)
-                .HasForeignKey(d => d.CropId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("users_crop_id_fkey");
         });
 
         modelBuilder.Entity<ApplicationRole>(entity =>
         {
-            entity.ToTable("roles"); // Opcional: para usar 'roles' en vez de 'AspNetRoles'
+            entity.ToTable("roles");
+        });
+
+        modelBuilder.Entity<AnalysisResult>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("analysis_results_pkey");
+            entity.ToTable("analysis_results",
+                tb => tb.HasComment(
+                    "Stores calculated results from the analysis module for optimal reporting and full auditability."));
+
+            entity.HasIndex(e => new { e.PlantId, e.RecordedAt }, "idx_analysis_results_plant_id_recorded_at")
+                .IsDescending(false, true);
+            entity.HasIndex(e => new { e.PlantId, e.RecordedAt }).IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PlantId).HasColumnName("plant_id");
+            entity.Property(e => e.RecordedAt).HasColumnName("recorded_at");
+            entity.Property(e => e.CwsiValue).HasColumnName("cwsi_value");
+            entity.Property(e => e.Status).HasColumnName("status").HasConversion<string>();
+            entity.Property(e => e.CanopyTemperature).HasColumnName("canopy_temperature");
+            entity.Property(e => e.AmbientTemperature).HasColumnName("ambient_temperature");
+            entity.Property(e => e.Vpd).HasColumnName("vpd");
+            entity.Property(e => e.BaselineTwet).HasColumnName("baseline_twet");
+            entity.Property(e => e.BaselineTdry).HasColumnName("baseline_tdry");
+
+            entity.HasOne(d => d.Plant).WithMany(p => p.AnalysisResults)
+                .HasForeignKey(d => d.PlantId)
+                .HasConstraintName("analysis_results_plant_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

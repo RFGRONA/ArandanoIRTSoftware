@@ -1,7 +1,6 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
-using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
@@ -60,6 +59,7 @@ public class PlantService : IPlantService
                 Name = plantDto.Name,
                 CropId = plantDto.CropId,
                 Status = plantDto.Status ?? PlantStatus.UNKNOWN,
+                ExperimentalGroup = plantDto.ExperimentalGroup ?? ExperimentalGroupType.MONITORED,
                 RegisteredAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -142,6 +142,7 @@ public class PlantService : IPlantService
                     CropName = p.Crop.Name,
                     CropCityName = p.Crop.CityName,
                     StatusName = p.Status.ToString(),
+                    ExperimentalGroup = p.ExperimentalGroup.ToString(),
                     RegisteredAt = p.RegisteredAt,
                     UpdatedAt = p.UpdatedAt
                 })
@@ -171,7 +172,9 @@ public class PlantService : IPlantService
                 Name = plant.Name,
                 CropId = plant.CropId,
                 Status = plant.Status,
-                AvailableCrops = await GetCropsForSelectionAsync()
+                ExperimentalGroup = plant.ExperimentalGroup,
+                AvailableCrops = await GetCropsForSelectionAsync(),
+                AvailableExperimentalGroups = GetExperimentalGroupsForSelection()
             };
             return Result.Success<PlantEditDto?>(editDto);
         }
@@ -192,7 +195,7 @@ public class PlantService : IPlantService
             existingPlant.Name = plantDto.Name;
             existingPlant.CropId = plantDto.CropId;
             existingPlant.Status = plantDto.Status.Value;
-            // StatusId ya no existe.
+            existingPlant.ExperimentalGroup = plantDto.ExperimentalGroup.Value;
             existingPlant.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -324,11 +327,14 @@ public class PlantService : IPlantService
         }
     }
 
-    public Task<IEnumerable<SelectListItem>> GetStatusesForSelectionAsync()
+    public IEnumerable<SelectListItem> GetExperimentalGroupsForSelection()
     {
-        _logger.LogInformation(
-            "GetStatusesForSelectionAsync para Plantas fue llamado, pero las plantas ya no tienen estados. Devolviendo lista vacía.");
-        // Las plantas ya no tienen un estado en el nuevo esquema.
-        return Task.FromResult<IEnumerable<SelectListItem>>(new List<SelectListItem>());
+        return Enum.GetValues(typeof(ExperimentalGroupType))
+            .Cast<ExperimentalGroupType>()
+            .Select(e => new SelectListItem
+            {
+                Value = e.ToString(),
+                Text = e.ToString()
+            }).ToList();
     }
 }

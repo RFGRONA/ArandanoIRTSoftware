@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
@@ -17,4 +18,7 @@ public interface ICropFormData
     [StringLength(100, MinimumLength = 3, ErrorMessage = "El nombre de la ciudad debe tener entre 3 y 100 caracteres.")]
     [Display(Name = "Nombre de la Ciudad (para WeatherAPI)")]
     public string CityName { get; set; }
+    
+    [Display(Name = "Configuraciones del Cultivo")]
+    public CropSettings CropSettings { get; set; }
 }

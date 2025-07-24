@@ -17,3 +17,67 @@
     <input asp-for="CityName" class="form-control" placeholder="Ej: Bogotá,Cundinamarca,Colombia" />
     <span asp-validation-for="CityName" class="text-danger"></span>
 </div>
+
+@if (Model.CropSettings != null)
+{
+    <hr />
+    <h5 class="mt-4">Parámetros y Umbrales del Cultivo</h5>
+
+    <fieldset class="border p-3 mb-3">
+        <legend class="w-auto px-2 fs-6">Parámetros de Análisis (CWSI)</legend>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.AnalysisParameters.CwsiThresholdIncipient" class="form-label"></label>
+                <input type="number" step="0.01" asp-for="CropSettings.AnalysisParameters.CwsiThresholdIncipient" class="form-control" />
+                <span asp-validation-for="CropSettings.AnalysisParameters.CwsiThresholdIncipient" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.AnalysisParameters.CwsiThresholdCritical" class="form-label"></label>
+                <input type="number" step="0.01" asp-for="CropSettings.AnalysisParameters.CwsiThresholdCritical" class="form-control" />
+                <span asp-validation-for="CropSettings.AnalysisParameters.CwsiThresholdCritical" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.AnalysisParameters.AnalysisWindowStartHour" class="form-label"></label>
+                <input type="number" asp-for="CropSettings.AnalysisParameters.AnalysisWindowStartHour" class="form-control" />
+                <span asp-validation-for="CropSettings.AnalysisParameters.AnalysisWindowStartHour" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.AnalysisParameters.AnalysisWindowEndHour" class="form-label"></label>
+                <input type="number" asp-for="CropSettings.AnalysisParameters.AnalysisWindowEndHour" class="form-control" />
+                <span asp-validation-for="CropSettings.AnalysisParameters.AnalysisWindowEndHour" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="form-label"></label>
+                <input type="number" asp-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="form-control" />
+                <span asp-validation-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="text-danger"></span>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="border p-3 mb-3">
+        <legend class="w-auto px-2 fs-6">Parámetros de Anomalías Nocturnas</legend>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="form-label"></label>
+                <input type="number" step="0.1" asp-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="form-control" />
+                <span asp-validation-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.AnomalyParameters.DurationMinutes" class="form-label"></label>
+                <input type="number" asp-for="CropSettings.AnomalyParameters.DurationMinutes" class="form-control" />
+                <span asp-validation-for="CropSettings.AnomalyParameters.DurationMinutes" class="text-danger"></span>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="border p-3 mb-3">
+        <legend class="w-auto px-2 fs-6">Recordatorio de Calibración</legend>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="form-label"></label>
+                <input type="number" asp-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="form-control" />
+                <span asp-validation-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="text-danger"></span>
+            </div>
+        </div>
+    </fieldset>
+}

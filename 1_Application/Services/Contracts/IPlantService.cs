@@ -23,5 +23,5 @@ public interface IPlantService
 
     // Métodos para poblar dropdowns
     Task<IEnumerable<SelectListItem>> GetCropsForSelectionAsync();
-    Task<IEnumerable<SelectListItem>> GetStatusesForSelectionAsync();
+    IEnumerable<SelectListItem> GetExperimentalGroupsForSelection();
 }

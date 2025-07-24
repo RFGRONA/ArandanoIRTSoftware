@@ -113,13 +113,19 @@ public class CropService : ICropService
                     Address = c.Address,
                     CityName = c.CityName,
                     CreatedAt = c.CreatedAt.ToLocalTime(),
-                    UpdatedAt = c.UpdatedAt.ToLocalTime()
+                    UpdatedAt = c.UpdatedAt.ToLocalTime(),
+                    CropSettings = c.CropSettings 
                 })
                 .FirstOrDefaultAsync();
 
             if (cropDetails == null)
             {
                 _logger.LogWarning("Cultivo con ID: {CropId} no encontrado.", cropId);
+            }
+
+            if (cropDetails.CropSettings == null)
+            {
+                cropDetails.CropSettings ??= new CropSettings();
             }
 
             return Result.Success<CropDetailsDto?>(cropDetails);
@@ -142,13 +148,19 @@ public class CropService : ICropService
                     Id = c.Id,
                     Name = c.Name,
                     Address = c.Address,
-                    CityName = c.CityName
+                    CityName = c.CityName,
+                    CropSettings = c.CropSettings 
                 })
                 .FirstOrDefaultAsync();
 
             if (cropEditDto == null)
             {
                 _logger.LogWarning("Cultivo con ID: {CropId} no encontrado para edición.", cropId);
+            }
+            
+            if (cropEditDto.CropSettings == null)
+            {
+                cropEditDto.CropSettings ??= new CropSettings();
             }
 
             return Result.Success<CropEditDto?>(cropEditDto);
@@ -176,6 +188,7 @@ public class CropService : ICropService
             existingCrop.Address = cropDto.Address;
             existingCrop.CityName = cropDto.CityName;
             existingCrop.UpdatedAt = DateTime.UtcNow;
+            existingCrop.CropSettings = cropDto.CropSettings;
 
             await _context.SaveChangesAsync();
 

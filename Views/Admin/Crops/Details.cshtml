@@ -39,6 +39,41 @@
         <dd class = "col-sm-9">@Model.UpdatedAt.ToString("g")</dd>
     </dl>
 </div>
+<div class="mt-4">
+    <h5>Parámetros y Umbrales del Cultivo</h5>
+    <hr/>
+    <div class="row">
+        <div class="col-md-4">
+            <h6>Análisis (CWSI)</h6>
+            <dl>
+                <dt>Umbral Incipiente</dt>
+                <dd>@Model.CropSettings.AnalysisParameters.CwsiThresholdIncipient</dd>
+                <dt>Umbral Crítico</dt>
+                <dd>@Model.CropSettings.AnalysisParameters.CwsiThresholdCritical</dd>
+                <dt>Ventana de Análisis</dt>
+                <dd>@Model.CropSettings.AnalysisParameters.AnalysisWindowStartHour:00 - @Model.CropSettings.AnalysisParameters.AnalysisWindowEndHour:00</dd>
+                <dt>Umbral de Luz</dt>
+                <dd>@Model.CropSettings.AnalysisParameters.LightIntensityThreshold</dd>
+            </dl>
+        </div>
+        <div class="col-md-4">
+            <h6>Anomalías Nocturnas</h6>
+            <dl>
+                <dt>Umbral Delta T</dt>
+                <dd>@Model.CropSettings.AnomalyParameters.DeltaTThreshold °C</dd>
+                <dt>Duración Mínima</dt>
+                <dd>@Model.CropSettings.AnomalyParameters.DurationMinutes min</dd>
+            </dl>
+        </div>
+        <div class="col-md-4">
+            <h6>Calibración</h6>
+            <dl>
+                <dt>Intervalo Recordatorio</dt>
+                <dd>@Model.CropSettings.CalibrationReminder.ReminderIntervalMonths meses</dd>
+            </dl>
+        </div>
+    </div>
+</div>
 <div class="mt-3">
     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar</a> |
     <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>

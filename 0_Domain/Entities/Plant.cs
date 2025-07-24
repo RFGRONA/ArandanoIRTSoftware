@@ -21,6 +21,8 @@ public class Plant
 
     public string? ThermalMaskData { get; set; }
 
+    public ExperimentalGroupType ExperimentalGroup { get; set; }
+
     public virtual Crop Crop { get; set; } = null!;
 
     public virtual ICollection<Device> Devices { get; set; } = new List<Device>();
@@ -33,4 +35,6 @@ public class Plant
     public virtual ICollection<ThermalCapture> ThermalCaptures { get; set; } = new List<ThermalCapture>();
 
     public virtual ICollection<PlantStatusHistory> PlantStatusHistories { get; set; } = new List<PlantStatusHistory>();
+
+    public virtual ICollection<AnalysisResult> AnalysisResults { get; set; } = new List<AnalysisResult>();
 }

@@ -14,6 +14,8 @@ public class PlantDetailsDto
 
     [Display(Name = "Estado")] public string StatusName { get; set; } = string.Empty;
 
+    [Display(Name = "Grupo Experimental")] public string ExperimentalGroup { get; set; } = string.Empty;
+
     [Display(Name = "Fecha de Registro")] public DateTime RegisteredAt { get; set; }
 
     [Display(Name = "Última Actualización")]

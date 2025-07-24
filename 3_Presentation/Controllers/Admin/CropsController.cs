@@ -47,7 +47,8 @@ public class CropsController : BaseAdminController
 
     public IActionResult Create()
     {
-        return View();
+        var model = new CropCreateDto();
+        return View(model);
     }
 
     [HttpPost]
