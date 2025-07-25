@@ -247,4 +247,9 @@ public class UserService : IUserService
         var compiledPredicate = predicate.Compile();
         return allAdmins.Where(u => compiledPredicate(u.AccountSettings)).ToList();
     }
+    
+    public async Task<List<User>> GetAllUsersAsync()
+    {
+        return await _userManager.Users.ToListAsync();
+    }
 }

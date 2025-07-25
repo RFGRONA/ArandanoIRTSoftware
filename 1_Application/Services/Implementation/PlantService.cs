@@ -108,13 +108,13 @@ public class PlantService : IPlantService
         {
             var plantSummaries = await _context.Plants
                 .AsNoTracking()
-                .Include(p => p.Crop) // Incluimos el cultivo para acceder a su nombre
+                .Include(p => p.Crop) 
                 .Select(p => new PlantSummaryDto
                 {
                     Id = p.Id,
                     Name = p.Name,
                     CropName = p.Crop.Name,
-                    // StatusName ya no existe.
+                    StatusName = p.Status.ToString(),
                     RegisteredAt = p.RegisteredAt
                 })
                 .ToListAsync();
@@ -143,6 +143,7 @@ public class PlantService : IPlantService
                     CropCityName = p.Crop.CityName,
                     StatusName = p.Status.ToString(),
                     ExperimentalGroup = p.ExperimentalGroup.ToString(),
+                    ThermalMaskData = p.ThermalMaskData,
                     RegisteredAt = p.RegisteredAt,
                     UpdatedAt = p.UpdatedAt
                 })

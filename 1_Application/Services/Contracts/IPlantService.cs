@@ -1,4 +1,5 @@
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Plants;

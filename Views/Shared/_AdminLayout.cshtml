@@ -32,6 +32,11 @@
                 <li class="nav-title">Visualizar Datos</li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="AmbientData" asp-action="Index"><i class="fas fa-cloud-sun fa-fw"></i><span>Datos Ambientales</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Captures" asp-action="Index"><i class="fas fa-camera fa-fw"></i><span>Capturas</span></a></li>
+                
+                <ul class="nav-section">
+                    <li class="nav-title">Análisis</li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Analytics" asp-action="Index"><i class="fas fa-chart-bar fa-fw"></i><span>Analíticas y Reportes</span></a></li>
+                </ul>
             </ul>
         </nav>
         <div class="sidebar-footer">
@@ -62,6 +67,9 @@
                 <i class="fas fa-bars"></i>
             </button>
         </header>
+        
+        <partial name="_AlertsPartial" />
+        
         <main class="content-fluid">
             @RenderBody()
         </main>

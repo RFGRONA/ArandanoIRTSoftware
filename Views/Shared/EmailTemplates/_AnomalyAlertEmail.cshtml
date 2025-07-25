@@ -1,0 +1,12 @@
+@model ArandanoIRT.Web._3_Presentation.ViewModels.AnomalyAlertViewModel
+
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Alerta de Comportamiento Anómalo</h2>
+<p>Hola @Model.UserName,</p>
+<p>Se ha detectado un comportamiento térmico anómalo durante la noche en la planta <strong>@Model.PlantName</strong> (ID: @Model.PlantId).</p>
+<p>Esto puede ser un indicador temprano de estrés biótico (plagas, enfermedades) u otros problemas. Se recomienda una inspección visual de la planta lo antes posible.</p>
+<p><em>Fecha de la alerta: @Model.AlertTime</em></p>
+</body>
+</html>

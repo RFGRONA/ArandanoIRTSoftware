@@ -152,4 +152,41 @@ public class AlertTriggerService : IAlertTriggerService
         _logger.LogInformation("Este método se implementará en la Fase 4.");
         return Task.CompletedTask;
     }
+    
+    public async Task TriggerAnomalyAlertAsync(int plantId, string plantName)
+    {
+        var usersToNotify = await _userService.GetAllUsersAsync(); 
+        if (!usersToNotify.Any()) return;
+
+        foreach (var user in usersToNotify)
+        {
+            var viewModel = new AnomalyAlertViewModel
+            {
+                UserName = user.FirstName,
+                PlantName = plantName,
+                PlantId = plantId
+            };
+            await _alertService.SendAnomalyAlertEmailAsync(user.Email, viewModel);
+        }
+        _logger.LogWarning("Alerta de comportamiento anómalo enviada para la planta {PlantName}", plantName);
+    }
+
+    public async Task TriggerMaskCreationAlertAsync(List<string> plantNames)
+    {
+        if (!plantNames.Any()) return;
+        
+        var usersToNotify = await _userService.GetAllUsersAsync(); 
+        if (!usersToNotify.Any()) return;
+
+        foreach (var user in usersToNotify)
+        {
+            var viewModel = new MaskCreationAlertViewModel
+            {
+                UserName = user.FirstName,
+                PlantNames = plantNames
+            };
+            await _alertService.SendMaskCreationAlertEmailAsync(user.Email, viewModel);
+        }
+        _logger.LogInformation("Alerta de creación de máscara enviada para {Count} plantas.", plantNames.Count);
+    }
 }

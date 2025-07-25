@@ -9,6 +9,7 @@ public interface IAlertTriggerService
     Task ProcessGrafanaWebhookAsync(GrafanaWebhookPayload payload);
     Task CheckDeviceInactivityAsync();
     Task TriggerStressAlertsAsync();
-    
     Task SendGroupedAlertSummaryAsync(string alertType, AlertGroupState group);
+    Task TriggerAnomalyAlertAsync(int plantId, string plantName);
+    Task TriggerMaskCreationAlertAsync(List<string> plantNames);
 }

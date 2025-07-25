@@ -3,31 +3,35 @@ namespace ArandanoIRT.Web._0_Domain.Common;
 public static class DateTimeExtensions
 {
     private static readonly TimeZoneInfo ColombiaTimeZone;
-    // Podrías inyectar ILogger aquí si quieres loguear errores de la extensión,
-    // pero para una extensión estática, tendrías que pasarlo como parámetro o usar un logger estático.
 
     static DateTimeExtensions()
     {
         try
         {
+            // For Linux systems
             ColombiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
         }
         catch (TimeZoneNotFoundException)
         {
-            // Loggear este error críticamente si tienes un logger estático disponible
-            // Console.WriteLine("FATAL: TimeZone 'America/Bogota' not found. Falling back to SA Pacific Standard Time.");
             try
             {
+                // For Windows systems
                 ColombiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
             }
             catch
             {
-                // Console.WriteLine("FATAL: Fallback TimeZone 'SA Pacific Standard Time' also not found. Using UTC as last resort for ColombiaTimeZone.");
-                ColombiaTimeZone = TimeZoneInfo.Utc; // Como último recurso muy problemático.
+                // Fallback to UTC if no timezone is found
+                ColombiaTimeZone = TimeZoneInfo.Utc;
             }
         }
     }
 
+    /// <summary>
+    ///     Converts a DateTime object to Colombia local time.
+    ///     It handles UTC, Local, and Unspecified kinds.
+    /// </summary>
+    /// <param name="dateTimeToConvert">The DateTime to convert.</param>
+    /// <returns>The DateTime in Colombian local time.</returns>
     public static DateTime ToColombiaTime(this DateTime dateTimeToConvert)
     {
         DateTime utcDateTime;
@@ -35,45 +39,46 @@ public static class DateTimeExtensions
         switch (dateTimeToConvert.Kind)
         {
             case DateTimeKind.Utc:
-                // Ya es UTC, lista para convertir a Colombia.
                 utcDateTime = dateTimeToConvert;
-                // Console.WriteLine($"ToColombiaTime: Input Kind Utc ('{dateTimeToConvert:o}'), using as is for UTC base.");
                 break;
 
             case DateTimeKind.Local:
-                // Es Local (basada en la zona del servidor de la aplicación). Convertir a UTC.
                 utcDateTime = dateTimeToConvert.ToUniversalTime();
-                // Console.WriteLine($"ToColombiaTime: Input Kind Local ('{dateTimeToConvert:o}'), converted to UTC '{utcDateTime:o}'.");
                 break;
 
             case DateTimeKind.Unspecified:
             default:
-                // TRATAMIENTO CLAVE:
-                // Asumimos que 'Unspecified' de Supabase (en este contexto de la aplicación)
-                // representa un DateTime que YA ESTÁ en la hora local del servidor de la aplicación.
-                // Por lo tanto, lo tratamos como 'Local' para convertirlo a UTC correctamente.
-                // Console.WriteLine($"ToColombiaTime: Input Kind Unspecified ('{dateTimeToConvert:o}'), treating as Local Server Time and converting to UTC.");
+                // Assume Unspecified time is Local time as a safe default
                 utcDateTime = DateTime.SpecifyKind(dateTimeToConvert, DateTimeKind.Local).ToUniversalTime();
                 break;
         }
 
-        // Ahora utcDateTime es definitivamente UTC. Procedemos a convertir a la zona de Colombia.
-        try
-        {
-            return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, ColombiaTimeZone);
-        }
-        catch (Exception) // Captura más general por si ColombiaTimeZone no se inicializó bien.
-        {
-            return utcDateTime; // Fallback: devuelve la fecha UTC que se intentó convertir.
-        }
+        return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, ColombiaTimeZone);
     }
 
-    // Versión para Nullable<DateTime>
+    /// <summary>
+    ///     Converts a nullable DateTime object to Colombia local time.
+    /// </summary>
+    /// <param name="utcDateTime">The nullable DateTime to convert.</param>
+    /// <returns>A nullable DateTime in Colombian local time, or null.</returns>
     public static DateTime? ToColombiaTime(this DateTime? utcDateTime)
     {
         if (!utcDateTime.HasValue)
             return null;
 
         return utcDateTime.Value.ToColombiaTime();
+    }
+
+    /// <summary>
+    ///     Checks if a given UTC DateTime falls within a specific time window (start and end hour) in Colombian local time.
+    /// </summary>
+    /// <param name="utcNow">The current UTC time to check.</param>
+    /// <param name="startHour">The start hour of the window (inclusive).</param>
+    /// <param name="endHour">The end hour of the window (exclusive).</param>
+    /// <returns>True if the time is within the window, false otherwise.</returns>
+    public static bool IsWithinColombiaTimeWindow(this DateTime utcNow, int startHour, int endHour)
+    {
+        var colombiaTime = utcNow.ToColombiaTime();
+        return colombiaTime.Hour >= startHour && colombiaTime.Hour < endHour;
     }
 }

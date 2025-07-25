@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Enums;
-using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.DTOs.SensorData;
@@ -96,7 +96,7 @@ public class DataQueryService : IDataQueryService
                 CityHumidity = er.CityHumidity,
                 CityWeatherCondition = er.CityWeatherCondition,
                 IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
-                RecordedAt = ToColombiaTime(er.RecordedAtServer)
+                RecordedAt = er.RecordedAtServer.ToColombiaTime()
             }).ToList();
 
             return Result.Success(new PagedResultDto<SensorDataDisplayDto>
@@ -172,7 +172,7 @@ public class DataQueryService : IDataQueryService
                     MinTemp = thermalStats?.Min_Temp,
                     AvgTemp = thermalStats?.Avg_Temp,
                     RgbImagePath = m.RgbImagePath,
-                    RecordedAt = ToColombiaTime(m.RecordedAtServer) // Llamada segura
+                    RecordedAt = m.RecordedAtServer.ToColombiaTime() // Llamada segura
                 };
             }).ToList();
 
@@ -230,7 +230,7 @@ public class DataQueryService : IDataQueryService
                 MinTemp = thermalStats?.Min_Temp ?? 0,
                 AvgTemp = thermalStats?.Avg_Temp ?? 0,
                 RgbImagePath = result.Capture.RgbImagePath,
-                RecordedAt = ToColombiaTime(result.Capture.RecordedAtServer),
+                RecordedAt = result.Capture.RecordedAtServer.ToColombiaTime(),
                 Temperatures = thermalStats?.Temperatures,
                 ThermalDataJson = result.Capture.ThermalDataStats,
                 ThermalImageWidth = 32, // Valor estático según requerimiento
@@ -287,7 +287,7 @@ public class DataQueryService : IDataQueryService
                 CityTemperature = er.CityTemperature,
                 CityHumidity = er.CityHumidity,
                 IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
-                RecordedAt = ToColombiaTime(er.RecordedAtServer) // Llamada segura
+                RecordedAt = er.RecordedAtServer.ToColombiaTime() // Llamada segura
             }).ToList();
 
             _logger.LogInformation("Datos ambientales para dashboard recuperados: {Count} puntos.", finalData.Count);
@@ -354,7 +354,7 @@ public class DataQueryService : IDataQueryService
                 LatestMaxTemp = latestStats?.Max_Temp,
                 LatestMinTemp = latestStats?.Min_Temp,
                 LatestAvgTemp = latestStats?.Avg_Temp,
-                LatestThermalReadingTimestamp = ToColombiaTime(latestCapture.RecordedAtServer) // Llamada segura
+                LatestThermalReadingTimestamp = latestCapture.RecordedAtServer.ToColombiaTime() // Llamada segura
             };
 
             // =================== FIN DE LA CORRECCIÓN ====================
@@ -465,7 +465,7 @@ public class DataQueryService : IDataQueryService
                 CityHumidity = rawResult.CityHumidity,
                 CityWeatherCondition = rawResult.CityWeatherCondition,
                 IsNight = rawResult.ExtraData != null && rawResult.ExtraData.Contains("\"is_night\": true"),
-                RecordedAt = ToColombiaTime(rawResult.RecordedAtServer) // Llamada segura
+                RecordedAt = rawResult.RecordedAtServer.ToColombiaTime()
             };
 
             return Result.Success(finalResult);
@@ -478,16 +478,67 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    #region Métodos Auxiliares Internos
-
-    /// <summary>
-    ///     Convierte una fecha y hora a la zona horaria de Colombia.
-    ///     Asume que la fecha de entrada está en UTC.
-    /// </summary>
-    private DateTime ToColombiaTime(DateTime utcDate)
+    public async Task<Result<List<PlantRawDataDto>>> GetRawDataForAnalysisAsync(List<int> plantIds, DateTime startTime,
+        DateTime endTime)
     {
-        return TimeZoneInfo.ConvertTimeFromUtc(utcDate, _colombiaZone);
+        try
+        {
+            var plantsWithData = await _context.Plants
+                .AsNoTracking()
+                .Include(p =>
+                    p.EnvironmentalReadings.Where(er =>
+                        er.RecordedAtServer >= startTime && er.RecordedAtServer < endTime))
+                .Include(p =>
+                    p.ThermalCaptures.Where(tc => tc.RecordedAtServer >= startTime && tc.RecordedAtServer < endTime))
+                .Where(p => plantIds.Contains(p.Id))
+                .Select(p => new PlantRawDataDto
+                {
+                    Plant = p,
+                    EnvironmentalReadings = p.EnvironmentalReadings.ToList(),
+                    ThermalCaptures = p.ThermalCaptures.ToList()
+                })
+                .ToListAsync();
+
+            return Result.Success(plantsWithData);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error obteniendo datos crudos para el análisis.");
+            return Result.Failure<List<PlantRawDataDto>>($"Error interno al obtener datos para análisis: {ex.Message}");
+        }
     }
+
+    public async Task<Result<ThermalDataDto?>> GetLatestCaptureForMaskAsync(int plantId)
+    {
+        try
+        {
+            // La consulta original estaba en la línea 485
+            var latestCaptureJson = await _context.ThermalCaptures
+                .AsNoTracking()
+                // CORRECCIÓN: Se reemplaza .Contains() por EF.Functions.JsonExists()
+                .Where(tc => tc.PlantId == plantId
+                             && tc.RgbImagePath != null
+                             && EF.Functions.JsonExists(tc.ThermalDataStats,
+                                 "temperatures")) // <-- ESTA ES LA LÍNEA CORREGIDA
+                .OrderByDescending(tc => tc.RecordedAtServer)
+                .Select(tc => tc.ThermalDataStats)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(latestCaptureJson))
+                // Este return es correcto, significa que no se encontró ninguna captura que cumpla los requisitos
+                return Result.Success<ThermalDataDto?>(null);
+
+            var thermalStats = DeserializeThermalStats(latestCaptureJson, 0);
+            return Result.Success(thermalStats);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error obteniendo la última captura para la máscara de la planta {PlantId}", plantId);
+            return Result.Failure<ThermalDataDto?>("Error interno al obtener datos de la captura.");
+        }
+    }
+
+    #region Métodos Auxiliares Internos
 
     /// <summary>
     ///     Parsea de forma segura el campo ExtraData (JSON) para extraer el valor de 'light'.

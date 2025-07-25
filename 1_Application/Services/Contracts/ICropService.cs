@@ -1,5 +1,5 @@
 using ArandanoIRT.Web._0_Domain.Common;
-using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Crops;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -12,4 +12,5 @@ public interface ICropService
     Task<Result<int>> CreateCropAsync(CropCreateDto cropDto);
     Task<Result> UpdateCropAsync(CropEditDto cropDto);
     Task<Result> DeleteCropAsync(int cropId);
+    Task<Result<CropSettings>> GetAnalysisParametersAsync(int cropId);
 }

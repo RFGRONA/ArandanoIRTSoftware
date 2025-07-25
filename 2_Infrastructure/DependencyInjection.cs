@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Serilog;
+using AnalysisParameters = ArandanoIRT.Web._0_Domain.Entities.AnalysisParameters;
 
 namespace ArandanoIRT.Web._2_Infrastructure;
 
@@ -49,6 +50,9 @@ public static class DependencyInjection
         services.Configure<BrevoSettings>(configuration.GetSection(BrevoSettings.SectionName));
         services.Configure<AlertingSettings>(configuration.GetSection(AlertingSettings.SectionName));
         services.Configure<BackgroundJobSettings>(configuration.GetSection(BackgroundJobSettings.SectionName));
+        services.Configure<AnalysisParametersSettings>(configuration.GetSection(AnalysisParametersSettings.SectionName));
+        services.Configure<AnomalyParametersSettings>(configuration.GetSection(AnomalyParametersSettings.SectionName));
+        services.Configure<CalibrationReminderSettings>(configuration.GetSection(CalibrationReminderSettings.SectionName));
 
         // HTTP Client for Weather API
         services.AddHttpClient("WeatherApi", (serviceProvider, client) =>
@@ -74,6 +78,8 @@ public static class DependencyInjection
         services.AddScoped<IObservationService, ObservationService>();
         services.AddScoped<IAlertService, AlertService>();
         services.AddScoped<IAlertTriggerService, AlertTriggerService>();
+        services.AddScoped<IEnvironmentalDataProvider, EnvironmentalDataProvider>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
@@ -83,6 +89,8 @@ public static class DependencyInjection
 
         // Background Jobs
         services.AddHostedService<DeviceInactivityService>();
+        services.AddHostedService<WaterStressAnalysisService>();
+        services.AddHostedService<DailyTasksService>();
 
         return services;
     }

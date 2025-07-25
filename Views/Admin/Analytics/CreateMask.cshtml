@@ -1,0 +1,144 @@
+@model ArandanoIRT.Web._3_Presentation.ViewModels.MaskCreatorViewModel;
+@{
+    ViewData["Title"] = $"Crear Máscara para {Model.PlantName}";
+    Layout = "_AdminLayout";
+
+    string GetColorForTemperature(float? temp, float min, float max)
+    {
+        if (!temp.HasValue) return "#808080"; // Gris para N/A
+        if (max - min == 0) return "#00ff00";
+
+        var percentage = (temp.Value - min) / (max - min);
+        int r, g, b;
+
+        // Simple gradiente de Azul -> Verde -> Rojo
+        if (percentage < 0.5)
+        {
+            r = 0;
+            g = (int)(255 * (percentage * 2));
+            b = (int)(255 * (1 - (percentage * 2)));
+        }
+        else
+        {
+            r = (int)(255 * ((percentage - 0.5) * 2));
+            g = (int)(255 * (1 - (percentage - 0.5) * 2));
+            b = 0;
+        }
+        return $"rgb({r},{g},{b})";
+    }
+}
+
+<style>
+    .thermal-grid {
+        display: grid;
+        grid-template-columns: repeat(@Model.ThermalImageWidth, 1fr);
+        border: 1px solid #ccc;
+        width: 100%;
+        aspect-ratio: @Model.ThermalImageWidth / @Model.ThermalImageHeight;
+    }
+    .thermal-cell {
+        aspect-ratio: 1 / 1;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .thermal-cell:hover {
+        transform: scale(1.2);
+        z-index: 10;
+        border: 1px solid white;
+    }
+    .thermal-cell.selected {
+        border: 2px solid #000;
+        box-shadow: 0 0 5px #fff;
+        transform: scale(1.1);
+    }
+    .rgb-image {
+        width: 100%;
+        transform: scaleX(-1); /* Reflejar imagen RGB */
+    }
+</style>
+
+<h1>@ViewData["Title"]</h1>
+<p>Haz clic en las celdas de la cuadrícula térmica para seleccionar la canopia de la planta. La imagen de la izquierda (RGB) está reflejada para coincidir con la orientación de la cuadrícula térmica.</p>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <h5>Imagen RGB (Referencia)</h5>
+        <img src="@Model.RgbImagePath" alt="Imagen RGB de la planta" class="img-fluid rgb-image" />
+    </div>
+    <div class="col-md-6">
+        <h5>Cuadrícula Térmica Interactiva</h5>
+        <div class="thermal-grid">
+            @for (int y = 0; y < Model.ThermalImageHeight; y++)
+            {
+                @for (int x = 0; x < Model.ThermalImageWidth; x++)
+                {
+                    int index = y * Model.ThermalImageWidth + x;
+                    var temp = Model.Temperatures[index];
+                    <div class="thermal-cell" 
+                         style="background-color: @GetColorForTemperature(temp, Model.MinTemp, Model.MaxTemp)"
+                         title="Temp: @(temp.HasValue ? temp.Value.ToString("F2") : "N/A")"
+                         data-x="@x" data-y="@y"></div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <form id="maskForm" asp-action="SaveMask" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="plantId" value="@Model.PlantId" />
+            <input type="hidden" id="coordinates" name="coordinates" />
+            <button type="submit" class="btn btn-success">Guardar Máscara</button>
+            <a asp-controller="Plants" asp-action="Details" asp-route-id="@Model.PlantId" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const grid = document.querySelector('.thermal-grid');
+        const existingMaskJson = @Html.Raw(Model.ExistingMaskJson);
+        
+        let existingCoordinates = [];
+        // La máscara se guarda anidada, la extraemos
+        if(existingMaskJson.thermal_mask && existingMaskJson.thermal_mask.coordinates){
+            existingCoordinates = existingMaskJson.thermal_mask.coordinates;
+        }
+
+        // Marcar celdas existentes
+        existingCoordinates.forEach(coord => {
+            const cell = grid.querySelector(`.thermal-cell[data-x='${coord.X}'][data-y='${coord.Y}']`);
+            if (cell) {
+                cell.classList.add('selected');
+            }
+        });
+
+        grid.addEventListener('click', function (e) {
+            if (e.target.classList.contains('thermal-cell')) {
+                e.target.classList.toggle('selected');
+            }
+        });
+
+        const form = document.getElementById('maskForm');
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            
+            const selectedCells = grid.querySelectorAll('.thermal-cell.selected');
+            const coords = [];
+            selectedCells.forEach(cell => {
+                coords.push({
+                    X: parseInt(cell.dataset.x, 10),
+                    Y: parseInt(cell.dataset.y, 10)
+                });
+            });
+
+            document.getElementById('coordinates').value = JSON.stringify(coords);
+            form.submit();
+        });
+    });
+</script>
+}

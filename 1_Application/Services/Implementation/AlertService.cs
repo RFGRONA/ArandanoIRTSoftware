@@ -135,4 +135,27 @@ public class AlertService : IAlertService
             _logger.LogError(ex, "Error al enviar la alerta genérica a {Email}", email);
         }
     }
+    
+    public async Task SendAnomalyAlertEmailAsync(string recipientEmail, AnomalyAlertViewModel viewModel)
+    {
+        string htmlContent = await _razorRenderer.RenderViewToStringAsync(
+            "/Views/Shared/EmailTemplates/_AnomalyAlertEmail.cshtml", 
+            viewModel
+        );
+
+        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Alerta de Comportamiento Anómalo", htmlContent);
+        _logger.LogInformation("Alerta de comportamiento anómalo enviada a {RecipientEmail}", recipientEmail);
+        
+    }
+
+    public async Task SendMaskCreationAlertEmailAsync(string recipientEmail, MaskCreationAlertViewModel viewModel)
+    {
+        string htmlContent = await _razorRenderer.RenderViewToStringAsync(
+            "/Views/Shared/EmailTemplates/_MaskCreationAlertEmail.cshtml", 
+            viewModel
+        );
+        
+        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Acción Requerida: Crear Máscaras Térmicas", htmlContent);
+        _logger.LogInformation("Alerta de creación de máscara enviada a {RecipientEmail}", recipientEmail);
+    }
 }

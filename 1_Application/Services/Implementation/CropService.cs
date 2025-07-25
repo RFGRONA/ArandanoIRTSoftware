@@ -1,6 +1,5 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
-using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Crops;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
@@ -53,7 +52,9 @@ public class CropService : ICropService
 
             if (cropToDelete == null)
             {
-                _logger.LogWarning("No se encontró el cultivo con ID: {CropId} para eliminar. Se considera la operación exitosa.", cropId);
+                _logger.LogWarning(
+                    "No se encontró el cultivo con ID: {CropId} para eliminar. Se considera la operación exitosa.",
+                    cropId);
                 return Result.Success();
             }
 
@@ -65,8 +66,11 @@ public class CropService : ICropService
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "Error de base de datos al eliminar el cultivo con ID: {CropId}. Puede deberse a restricciones de clave externa.", cropId);
-            return Result.Failure($"Error de base de datos al eliminar el cultivo. Verifique que no tenga entidades dependientes.");
+            _logger.LogError(ex,
+                "Error de base de datos al eliminar el cultivo con ID: {CropId}. Puede deberse a restricciones de clave externa.",
+                cropId);
+            return Result.Failure(
+                "Error de base de datos al eliminar el cultivo. Verifique que no tenga entidades dependientes.");
         }
         catch (Exception ex)
         {
@@ -114,19 +118,13 @@ public class CropService : ICropService
                     CityName = c.CityName,
                     CreatedAt = c.CreatedAt.ToLocalTime(),
                     UpdatedAt = c.UpdatedAt.ToLocalTime(),
-                    CropSettings = c.CropSettings 
+                    CropSettings = c.CropSettings
                 })
                 .FirstOrDefaultAsync();
 
-            if (cropDetails == null)
-            {
-                _logger.LogWarning("Cultivo con ID: {CropId} no encontrado.", cropId);
-            }
+            if (cropDetails == null) _logger.LogWarning("Cultivo con ID: {CropId} no encontrado.", cropId);
 
-            if (cropDetails.CropSettings == null)
-            {
-                cropDetails.CropSettings ??= new CropSettings();
-            }
+            if (cropDetails.CropSettings == null) cropDetails.CropSettings ??= new CropSettings();
 
             return Result.Success<CropDetailsDto?>(cropDetails);
         }
@@ -136,6 +134,7 @@ public class CropService : ICropService
             return Result.Failure<CropDetailsDto?>($"Error interno al obtener el cultivo: {ex.Message}");
         }
     }
+
     public async Task<Result<CropEditDto?>> GetCropForEditByIdAsync(int cropId)
     {
         try
@@ -149,19 +148,13 @@ public class CropService : ICropService
                     Name = c.Name,
                     Address = c.Address,
                     CityName = c.CityName,
-                    CropSettings = c.CropSettings 
+                    CropSettings = c.CropSettings
                 })
                 .FirstOrDefaultAsync();
 
-            if (cropEditDto == null)
-            {
-                _logger.LogWarning("Cultivo con ID: {CropId} no encontrado para edición.", cropId);
-            }
-            
-            if (cropEditDto.CropSettings == null)
-            {
-                cropEditDto.CropSettings ??= new CropSettings();
-            }
+            if (cropEditDto == null) _logger.LogWarning("Cultivo con ID: {CropId} no encontrado para edición.", cropId);
+
+            if (cropEditDto.CropSettings == null) cropEditDto.CropSettings ??= new CropSettings();
 
             return Result.Success<CropEditDto?>(cropEditDto);
         }
@@ -199,6 +192,35 @@ public class CropService : ICropService
         {
             _logger.LogError(ex, "Excepción al actualizar el cultivo con ID: {CropId}", cropDto.Id);
             return Result.Failure($"Error interno al actualizar el cultivo: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<CropSettings>> GetAnalysisParametersAsync(int cropId)
+    {
+        try
+        {
+            var crop = await _context.Crops
+                .AsNoTracking()
+                .Where(c => c.Id == cropId)
+                .Select(c => c.CropSettings)
+                .FirstOrDefaultAsync();
+
+            if (crop != null)
+                // Si la configuración existe en la BD, la retornamos.
+                // Aquí se podría añadir lógica para fusionar con los defaults si faltan algunas propiedades.
+                return Result.Success(crop);
+
+            _logger.LogWarning(
+                "No se encontraron parámetros de análisis para el cultivo {CropId}. Usando valores por defecto.",
+                cropId);
+
+            // Si no hay configuración en la BD, retornamos los valores por defecto de appsettings.json
+            return Result.Success(new CropSettings());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error obteniendo parámetros de análisis para el cultivo {CropId}", cropId);
+            return Result.Failure<CropSettings>($"Error interno al obtener parámetros de análisis: {ex.Message}");
         }
     }
 }

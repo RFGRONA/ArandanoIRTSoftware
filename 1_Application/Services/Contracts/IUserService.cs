@@ -22,4 +22,5 @@ public interface IUserService
     Task<Result> ChangePasswordAsync(ClaimsPrincipal userPrincipal, ChangePasswordDto model);
     Task<Result> UpdateProfileAsync(ClaimsPrincipal userPrincipal, ProfileInfoDto model);
     Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate);
+    Task<List<User>> GetAllUsersAsync();
 }

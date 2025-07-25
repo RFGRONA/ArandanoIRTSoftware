@@ -1,0 +1,20 @@
+@model ArandanoIRT.Web._3_Presentation.ViewModels.MaskCreationAlertViewModel
+
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Acción Requerida: Crear Máscaras Térmicas</h2>
+<p>Hola @Model.UserName,</p>
+<p>Para mejorar la precisión de los análisis de estrés hídrico, las siguientes plantas requieren que se defina su máscara térmica:</p>
+<ul>
+    @foreach (var name in Model.PlantNames)
+    {
+        <li>@name</li>
+    }
+</ul>
+<p>Puedes crear las máscaras desde el panel de cada planta.</p>
+<a href="@Model.CtaButtonUrl" style="padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+    Ir al listado de Plantas
+</a>
+</body>
+</html>
