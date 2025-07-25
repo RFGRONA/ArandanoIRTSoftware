@@ -1,0 +1,98 @@
+     :root {
+            --primary-color: #5D3EBF;
+            --primary-light: #f4f2ff;
+            --secondary-color: #f8f9fa;
+            --background-color: #F8F9FA;
+            --card-background: #FFFFFF;
+            --text-color: #495057;
+            --text-muted: #6c757d;
+            --border-color: #e9ecef;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --border-radius: 0.75rem;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #4a319a;
+            border-color: #4a319a;
+        }
+
+        .table-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            border: none;
+            overflow: hidden;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border-bottom: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .table td, .table th {
+            padding: 1rem;
+            vertical-align: middle;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .table thead th {
+            border-top: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-start;
+        }
+
+        .btn-action {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .btn-action.edit:hover { color: var(--warning-color); }
+        .btn-action.details:hover { color: var(--info-color); }
+        .btn-action.delete:hover { color: var(--danger-color); }
+

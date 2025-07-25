@@ -4,7 +4,25 @@
     Layout = "_AdminLayout";
 }
 
-<h1>@ViewData["Title"]</h1>
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="~/css/data-tables.css" asp-append-version="true" />
+    <style>
+        /* Estilos para hacer los interruptores un poco más grandes*/
+        .form-switch .form-check-input {
+            width: 3.25em;
+            height: 1.6em;
+            cursor: pointer;
+        }
+        .form-check-label {
+            padding-left: 0.5em;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+</div>
 
 @if (TempData["SuccessMessage"] != null)
 {
@@ -16,85 +34,76 @@
 }
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                Información del Perfil
-            </div>
-            <div class="card-body">
+    <div class="col-lg-6 mb-4">
+        <div class="card table-card h-100">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3" style="color: var(--primary-color); font-weight: 600;">Información del Perfil</h5>
+                <hr class="filter-divider mt-0 mb-4">
+                
                 <form asp-action="UpdateProfile" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
                     <div class="mb-3">
-                        <label asp-for="ProfileInfo.FirstName" class="form-label"></label>
+                        <label asp-for="ProfileInfo.FirstName" class="form-label fw-bold"></label>
                         <input asp-for="ProfileInfo.FirstName" class="form-control"/>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="ProfileInfo.LastName" class="form-label"></label>
+                        <label asp-for="ProfileInfo.LastName" class="form-label fw-bold"></label>
                         <input asp-for="ProfileInfo.LastName" class="form-control"/>
                     </div>
-                    <hr/>
-                    <h5 class="card-title fs-6">Preferencias de Notificación</h5>
+                    
+                    <h5 class="card-title mt-4 mb-3" style="color: var(--primary-color); font-weight: 600;">Preferencias de Notificación</h5>
+                    <hr class="filter-divider mt-0 mb-4">
 
-                    @* Opción para TODOS los usuarios *@
-                    <div class="form-check">
+                    <div class="form-check form-switch mb-3">
                         <input asp-for="ProfileInfo.AccountSettings.EmailOnMildStressAlert" class="form-check-input"/>
-                        <label asp-for="ProfileInfo.AccountSettings.EmailOnMildStressAlert" class="form-check-label">Recibir
-                            alertas de estrés hídrico inicial por correo.</label>
+                        <label asp-for="ProfileInfo.AccountSettings.EmailOnMildStressAlert" class="form-check-label">Recibir alertas de estrés hídrico inicial.</label>
                     </div>
 
-                    @* Opciones SOLO PARA ADMINS *@
                     @if (User.IsInRole("Admin"))
                     {
-                        <div class="form-check mt-2">
+                        <div class="form-check form-switch mb-3">
                             <input asp-for="ProfileInfo.AccountSettings.EmailOnHelpRequest" class="form-check-input"/>
-                            <label asp-for="ProfileInfo.AccountSettings.EmailOnHelpRequest"
-                                   class="form-check-label">Recibir notificaciones de ayuda.</label>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnHelpRequest" class="form-check-label">Recibir notificaciones de ayuda.</label>
                         </div>
-                        <div class="form-check mt-2">
-                            <input asp-for="ProfileInfo.AccountSettings.EmailOnAppFailureAlert"
-                                   class="form-check-input"/>
-                            <label asp-for="ProfileInfo.AccountSettings.EmailOnAppFailureAlert"
-                                   class="form-check-label">Recibir alertas por fallos de la aplicación.</label>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="ProfileInfo.AccountSettings.EmailOnAppFailureAlert" class="form-check-input"/>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnAppFailureAlert" class="form-check-label">Recibir alertas por fallos de la aplicación.</label>
                         </div>
-                        <div class="form-check mt-2">
-                            <input asp-for="ProfileInfo.AccountSettings.EmailOnDeviceFailureAlert"
-                                   class="form-check-input"/>
-                            <label asp-for="ProfileInfo.AccountSettings.EmailOnDeviceFailureAlert"
-                                   class="form-check-label">Recibir alertas por fallos de dispositivos.</label>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="ProfileInfo.AccountSettings.EmailOnDeviceFailureAlert" class="form-check-input"/>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnDeviceFailureAlert" class="form-check-label">Recibir alertas por fallos de dispositivos.</label>
                         </div>
-                        <div class="form-check mt-2">
-                            <input asp-for="ProfileInfo.AccountSettings.EmailOnDeviceInactivity"
-                                   class="form-check-input"/>
-                            <label asp-for="ProfileInfo.AccountSettings.EmailOnDeviceInactivity"
-                                   class="form-check-label">Recibir alertas por inactividad de dispositivos.</label>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="ProfileInfo.AccountSettings.EmailOnDeviceInactivity" class="form-check-input"/>
+                            <label asp-for="ProfileInfo.AccountSettings.EmailOnDeviceInactivity" class="form-check-label">Recibir alertas por inactividad de dispositivos.</label>
                         </div>
                     }
-                    <button type="submit" class="btn btn-primary mt-3">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-primary w-100 mt-3 py-2">Guardar Cambios</button>
                 </form>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                Cambiar Contraseña
-            </div>
-            <div class="card-body">
+    <div class="col-lg-6 mb-4">
+        <div class="card table-card h-100">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3" style="color: var(--primary-color); font-weight: 600;">Cambiar Contraseña</h5>
+                <hr class="filter-divider mt-0 mb-4">
+                
                 <form asp-action="ChangePassword" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
                     <div class="mb-3">
-                        <label asp-for="ChangePassword.OldPassword" class="form-label"></label>
-                        <input asp-for="ChangePassword.OldPassword" class="form-control"/>
+                        <label asp-for="ChangePassword.OldPassword" class="form-label fw-bold"></label>
+                        <input asp-for="ChangePassword.OldPassword" class="form-control" type="password"/>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="ChangePassword.NewPassword" class="form-label"></label>
-                        <input asp-for="ChangePassword.NewPassword" class="form-control"/>
+                        <label asp-for="ChangePassword.NewPassword" class="form-label fw-bold"></label>
+                        <input asp-for="ChangePassword.NewPassword" class="form-control" type="password"/>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="ChangePassword.ConfirmNewPassword" class="form-label"></label>
-                        <input asp-for="ChangePassword.ConfirmNewPassword" class="form-control"/>
+                        <label asp-for="ChangePassword.ConfirmNewPassword" class="form-label fw-bold"></label>
+                        <input asp-for="ChangePassword.ConfirmNewPassword" class="form-control" type="password"/>
                     </div>
-                    <button type="submit" class="btn btn-primary mt-3">Cambiar Contraseña</button>
+                    <button type="submit" class="btn btn-primary w-100 mt-3 py-2">Cambiar Contraseña</button>
                 </form>
             </div>
         </div>

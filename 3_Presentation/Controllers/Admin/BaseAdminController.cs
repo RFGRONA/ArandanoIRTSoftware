@@ -26,7 +26,7 @@ public abstract class BaseAdminController : Controller
         if (result.IsSuccess)
         {
             // You can customize the success message here if needed
-            TempData[SuccessMessageKey] = "Operation completed successfully.";
+            TempData[SuccessMessageKey] = "Operación completada exitosamente.";
             return RedirectToAction(successRedirectActionName);
         }
         else
@@ -44,7 +44,7 @@ public abstract class BaseAdminController : Controller
     {
         if (result.IsSuccess)
         {
-            TempData[SuccessMessageKey] = "Operation completed successfully.";
+            TempData[SuccessMessageKey] = "Operación completada exitosamente.";
             return RedirectToAction(successRedirectActionName);
         }
         else
