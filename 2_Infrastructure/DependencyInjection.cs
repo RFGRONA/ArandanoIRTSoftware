@@ -80,6 +80,7 @@ public static class DependencyInjection
         services.AddScoped<IAlertTriggerService, AlertTriggerService>();
         services.AddScoped<IEnvironmentalDataProvider, EnvironmentalDataProvider>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();

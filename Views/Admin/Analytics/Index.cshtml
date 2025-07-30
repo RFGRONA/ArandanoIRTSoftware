@@ -1,0 +1,97 @@
+@model List<ArandanoIRT.Web._1_Application.DTOs.Analysis.CropMonitorViewModel>
+@using ArandanoIRT.Web._0_Domain.Enums
+
+@{
+    ViewData["Title"] = "Monitor de Cultivo y Analíticas";
+    Layout = "_AdminLayout";
+    
+    string GetStatusClass(PlantStatus status) => status switch
+    {
+        PlantStatus.OPTIMAL => "status-optimal",
+        PlantStatus.RECOVERING => "status-recovering",
+        PlantStatus.MILD_STRESS => "status-mild-stress",
+        PlantStatus.SEVERE_STRESS => "status-severe-stress",
+        PlantStatus.UNKNOWN => "status-unknown",
+        _ => "status-default"
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/plantStatus.css" asp-append-version="true" />
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+</div>
+<p class="lead mb-4">Supervisa el estado actual de todas tus plantas y accede a los análisis detallados.</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No hay cultivos registrados en el sistema.</div>
+}
+
+@foreach (var crop in Model)
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Cultivo: @crop.Name</h3>
+        </div>
+        <div class="card-body">
+            @if (!crop.IsConfigurationValid)
+            {
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>@crop.ValidationMessage</strong>
+                </div>
+            }
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Planta</th>
+                            <th>Estado Actual</th>
+                            <th>Máscara Térmica</th>
+                            <th style="width: 25%;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plant in crop.Plants)
+                        {
+                            <tr>
+                                <td>@plant.Name</td>
+                                <td>
+                                    <span class="status-badge @GetStatusClass(plant.Status)">
+                                        @plant.Status.ToString().Replace("_", " ")
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (plant.HasMask)
+                                    {
+                                        <i class="fas fa-check-circle text-success" title="Definida"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-times-circle text-danger" title="No Definida"></i>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@plant.Id" 
+                                       class="btn btn-primary btn-sm @(crop.IsConfigurationValid ? "" : "disabled")"
+                                       title="Analizar">
+                                        <i class="fas fa-chart-line"></i> Analizar
+                                    </a>
+                                    <a asp-action="CreateMask" asp-route-id="@plant.Id" 
+                                       class="btn btn-secondary btn-sm"
+                                       title="Crear o Editar Máscara">
+                                        <i class="fas fa-draw-polygon"></i> Máscara
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}

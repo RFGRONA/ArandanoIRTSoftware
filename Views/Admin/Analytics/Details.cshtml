@@ -1,0 +1,108 @@
+@model ArandanoIRT.Web._1_Application.DTOs.Analysis.AnalysisDetailsViewModel
+@{
+    ViewData["Title"] = $"Análisis de {Model.PlantName}";
+    Layout = "_AdminLayout";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>@ViewData["Title"] <small class="text-muted fs-5">(@Model.CropName)</small></h1>
+    <div>
+        <a asp-action="GenerateReport" asp-route-plantId="@Model.PlantId" asp-route-startDate="@Model.StartDate.ToString("o")" asp-route-endDate="@Model.EndDate.ToString("o")" class="btn btn-success">
+            <i class="fas fa-file-pdf"></i> Generar Reporte PDF
+        </a>
+    </div>
+</div>
+
+<div class="card filter-card mb-4">
+    <form asp-action="Details" asp-route-id="@Model.PlantId" method="get">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Fecha Inicio</label>
+                <input type="date" name="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Fecha Fin</label>
+                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Filtrar Periodo
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card">
+            <div class="card-header">Evolución del Índice de Estrés Hídrico (CWSI)</div>
+            <div class="card-body">
+                <canvas id="cwsiChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">Evolución de Temperaturas</div>
+            <div class="card-body">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Datos del CWSI desde el ViewModel
+            const cwsiData = JSON.parse('@Html.Raw(Model.CwsiChartDataJson)');
+            const ctxCswi = document.getElementById('cwsiChart').getContext('2d');
+            new Chart(ctxCswi, {
+                type: 'line',
+                data: cwsiData,
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, max: 1 } },
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                incipientStressLine: {
+                                    type: 'line',
+                                    yMin: @Model.CwsiThresholdIncipient,
+                                    yMax: @Model.CwsiThresholdIncipient,
+                                    borderColor: 'rgb(255, 159, 64)',
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    label: { content: 'Estrés Incipiente', enabled: true, position: 'end' }
+                                },
+                                criticalStressLine: {
+                                    type: 'line',
+                                    yMin: @Model.CwsiThresholdCritical,
+                                    yMax: @Model.CwsiThresholdCritical,
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    label: { content: 'Estrés Crítico', enabled: true, position: 'end' }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Datos de Temperatura desde el ViewModel
+            const tempData = JSON.parse('@Html.Raw(Model.TempChartDataJson)');
+            const ctxTemp = document.getElementById('tempChart').getContext('2d');
+            new Chart(ctxTemp, {
+                type: 'line',
+                data: tempData,
+                options: { responsive: true }
+            });
+        });
+    </script>
+}
