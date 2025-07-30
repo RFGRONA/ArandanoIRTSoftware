@@ -1,6 +1,6 @@
 using ArandanoIRT.Web._0_Domain.Common;
 
-namespace ArandanoIRT.Web._3_Presentation.ViewModels;
+namespace ArandanoIRT.Web._1_Application.DTOs.Analysis;
 
 public class AnomalyAlertViewModel
 {

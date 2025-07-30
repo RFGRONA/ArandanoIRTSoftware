@@ -1,6 +1,7 @@
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Alerts;
+using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._3_Presentation.ViewModels;
 using Microsoft.Extensions.Caching.Memory;
