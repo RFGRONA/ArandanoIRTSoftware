@@ -4,38 +4,62 @@
     Layout = "_AdminLayout";
 }
 
-<h1>@ViewData["Title"]</h1>
+@section Styles {
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+}
 
 @if (Model == null)
 {
     <div class="alert alert-warning">Planta no encontrada.</div>
-    <p><a asp-action="Index" class="btn btn-secondary">Volver al listado</a></p>
-    return; // Detiene la renderización si el modelo es null
+    <p><a asp-action="Index" class="btn btn-secondary-outline">Volver al listado</a></p>
 }
-@if (TempData["ErrorMessage"] != null)
+else
 {
-    <div class="alert alert-danger" role="alert">
-        @TempData["ErrorMessage"]
+    <div class="page-header">
+        <h1>@ViewData["Title"]</h1>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <div class="card delete-confirmation-card">
+                    <div class="card-body">
+                        <div class="delete-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>¿Estás seguro?</h3>
+                            <p class="lead">
+                                Estás a punto de eliminar permanentemente la planta:
+                                <strong class="item-to-delete">@Model.Name</strong>
+                            </p>
+                            <p class="text-muted">Esta acción no se puede deshacer.</p>
+                        </div>
+
+                        <hr class="my-4"/>
+
+                        <h5 class="details-title">Se eliminará la siguiente información:</h5>
+                        <dl class="row details-list mt-3">
+                            <dt class="col-sm-4">Nombre de la Planta</dt>
+                            <dd class="col-sm-8">@Model.Name</dd>
+
+                            <dt class="col-sm-4">Cultivo Asociado</dt>
+                            <dd class="col-sm-8">@Model.CropName</dd>
+                        </dl>
+                    </div>
+                    <div class="card-footer">
+                        <a asp-action="Index" class="btn btn-secondary-outline">No, Cancelar</a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-2"></i>Sí, Eliminar Permanentemente
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 }
-
-<h3>¿Estás seguro de que quieres eliminar la planta "@Model.Name"?</h3>
-<p class="text-danger">Esta acción no se puede deshacer.</p>
-
-<div>
-    <h4>Detalles de la Planta</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.Name)</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
-
-        <dt class = "col-sm-3">@Html.DisplayNameFor(model => model.CropName)</dt>
-        <dd class = "col-sm-9">@Html.DisplayFor(model => model.CropName)</dd>
-    </dl>
-
-    <form asp-action="Delete" method="post"> @* Asegúrate que el método sea POST *@
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Eliminar Definitivamente" class="btn btn-danger" /> |
-        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-    </form>
-</div>
