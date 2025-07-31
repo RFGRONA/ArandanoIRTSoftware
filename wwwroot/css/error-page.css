@@ -1,0 +1,115 @@
+:root {
+    --primary-color: #5D3EBF;
+    --background-color: #F8F9FA;
+    --card-background: #FFFFFF;
+    --text-color: #495057;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --card-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    --border-radius: 0.75rem;
+    --danger-color: #dc3545;
+}
+
+body {
+    background-color: var(--background-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.error-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.error-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    text-align: center;
+    padding: 3rem;
+    width: 100%;
+    max-width: 600px;
+}
+
+.error-icon {
+    font-size: 4rem;
+    color: var(--danger-color);
+    margin-bottom: 1.5rem;
+}
+
+.error-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 450px;
+    margin: 0 auto 2rem auto;
+}
+
+.request-id {
+    background-color: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+.request-id code {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.error-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+    max-width: 300px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #4a319a;
+    border-color: #4a319a;
+}
+
+.btn-secondary-outline {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary-outline:hover {
+    background-color: #f8f9fa;
+    color: var(--text-color);
+    border-color: #ced4da;
+}
