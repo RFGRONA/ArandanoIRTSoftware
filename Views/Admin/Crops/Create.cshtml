@@ -4,15 +4,31 @@
     Layout = "_AdminLayout";
 }
 
-<h1>@ViewData["Title"]</h1>
-<hr />
-<div class="row">
-    <div class="col-md-6">
+@section Styles {
+     <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" /> 
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
         <form asp-action="Create">
-            <partial name="_CropFormPartial" model="Model" />
-            <div class="form-group mt-3">
-                <input type="submit" value="Crear" class="btn btn-success" />
-                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            <div class="card form-card">
+                <div class="card-body">
+                    @* La vista parcial contendrá todos los campos del formulario. *@
+                    <partial name="_CropFormPartial" model="Model" />
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Index" class="btn btn-secondary-outline">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Crear Cultivo
+                    </button>
+                </div>
             </div>
         </form>
     </div>
