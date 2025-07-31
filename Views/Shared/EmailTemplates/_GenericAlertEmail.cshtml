@@ -1,13 +1,33 @@
-@model GenericAlertViewModel
+@model (string Title, string Message, DateTime AlertTime, string Severity)
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = Model.Title;
 
-<!DOCTYPE html>
-<html>
-<body>
-<div class="container">
-    <h2 style="color: @(Model.Severity == "Critical" ? "red" : "orange");">@Model.Title</h2>
-    <p>Se ha detectado la siguiente alerta en el sistema:</p>
-    <blockquote>@Model.Message</blockquote>
-    <p><strong>Fecha y Hora (UTC):</strong> @Model.AlertTime</p>
+    // Lógica para determinar el estilo de la alerta según la severidad
+    var alertStyle = "border-left: 4px solid #ffc107; background-color: #fff3cd;"; // Warning (amarillo) por defecto
+    var iconClass = "⚠️"; // Emoji de advertencia por defecto
+    var textColor = "#664d03";
+
+    if (Model.Severity.Equals("Critical", StringComparison.OrdinalIgnoreCase))
+    {
+        alertStyle = "border-left: 4px solid #dc3545; background-color: #f8d7da;"; // Critical (rojo)
+        iconClass = "🚨"; // Emoji de alerta crítica
+        textColor = "#842029";
+    }
+}
+
+<h1>@iconClass @Model.Title</h1>
+
+<p>Se ha detectado la siguiente alerta en el sistema:</p>
+
+<div style="@alertStyle padding: 16px; margin: 24px 0; border-radius: 8px;">
+    <p style="color: @textColor; font-weight: bold; margin: 0;">
+        @Model.Message
+    </p>
 </div>
-</body>
-</html>
+
+<p><strong>Fecha y Hora (UTC):</strong> @Model.AlertTime.ToString("F")</p>
+
+<p>Si tienes alguna duda, por favor, contacta a soporte.</p>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>

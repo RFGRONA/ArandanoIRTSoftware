@@ -1,0 +1,134 @@
+@*
+    Este es el Layout principal para todos los correos.
+    Define la estructura, el encabezado, el pie de página y los estilos generales.
+*@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>@ViewData["Title"]</title>
+    <style>
+        /* --- Estilos Generales --- */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f5f7;
+            font-family: Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        table {
+            border-spacing: 0;
+        }
+        td {
+            padding: 0;
+        }
+        img {
+            border: 0;
+        }
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f4f5f7;
+            padding: 40px 0;
+        }
+        .main {
+            background-color: #ffffff;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            border-spacing: 0;
+            font-family: Arial, sans-serif;
+            color: #4a4a4a;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .content {
+            padding: 48px;
+        }
+        h1, h2, p {
+            margin: 0;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #5D3EBF; /* Color primario */
+            margin-bottom: 24px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 24px;
+            margin-bottom: 16px;
+        }
+        a {
+            color: #5D3EBF;
+            text-decoration: underline;
+        }
+        /* --- Botón de Acción --- */
+        .button {
+            background-color: #5D3EBF;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        /* --- Código Destacado --- */
+        .code-box {
+            background-color: #f4f5f7;
+            border: 1px dashed #cccccc;
+            padding: 16px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 24px 0;
+        }
+        /* --- Cabecera y Pie de Página --- */
+        .header, .footer {
+            padding: 20px;
+            text-align: center;
+        }
+        .header {
+             background-color: #ffffff;
+             padding-top: 32px;
+        }
+        .footer {
+            background-color: #f4f5f7;
+        }
+        .footer p {
+            font-size: 12px;
+            color: #999999;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <center class="wrapper">
+        <table class="main" width="100%">
+            <!-- Encabezado con Logo -->
+            <tr>
+                <td class="header">
+                    <a href="#">
+                        <img src="https://i.imgur.com/dIVwFJa.png" alt="Arandano IRT Logo" width="64">
+                    </a>
+                </td>
+            </tr>
+            <!-- Contenido del Correo -->
+            <tr>
+                <td class="content">
+                    @RenderBody()
+                </td>
+            </tr>
+            <!-- Pie de Página -->
+            <tr>
+                <td class="footer">
+                    <p>&copy; @DateTime.Now.Year Arandano IRT. Todos los derechos reservados.</p>
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+</html>

@@ -1,0 +1,387 @@
+:root {
+            --primary-color: #5D3EBF;
+            --primary-light: #f4f2ff;
+            --background-color: #F8F9FA;
+            --card-background: #FFFFFF;
+            --text-color: #495057;
+            --text-muted: #6c757d;
+            --border-color: #e9ecef;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --border-radius: 0.75rem;
+            --success-color: #198754;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .form-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-card .card-body {
+            padding: 2rem;
+        }
+
+        .form-card .card-footer {
+            background-color: var(--background-color);
+            padding: 1rem 2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* Estilos generales para los formularios dentro de la tarjeta */
+        .form-label {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .form-control, .form-select {
+            border-radius: 0.5rem;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(93, 62, 191, 0.25);
+        }
+        
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: 1px solid var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #4a319a;
+            border-color: #4a319a;
+        }
+        
+        .btn-secondary-outline {
+            background-color: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary-outline:hover {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border-color: #ced4da;
+        }
+        /* Estilos para la lista de detalles */
+        .details-list dt {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .details-list dd {
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Estilos para las tarjetas de parámetros */
+        .parameter-card {
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            height: 100%;
+        }
+
+        .parameter-card h6 {
+            font-weight: 600;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .parameter-card dl dt {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .parameter-card dl dd {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: #000;
+            border: 1px solid var(--warning-color);
+        }
+        
+        .btn-warning:hover {
+            background-color: #ffca2c;
+            border-color: #ffca2c;
+        }
+        
+        .btn-secondary-outline {
+            background-color: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary-outline:hover {
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            border-color: #ced4da;
+        }
+
+
+/* =============================================
+   ESTILOS PARA PÁGINAS DE DETALLES (READ)
+   ============================================= */
+
+.details-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.details-card .card-body {
+    padding: 2.5rem;
+}
+
+.details-card .card-footer {
+    background-color: var(--background-color);
+    padding: 1.25rem 2.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Estilos para la lista de detalles principal */
+.details-list dt {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.details-list dd {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+/* Título de la sección de parámetros */
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Estilos para las tarjetas de parámetros */
+.parameter-card {
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.75rem;
+    height: 100%;
+}
+
+.parameter-card h6 {
+    font-weight: 700;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.parameter-card dl dt {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.parameter-card dl dd {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+/* =============================================
+ESTILOS PARA PÁGINAS DE ELIMINACIÓN (DELETE)
+============================================= */
+
+.delete-confirmation-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    border-left: 5px solid var(--danger-color); /* Borde distintivo de peligro */
+}
+
+.delete-confirmation-card .card-body {
+    padding: 2.5rem;
+}
+
+.delete-confirmation-card .card-footer {
+    background-color: var(--background-color);
+    padding: 1.25rem 2.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.delete-warning {
+    text-align: center;
+}
+
+.delete-warning .fa-exclamation-triangle {
+    color: var(--danger-color);
+    font-size: 3.7rem;
+    
+}
+
+.delete-warning h3 {
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.details-title {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: rgb(216, 0, 0);
+    border: 1px solid var(--danger-color);
+}
+
+.btn-danger:hover {
+    background-color: #b02a37;
+    border-color: #a52834;
+}
+/* Estilos extras para mejor legibilidad en plants/details  */
+
+        .details-list .detail-item {
+            padding: 1.25rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .details-list .detail-item:last-of-type {
+            border-bottom: none;
+        }
+
+        .details-list dt {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .details-list dd {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0;
+        }
+
+        .status-badge {
+            padding: 0.4em 0.9em;
+            font-size: 0.8em;
+            font-weight: 600;
+            border-radius: 50px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .status-healthy { background-color: #198754; }
+        .status-mild-stress { background-color: #ffc107; color: #000; }
+        .status-severe-stress { background-color: #dc3545; }
+        .status-recovering { background-color: #0dcaf0; color: #000; }
+        .status-default { background-color: #6c757d; }
+ 
+/* Vistas adicionales para mejorar el Device/details */
+
+        .details-list .detail-item {
+            padding: 1.25rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .details-list .detail-item:last-of-type {
+            border-bottom: none;
+        }
+
+        .details-list dt {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .details-list dd {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0;
+        }
+
+        .status-badge {
+            padding: 0.4em 0.9em;
+            font-size: 0.8em;
+            font-weight: 600;
+            border-radius: 50px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .status-active { background-color: #198754; }
+        .status-inactive { background-color: #6c757d; }
+        .status-error { background-color: #dc3545; }
+        .status-unassigned { background-color: #ffc107; color: #000; }
+

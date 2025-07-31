@@ -1,20 +1,32 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Analysis.MaskCreationAlertViewModel
+@model (string UserName, List<string> PlantNames, string CtaButtonUrl)
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Acción Requerida: Crear Máscaras Térmicas";
+}
 
-<!DOCTYPE html>
-<html>
-<body>
-<h2>Acción Requerida: Crear Máscaras Térmicas</h2>
-<p>Hola @Model.UserName,</p>
+<h1>🎯 Acción Requerida: Crear Máscaras Térmicas</h1>
+
+<p>Hola, @Model.UserName,</p>
+
 <p>Para mejorar la precisión de los análisis de estrés hídrico, las siguientes plantas requieren que se defina su máscara térmica:</p>
-<ul>
-    @foreach (var name in Model.PlantNames)
-    {
-        <li>@name</li>
-    }
-</ul>
-<p>Puedes crear las máscaras desde el panel de cada planta.</p>
-<a href="@Model.CtaButtonUrl" style="padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
-    Ir al listado de Plantas
-</a>
-</body>
-</html>
+
+<div style="background-color: #f4f5f7; border-radius: 8px; padding: 20px; margin: 24px 0;">
+    <ul style="margin: 0; padding-left: 20px;">
+        @foreach (var name in Model.PlantNames)
+        {
+            <li style="font-size: 16px; line-height: 24px; margin-bottom: 8px; color: #4a4a4a;">@name</li>
+        }
+    </ul>
+</div>
+
+<p>Puedes crear las máscaras desde el panel de cada planta. Haz clic en el siguiente botón para ir al listado de plantas y comenzar.</p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
+    <tr>
+        <td align="center">
+            <a href="@Model.CtaButtonUrl" class="button">Ir al Listado de Plantas</a>
+        </td>
+    </tr>
+</table>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>
