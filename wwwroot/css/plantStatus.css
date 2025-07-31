@@ -99,4 +99,5 @@
         .status-severe-stress { background-color: var(--danger-color); }
         .status-recovering { background-color: var(--info-color); color: #000; }
         .status-default { background-color: var(--text-muted); }
+        .status-unknown { background-color: #6c757d; color: white; }
 

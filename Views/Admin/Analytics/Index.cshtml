@@ -77,7 +77,7 @@
                                 </td>
                                 <td>
                                     <a asp-action="Details" asp-route-id="@plant.Id" 
-                                       class="btn btn-primary btn-sm @(crop.IsConfigurationValid ? "" : "disabled")"
+                                       class="btn btn-primary btn-sm @(!crop.IsConfigurationValid || !plant.HasMask ? "disabled" : "")"
                                        title="Analizar">
                                         <i class="fas fa-chart-line"></i> Analizar
                                     </a>

@@ -113,6 +113,11 @@ public class AnalyticsService : IAnalyticsService
         // 1. Validar la configuración del cultivo
         var plant = await _context.Plants.Include(p => p.Crop).FirstOrDefaultAsync(p => p.Id == plantId);
         if (plant == null) return Result.Failure<AnalysisDetailsViewModel>("Planta no encontrada.");
+        
+        if (string.IsNullOrEmpty(plant.ThermalMaskData))
+        {
+            return Result.Failure<AnalysisDetailsViewModel>("La planta no tiene una máscara térmica definida y no puede ser analizada.");
+        }
 
         var cropPlants = await _context.Plants.Where(p => p.CropId == plant.CropId).ToListAsync();
         if (!cropPlants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL) ||
@@ -122,8 +127,13 @@ public class AnalyticsService : IAnalyticsService
         }
 
         // 2. Definir rango de fechas (default: últimos 7 días)
-        var finalEndDate = endDate ?? DateTime.UtcNow;
-        var finalStartDate = startDate ?? finalEndDate.AddDays(-7);
+        var finalEndDate = endDate.HasValue 
+            ? endDate.Value.ToColombiaTime().AddDays(1).AddTicks(-1).ToUniversalTime()
+            : DateTime.UtcNow;
+
+        var finalStartDate = startDate.HasValue 
+            ? startDate.Value.ToColombiaTime().ToUniversalTime()
+            : finalEndDate.AddDays(-7);
 
         // 3. Obtener datos de análisis
         var analysisData = await _context.AnalysisResults

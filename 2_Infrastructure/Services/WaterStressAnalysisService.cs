@@ -1,7 +1,6 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
-using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
@@ -67,25 +66,35 @@ public class WaterStressAnalysisService : BackgroundService
         var dataQueryService = services.GetRequiredService<IDataQueryService>();
         var environmentalDataProvider = services.GetRequiredService<IEnvironmentalDataProvider>();
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        var alertTriggerService = services.GetRequiredService<IAlertTriggerService>();
 
-        // 1. Obtener plantas para el análisis
-        var allPlantIds = await dbContext.Plants
+        // 1. Obtener plantas y validar la configuración del cultivo
+        var plantsInCrop = await dbContext.Plants
             .Where(p => p.CropId == crop.Id)
-            .Select(p => p.Id)
             .ToListAsync(token);
 
-        if (!allPlantIds.Any()) return;
+        var hasControl = plantsInCrop.Any(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL);
+        var hasStress = plantsInCrop.Any(p => p.ExperimentalGroup == ExperimentalGroupType.STRESS);
+        var hasMonitored = plantsInCrop.Any(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED);
 
+        if (!hasControl || !hasStress || !hasMonitored)
+        {
+            _logger.LogWarning("El cultivo {CropName} no puede ser analizado. Se requiere al menos una planta de tipo 'Control', 'Stress' y 'Monitored'.", crop.Name);
+            return; // Detenemos el análisis para este cultivo
+        }
+
+        // 2. Obtener datos crudos
+        var allPlantIds = plantsInCrop.Select(p => p.Id).ToList();
         var startTime = nowUtc.AddMinutes(-_settings.AnalysisIntervalMinutes);
         var rawDataResult = await dataQueryService.GetRawDataForAnalysisAsync(allPlantIds, startTime, nowUtc);
         if (rawDataResult.IsFailure || !rawDataResult.Value.Any()) return;
 
         var plantsData = rawDataResult.Value;
 
-        // 2. Validar condiciones ambientales (usando el primer dato ambiental que encontremos como referencia)
+        // 3. Validar condiciones ambientales
         var referenceReading = plantsData.SelectMany(p => p.EnvironmentalReadings).FirstOrDefault();
         if (referenceReading == null) return;
-        
+    
         var lightValue = GetLightValueFromJson(referenceReading.ExtraData);
         var envDataResult = await environmentalDataProvider.GetEnvironmentalDataForAnalysisAsync(
             crop.CityName, lightValue, parameters.LightIntensityThreshold, referenceReading.Temperature, referenceReading.Humidity);
@@ -97,7 +106,7 @@ public class WaterStressAnalysisService : BackgroundService
         }
         var envData = envDataResult.Value;
 
-        // 3. Calcular Líneas Base T_wet y T_dry
+        // 4. Calcular Líneas Base T_wet y T_dry
         var controlPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.CONTROL);
         var stressPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.STRESS);
 
@@ -113,7 +122,7 @@ public class WaterStressAnalysisService : BackgroundService
         double tWet = wetTemperatures.Average();
         double tDry = dryTemperatures.Max();
 
-        // 4. Analizar cada planta 'Monitored'
+        // 5. Analizar cada planta 'Monitored'
         var monitoredPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.MONITORED);
         foreach (var plantData in monitoredPlantsData)
         {
@@ -123,9 +132,10 @@ public class WaterStressAnalysisService : BackgroundService
             double cwsi = (tDry - tWet > 0) ? (plantTc.Value - tWet) / (tDry - tWet) : 0;
             cwsi = Math.Clamp(cwsi, 0, 1); // Asegurar que el valor esté entre 0 y 1
 
-            var newStatus = DetermineStatus(cwsi, parameters, plantData.Plant.Status);
+            var previousStatus = plantData.Plant.Status; 
+            var newStatus = DetermineStatus(cwsi, parameters, previousStatus);
             
-            // 5. Guardar resultado y disparar alerta si es necesario
+            // 6. Guardar resultado y disparar alerta si es necesario
             var analysisResult = new AnalysisResult
             {
                 PlantId = plantData.Plant.Id,
@@ -141,12 +151,26 @@ public class WaterStressAnalysisService : BackgroundService
             
             dbContext.AnalysisResults.Add(analysisResult);
             
-            if (newStatus != plantData.Plant.Status)
+            if (newStatus != previousStatus)
             {
-                plantData.Plant.Status = newStatus;
-                plantData.Plant.UpdatedAt = nowUtc;
-                dbContext.Plants.Update(plantData.Plant);
-                // TODO: Llamar a IAlertTriggerService
+                // --- INICIO DE LA CORRECCIÓN ---
+                // Llamar al servicio de alertas ANTES de cambiar el estado en la base de datos
+                await alertTriggerService.TriggerStressAlertAsync(
+                    plantData.Plant.Id,
+                    plantData.Plant.Name,
+                    newStatus,
+                    previousStatus,
+                    (float)cwsi
+                );
+            
+                // Actualizar el estado de la planta en la entidad
+                var plantToUpdate = await dbContext.Plants.FindAsync(plantData.Plant.Id);
+                if(plantToUpdate != null)
+                {
+                    plantToUpdate.Status = newStatus;
+                    plantToUpdate.UpdatedAt = nowUtc;
+                }
+                // --- FIN DE LA CORRECCIÓN ---
             }
         }
         

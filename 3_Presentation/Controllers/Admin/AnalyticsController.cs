@@ -13,13 +13,15 @@ public class AnalyticsController : BaseAdminController
     private readonly IDataQueryService _dataQueryService;
     private readonly IAnalyticsService _analyticsService;
     private readonly IPdfGeneratorService _pdfGeneratorService;
+    private readonly IAlertService _alertService;
 
-    public AnalyticsController(IPlantService plantService, IDataQueryService dataQueryService, IAnalyticsService analyticsService, IPdfGeneratorService pdfGeneratorService)
+    public AnalyticsController(IPlantService plantService, IDataQueryService dataQueryService, IAnalyticsService analyticsService, IPdfGeneratorService pdfGeneratorService, IAlertService alertService)
     {
         _plantService = plantService;
         _dataQueryService = dataQueryService;
         _analyticsService = analyticsService;
         _pdfGeneratorService = pdfGeneratorService;
+        _alertService = alertService;
     }
     
     public async Task<IActionResult> Index()
@@ -77,20 +79,22 @@ public class AnalyticsController : BaseAdminController
         }
 
         var captureResult = await _dataQueryService.GetLatestCaptureForMaskAsync(id);
-        if (captureResult.IsFailure || captureResult.Value == null)
+        if (captureResult.IsFailure || captureResult.Value.Stats == null)
         {
-            TempData[ErrorMessageKey] = "No se encontró una captura térmica con imagen RGB para esta planta.";
+            TempData["ErrorMessage"] = "No se encontró una captura térmica con imagen RGB y matriz de datos para esta planta.";
             return RedirectToAction("Details", "Plants", new { id });
         }
+    
+        var (stats, imagePath) = captureResult.Value; 
 
-        var viewModel = new MaskCreatorViewModel()
+        var viewModel = new MaskCreatorViewModel
         {
             PlantId = plantResult.Value.Id,
             PlantName = plantResult.Value.Name,
-            RgbImagePath = captureResult.Value.RgbImagePath,
-            Temperatures = captureResult.Value.Temperatures,
-            MinTemp = captureResult.Value.Min_Temp,
-            MaxTemp = captureResult.Value.Max_Temp,
+            RgbImagePath = imagePath, 
+            Temperatures = stats.Temperatures,
+            MinTemp = stats.Min_Temp,
+            MaxTemp = stats.Max_Temp,
             ExistingMaskJson = plantResult.Value.ThermalMaskData ?? "[]"
         };
         
@@ -103,5 +107,29 @@ public class AnalyticsController : BaseAdminController
     {
         var result = await _analyticsService.SaveThermalMaskAsync(plantId, coordinates);
         return HandleServiceResult(result, "Details", new { controller = "Plants", id = plantId });
+    }
+    
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendReportByEmail(int plantId, DateTime startDate, DateTime endDate, string recipientEmail)
+    {
+        var plant = await _plantService.GetPlantByIdAsync(plantId); // Necesitamos el nombre de la planta
+        if (plant.IsFailure || plant.Value == null)
+        {
+            TempData["ErrorMessage"] = "No se pudo encontrar la planta para enviar el reporte.";
+            return RedirectToAction("Index");
+        }
+
+        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, startDate, endDate);
+        if (pdfBytes == null || pdfBytes.Length == 0)
+        {
+            TempData["ErrorMessage"] = "No se pudo generar el reporte para enviar.";
+            return RedirectToAction("Details", new { id = plantId, startDate, endDate });
+        }
+        
+        await _alertService.SendReportByEmailAsync(recipientEmail, plant.Value.Name, pdfBytes);
+        
+        TempData["SuccessMessage"] = $"Reporte enviado exitosamente a {recipientEmail}.";
+        return RedirectToAction("Details", new { id = plantId, startDate, endDate });
     }
 }

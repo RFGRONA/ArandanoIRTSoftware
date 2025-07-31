@@ -23,8 +23,12 @@ public interface IAlertService
     Task SendAuthenticatedHelpRequestEmailAsync(AuthenticatedHelpRequestDto request, User requestingUser,
         List<User> adminsToNotify);
 
-    // --- Alertas del Sistema ---
+    // --- Alerta Genérica ---
     Task SendGenericAlertEmailAsync(string email, string name, GenericAlertViewModel model);
+    
+    // --- Alertas de Análisis ---
     Task SendAnomalyAlertEmailAsync(string recipientEmail, AnomalyAlertViewModel viewModel);
     Task SendMaskCreationAlertEmailAsync(string recipientEmail, MaskCreationAlertViewModel viewModel);
+    Task SendStressAlertEmailAsync(string recipientEmail, StressAlertViewModel viewModel);
+    Task SendReportByEmailAsync(string recipientEmail, string plantName, byte[] pdfAttachment);
 }

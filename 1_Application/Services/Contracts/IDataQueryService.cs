@@ -36,5 +36,5 @@ public interface IDataQueryService
     Task<Result<int>> GetMonitoredPlantsCountAsync(int? cropId); 
     Task<Result<SensorDataDisplayDto?>> GetLatestAmbientDataAsync(int? cropId, int? plantId, int? deviceId);
     Task<Result<List<PlantRawDataDto>>> GetRawDataForAnalysisAsync(List<int> plantIds, DateTime startTime, DateTime endTime);
-    Task<Result<ThermalDataDto?>> GetLatestCaptureForMaskAsync(int plantId);
+    Task<Result<(ThermalDataDto? Stats, string? ImagePath)>> GetLatestCaptureForMaskAsync(int plantId);
 }

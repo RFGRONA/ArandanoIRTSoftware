@@ -508,33 +508,29 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    public async Task<Result<ThermalDataDto?>> GetLatestCaptureForMaskAsync(int plantId)
+    public async Task<Result<(ThermalDataDto? Stats, string? ImagePath)>> GetLatestCaptureForMaskAsync(int plantId)
     {
         try
         {
-            // La consulta original estaba en la línea 485
-            var latestCaptureJson = await _context.ThermalCaptures
+            var latestCapture = await _context.ThermalCaptures
                 .AsNoTracking()
-                // CORRECCIÓN: Se reemplaza .Contains() por EF.Functions.JsonExists()
-                .Where(tc => tc.PlantId == plantId
-                             && tc.RgbImagePath != null
-                             && EF.Functions.JsonExists(tc.ThermalDataStats,
-                                 "temperatures")) // <-- ESTA ES LA LÍNEA CORREGIDA
+                .Where(tc => tc.PlantId == plantId && tc.RgbImagePath != null && EF.Functions.JsonExists(tc.ThermalDataStats, "temperatures"))
                 .OrderByDescending(tc => tc.RecordedAtServer)
-                .Select(tc => tc.ThermalDataStats)
+                .Select(tc => new { tc.ThermalDataStats, tc.RgbImagePath }) // Seleccionamos ambos campos
                 .FirstOrDefaultAsync();
 
-            if (string.IsNullOrEmpty(latestCaptureJson))
-                // Este return es correcto, significa que no se encontró ninguna captura que cumpla los requisitos
-                return Result.Success<ThermalDataDto?>(null);
+            if (latestCapture == null)
+            {
+                return Result.Success<(ThermalDataDto? Stats, string? ImagePath)>((null, null));
+            }
 
-            var thermalStats = DeserializeThermalStats(latestCaptureJson, 0);
-            return Result.Success(thermalStats);
+            var thermalStats = DeserializeThermalStats(latestCapture.ThermalDataStats, 0);
+            return Result.Success((thermalStats, latestCapture.RgbImagePath));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error obteniendo la última captura para la máscara de la planta {PlantId}", plantId);
-            return Result.Failure<ThermalDataDto?>("Error interno al obtener datos de la captura.");
+            return Result.Failure<(ThermalDataDto? Stats, string? ImagePath)>("Error interno al obtener datos de la captura.");
         }
     }
 
