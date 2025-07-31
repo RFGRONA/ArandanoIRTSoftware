@@ -1,35 +1,32 @@
-@model InvitationCode
+@model ArandanoIRT.Web._0_Domain.Entities.InvitationCode
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Invitación para unirte a Arandano IRT";
+}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
+<h1>¡Has sido invitado a Arandano IRT!</h1>
 
-        .container {
-            padding: 20px;
-            border: 1px solid #ddd;
-        }
+<p>Hola,</p>
 
-        .code {
-            background-color: #f2f2f2;
-            padding: 10px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h2>¡Has sido invitado a Arandano IRT!</h2>
-    <p>Hola,</p>
-    <p>Has recibido una invitación para unirte a la plataforma de monitoreo Arandano IRT.</p>
-    <p>Usa el siguiente código de un solo uso para completar tu registro:</p>
-    <p class="code">@Model.Code</p>
-    <p>Este código expirará el <strong>@Model.ExpiresAt.ToString("f") (UTC)</strong>.</p>
-    <p>Para registrarte, ve a la página de registro y proporciona este código.</p>
-    <p>Gracias,<br>El equipo de Arandano IRT</p>
+<p>Has recibido una invitación para crear una cuenta en la plataforma de monitoreo Arandano IRT. Para completar tu registro, utiliza el siguiente código de un solo uso:</p>
+
+<div class="code-box">
+    @Model.Code
 </div>
-</body>
-</html>
+
+<p>Este código expirará el <strong>@Model.ExpiresAt.ToString("f") (UTC)</strong>.</p>
+
+<p>Para registrarte, haz clic en el botón de abajo y proporciona este código cuando se te solicite.</p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+    <tr>
+        <td align="center">
+            @* AQUI SE CAMBIARA PARA QUE SE PUEDA REGISTRAR UN USUARIO *@
+            <a href="@ViewData["RegistrationLink"]" class="button">Crear mi Cuenta</a>
+        </td>
+    </tr>
+</table>
+
+<p>Si no esperabas esta invitación, puedes ignorar este correo de forma segura.</p>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>

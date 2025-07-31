@@ -1,57 +1,27 @@
-@* El modelo será una tupla: (AuthenticatedHelpRequestDto Request, User RequestingUser) *@
+@using ArandanoIRT.Web._0_Domain.Entities
 @model (ArandanoIRT.Web._1_Application.DTOs.Admin.AuthenticatedHelpRequestDto Request, User RequestingUser)
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Nueva Solicitud de Ayuda (Usuario Registrado)";
+}
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            color: #333;
-        }
+<h1>Nueva Solicitud de Ayuda (Usuario Registrado)</h1>
 
-        .container {
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            max-width: 600px;
-        }
+<p>Se ha recibido una nueva solicitud de ayuda de un usuario autenticado con la siguiente información:</p>
 
-        .header {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0; background-color: #f4f5f7; border-radius: 8px; padding: 20px;">
+    <tr>
+        <td>
+            <p style="margin-bottom: 12px;"><strong>Asunto:</strong> @Model.Request.Subject</p>
+            <hr style="border: none; border-top: 1px solid #dddddd; margin: 16px 0;">
+            <p style="margin-bottom: 12px;"><strong>Nombre:</strong> @Model.RequestingUser.FirstName @Model.RequestingUser.LastName</p>
+            <p style="margin-bottom: 12px;"><strong>Email:</strong> <a href="mailto:@Model.RequestingUser.Email">@Model.RequestingUser.Email</a></p>
+            <p style="margin-bottom: 12px;"><strong>ID de Usuario:</strong> @Model.RequestingUser.Id</p>
+            <hr style="border: none; border-top: 1px solid #dddddd; margin: 16px 0;">
+            <p style="margin-bottom: 8px;"><strong>Mensaje:</strong></p>
+            <p style="margin: 0;">@Model.Request.Message</p>
+        </td>
+    </tr>
+</table>
 
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        li {
-            margin-bottom: 10px;
-        }
-
-        b {
-            color: #0056b3;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h3>Nueva Solicitud de Ayuda (Usuario Registrado)</h3>
-    </div>
-    <h4>Asunto: @Model.Request.Subject</h4>
-    <hr>
-    <p>Se ha recibido una nueva solicitud de ayuda de un usuario autenticado:</p>
-    <ul>
-        <li><b>Nombre:</b> @Model.RequestingUser.FirstName @Model.RequestingUser.LastName</li>
-        <li><b>Email:</b> @Model.RequestingUser.Email</li>
-        <li><b>ID de Usuario:</b> @Model.RequestingUser.Id</li>
-    </ul>
-    <p><b>Mensaje:</b></p>
-    <p>@Model.Request.Message</p>
-</div>
-</body>
-</html>
+<p>Por favor, revisa y responde a esta solicitud a la brevedad posible.</p>
