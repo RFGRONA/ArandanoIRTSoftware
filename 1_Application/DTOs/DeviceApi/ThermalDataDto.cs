@@ -25,6 +25,6 @@ public class ThermalDataDto
     // [EnsureThermalArraySize(ErrorMessage = "El array de temperaturas debe contener 768 elementos.")]
 
     public DateTime? RecordedAtDevice { get; set; }
-    
+
     public string? RgbImagePath { get; set; }
 }

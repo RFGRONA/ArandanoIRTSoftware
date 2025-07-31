@@ -30,8 +30,10 @@ public class AnalyticsService : IAnalyticsService
         try
         {
             // Creamos el objeto JSON final que se almacenará en la base de datos
-            var maskObject = new {
-                thermal_mask = new {
+            var maskObject = new
+            {
+                thermal_mask = new
+                {
                     type = "points",
                     coordinates = JsonSerializer.Deserialize<object>(maskCoordinatesJson)
                 }
@@ -39,7 +41,7 @@ public class AnalyticsService : IAnalyticsService
 
             plant.ThermalMaskData = JsonSerializer.Serialize(maskObject);
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Máscara térmica guardada exitosamente para la planta {PlantId}", plantId);
             return Result.Success();
         }
@@ -49,7 +51,7 @@ public class AnalyticsService : IAnalyticsService
             return Result.Failure("Error al procesar y guardar la máscara.");
         }
     }
-    
+
     public async Task<Result<List<CropMonitorViewModel>>> GetCropsForMonitoringAsync()
     {
         try
@@ -95,7 +97,7 @@ public class AnalyticsService : IAnalyticsService
                         HasMask = !string.IsNullOrEmpty(plant.ThermalMaskData)
                     });
                 }
-                
+
                 resultList.Add(cropViewModel);
             }
 
@@ -107,13 +109,13 @@ public class AnalyticsService : IAnalyticsService
             return Result.Failure<List<CropMonitorViewModel>>("Error interno al preparar los datos de monitoreo.");
         }
     }
-    
+
     public async Task<Result<AnalysisDetailsViewModel>> GetAnalysisDetailsAsync(int plantId, DateTime? startDate, DateTime? endDate)
     {
         // 1. Validar la configuración del cultivo
         var plant = await _context.Plants.Include(p => p.Crop).FirstOrDefaultAsync(p => p.Id == plantId);
         if (plant == null) return Result.Failure<AnalysisDetailsViewModel>("Planta no encontrada.");
-        
+
         if (string.IsNullOrEmpty(plant.ThermalMaskData))
         {
             return Result.Failure<AnalysisDetailsViewModel>("La planta no tiene una máscara térmica definida y no puede ser analizada.");
@@ -127,11 +129,11 @@ public class AnalyticsService : IAnalyticsService
         }
 
         // 2. Definir rango de fechas (default: últimos 7 días)
-        var finalEndDate = endDate.HasValue 
+        var finalEndDate = endDate.HasValue
             ? endDate.Value.ToColombiaTime().AddDays(1).AddTicks(-1).ToUniversalTime()
             : DateTime.UtcNow;
 
-        var finalStartDate = startDate.HasValue 
+        var finalStartDate = startDate.HasValue
             ? startDate.Value.ToColombiaTime().ToUniversalTime()
             : finalEndDate.AddDays(-7);
 
@@ -144,8 +146,9 @@ public class AnalyticsService : IAnalyticsService
 
         // 4. Formatear datos para Chart.js
         var labels = analysisData.Select(ar => ar.RecordedAt.ToColombiaTime().ToString("dd/MM HH:mm")).ToList();
-        
-        var cwsiChartData = new {
+
+        var cwsiChartData = new
+        {
             labels,
             datasets = new[] {
                 new {
@@ -157,7 +160,8 @@ public class AnalyticsService : IAnalyticsService
             }
         };
 
-        var tempChartData = new {
+        var tempChartData = new
+        {
             labels,
             datasets = new[] {
                 new {

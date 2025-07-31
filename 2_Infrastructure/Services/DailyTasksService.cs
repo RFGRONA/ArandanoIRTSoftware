@@ -34,115 +34,115 @@ public class DailyTasksService : BackgroundService
         // El timer se ejecutará cada hora, pero la lógica interna solo correrá a las 6 AM.
         using var timer = new PeriodicTimer(TimeSpan.FromHours(1));
         _logger.LogInformation("Servicio de Tareas Diarias iniciado.");
-        
+
         while (await timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
         {
             if (DateTime.UtcNow.ToColombiaTime().Hour != 6)
             {
                 continue; // Solo ejecutar a las 6:00 AM hora de Colombia
             }
-            
+
             _logger.LogInformation("Ejecutando ciclo de tareas diarias...");
 
             await using var scope = _scopeFactory.CreateAsyncScope();
-            
+
             await RunAnomalyDetectionAsync(scope.ServiceProvider, stoppingToken);
             await RunMaskCreationCheckAsync(scope.ServiceProvider, stoppingToken);
-            
+
             _logger.LogInformation("Ciclo de tareas diarias completado.");
         }
     }
 
     private async Task RunAnomalyDetectionAsync(IServiceProvider services, CancellationToken token)
-{
-    var dbContext = services.GetRequiredService<ApplicationDbContext>();
-    var alertTriggerService = services.GetRequiredService<IAlertTriggerService>();
-    
-    var yesterday = DateTime.UtcNow.AddDays(-1);
-    var startTime = new DateTime(yesterday.Year, yesterday.Month, yesterday.Day, 20, 0, 0, DateTimeKind.Utc);
-    var endTime = startTime.AddHours(10); // Desde las 8 PM hasta las 6 AM del día siguiente
-
-    // Incluimos tanto lecturas ambientales como capturas térmicas
-    var plantsData = await dbContext.Plants
-        .Include(p => p.EnvironmentalReadings
-            .Where(er => er.RecordedAtServer >= startTime && er.RecordedAtServer < endTime)
-            .OrderBy(er => er.RecordedAtServer))
-        .Include(p => p.ThermalCaptures
-            .Where(tc => tc.RecordedAtServer >= startTime && tc.RecordedAtServer < endTime)
-            .OrderBy(tc => tc.RecordedAtServer))
-        .ToListAsync(token);
-
-    foreach (var plant in plantsData)
     {
-        int consecutiveAnomalies = 0;
-        
-        // No podemos analizar si no hay datos de ambos tipos
-        if (!plant.EnvironmentalReadings.Any() || !plant.ThermalCaptures.Any()) continue;
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        var alertTriggerService = services.GetRequiredService<IAlertTriggerService>();
 
-        // Iteramos sobre las lecturas ambientales y buscamos la captura térmica más cercana
-        foreach (var reading in plant.EnvironmentalReadings)
+        var yesterday = DateTime.UtcNow.AddDays(-1);
+        var startTime = new DateTime(yesterday.Year, yesterday.Month, yesterday.Day, 20, 0, 0, DateTimeKind.Utc);
+        var endTime = startTime.AddHours(10); // Desde las 8 PM hasta las 6 AM del día siguiente
+
+        // Incluimos tanto lecturas ambientales como capturas térmicas
+        var plantsData = await dbContext.Plants
+            .Include(p => p.EnvironmentalReadings
+                .Where(er => er.RecordedAtServer >= startTime && er.RecordedAtServer < endTime)
+                .OrderBy(er => er.RecordedAtServer))
+            .Include(p => p.ThermalCaptures
+                .Where(tc => tc.RecordedAtServer >= startTime && tc.RecordedAtServer < endTime)
+                .OrderBy(tc => tc.RecordedAtServer))
+            .ToListAsync(token);
+
+        foreach (var plant in plantsData)
         {
-            var closestCapture = plant.ThermalCaptures
-                .OrderBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalSeconds))
-                .FirstOrDefault();
+            int consecutiveAnomalies = 0;
 
-            // Si no hay captura térmica cercana (ej. a menos de 5 min), no podemos comparar
-            if (closestCapture == null || Math.Abs((closestCapture.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) > 5)
-            {
-                consecutiveAnomalies = 0; // Rompemos la racha si no hay datos
-                continue;
-            }
+            // No podemos analizar si no hay datos de ambos tipos
+            if (!plant.EnvironmentalReadings.Any() || !plant.ThermalCaptures.Any()) continue;
 
-            var thermalStats = DeserializeThermalStats(closestCapture.ThermalDataStats);
-            if (thermalStats?.Avg_Temp == null)
+            // Iteramos sobre las lecturas ambientales y buscamos la captura térmica más cercana
+            foreach (var reading in plant.EnvironmentalReadings)
             {
-                consecutiveAnomalies = 0;
-                continue;
-            }
+                var closestCapture = plant.ThermalCaptures
+                    .OrderBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalSeconds))
+                    .FirstOrDefault();
 
-            var canopyTemp = thermalStats.Avg_Temp;
-            var airTemp = reading.Temperature;
-            
-            if ((canopyTemp - airTemp) > _anomalySettings.DeltaTThreshold)
-            {
-                consecutiveAnomalies++;
-            }
-            else
-            {
-                consecutiveAnomalies = 0;
-            }
-
-            if (consecutiveAnomalies >= 4)
-            {
-                // Solo actualizamos y alertamos si el estado actual no es ya 'UNKNOWN'
-                if (plant.Status != PlantStatus.UNKNOWN)
+                // Si no hay captura térmica cercana (ej. a menos de 5 min), no podemos comparar
+                if (closestCapture == null || Math.Abs((closestCapture.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) > 5)
                 {
-                    _logger.LogWarning("Anomalía detectada para la planta {PlantName}", plant.Name);
-                    plant.Status = PlantStatus.UNKNOWN;
-                    dbContext.Update(plant);
-                    await dbContext.SaveChangesAsync(token);
-                    await alertTriggerService.TriggerAnomalyAlertAsync(plant.Id, plant.Name);
+                    consecutiveAnomalies = 0; // Rompemos la racha si no hay datos
+                    continue;
                 }
-                break; // Pasamos a la siguiente planta
+
+                var thermalStats = DeserializeThermalStats(closestCapture.ThermalDataStats);
+                if (thermalStats?.Avg_Temp == null)
+                {
+                    consecutiveAnomalies = 0;
+                    continue;
+                }
+
+                var canopyTemp = thermalStats.Avg_Temp;
+                var airTemp = reading.Temperature;
+
+                if ((canopyTemp - airTemp) > _anomalySettings.DeltaTThreshold)
+                {
+                    consecutiveAnomalies++;
+                }
+                else
+                {
+                    consecutiveAnomalies = 0;
+                }
+
+                if (consecutiveAnomalies >= 4)
+                {
+                    // Solo actualizamos y alertamos si el estado actual no es ya 'UNKNOWN'
+                    if (plant.Status != PlantStatus.UNKNOWN)
+                    {
+                        _logger.LogWarning("Anomalía detectada para la planta {PlantName}", plant.Name);
+                        plant.Status = PlantStatus.UNKNOWN;
+                        dbContext.Update(plant);
+                        await dbContext.SaveChangesAsync(token);
+                        await alertTriggerService.TriggerAnomalyAlertAsync(plant.Id, plant.Name);
+                    }
+                    break; // Pasamos a la siguiente planta
+                }
             }
         }
     }
-}
 
-// Necesitamos este método auxiliar dentro de DailyTasksService
-private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson)
-{
-    if (string.IsNullOrEmpty(thermalDataJson)) return null;
-    try
+    // Necesitamos este método auxiliar dentro de DailyTasksService
+    private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson)
     {
-        return System.Text.Json.JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (string.IsNullOrEmpty(thermalDataJson)) return null;
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "No se pudo deserializar ThermalDataStats en DailyTasksService.");
+            return null;
+        }
     }
-    catch (JsonException ex)
-    {
-        _logger.LogWarning(ex, "No se pudo deserializar ThermalDataStats en DailyTasksService.");
-        return null;
-    }
-}
 
     private async Task RunMaskCreationCheckAsync(IServiceProvider services, CancellationToken token)
     {

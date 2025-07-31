@@ -53,7 +53,7 @@ public class PdfGeneratorService : IPdfGeneratorService
                 AmbientTemperature = ar.AmbientTemperature ?? 0
             })
             .ToListAsync();
-            
+
         var observationData = await _context.Observations
             .AsNoTracking()
             .Include(o => o.User)
@@ -66,12 +66,12 @@ public class PdfGeneratorService : IPdfGeneratorService
                 Description = o.Description
             })
             .ToListAsync();
-            
+
         // 2. CALCULAR MÉTRICAS DE RESUMEN
         var statusHistory = await _context.PlantStatusHistories
             .Where(h => h.PlantId == plantId && h.ChangedAt >= startDate && h.ChangedAt <= endDate)
             .ToListAsync();
-            
+
         var mildStressAlerts = statusHistory.Count(h => h.Status == PlantStatus.MILD_STRESS);
         var severeStressAlerts = statusHistory.Count(h => h.Status == PlantStatus.SEVERE_STRESS);
         var anomalyAlerts = statusHistory.Count(h => h.Status == PlantStatus.UNKNOWN);

@@ -39,14 +39,14 @@ public class WaterStressAnalysisService : BackgroundService
             await using var scope = _scopeFactory.CreateAsyncScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var cropService = scope.ServiceProvider.GetRequiredService<ICropService>();
-            
+
             var crops = await dbContext.Crops.AsNoTracking().ToListAsync(stoppingToken);
 
             foreach (var crop in crops)
             {
                 var parametersResult = await cropService.GetAnalysisParametersAsync(crop.Id);
                 if (parametersResult.IsFailure) continue;
-                
+
                 var parameters = parametersResult.Value.AnalysisParameters;
                 var nowUtc = DateTime.UtcNow;
 
@@ -54,7 +54,7 @@ public class WaterStressAnalysisService : BackgroundService
                 {
                     continue; // No estamos en la ventana de análisis para este cultivo
                 }
-                
+
                 _logger.LogInformation("Iniciando ciclo de análisis para el cultivo: {CropName}", crop.Name);
                 await RunAnalysisCycleAsync(scope.ServiceProvider, crop, parameters, nowUtc, stoppingToken);
             }
@@ -94,7 +94,7 @@ public class WaterStressAnalysisService : BackgroundService
         // 3. Validar condiciones ambientales
         var referenceReading = plantsData.SelectMany(p => p.EnvironmentalReadings).FirstOrDefault();
         if (referenceReading == null) return;
-    
+
         var lightValue = GetLightValueFromJson(referenceReading.ExtraData);
         var envDataResult = await environmentalDataProvider.GetEnvironmentalDataForAnalysisAsync(
             crop.CityName, lightValue, parameters.LightIntensityThreshold, referenceReading.Temperature, referenceReading.Humidity);
@@ -132,9 +132,9 @@ public class WaterStressAnalysisService : BackgroundService
             double cwsi = (tDry - tWet > 0) ? (plantTc.Value - tWet) / (tDry - tWet) : 0;
             cwsi = Math.Clamp(cwsi, 0, 1); // Asegurar que el valor esté entre 0 y 1
 
-            var previousStatus = plantData.Plant.Status; 
+            var previousStatus = plantData.Plant.Status;
             var newStatus = DetermineStatus(cwsi, parameters, previousStatus);
-            
+
             // 6. Guardar resultado y disparar alerta si es necesario
             var analysisResult = new AnalysisResult
             {
@@ -148,9 +148,9 @@ public class WaterStressAnalysisService : BackgroundService
                 BaselineTwet = (float)tWet,
                 BaselineTdry = (float)tDry
             };
-            
+
             dbContext.AnalysisResults.Add(analysisResult);
-            
+
             if (newStatus != previousStatus)
             {
                 // --- INICIO DE LA CORRECCIÓN ---
@@ -162,10 +162,10 @@ public class WaterStressAnalysisService : BackgroundService
                     previousStatus,
                     (float)cwsi
                 );
-            
+
                 // Actualizar el estado de la planta en la entidad
                 var plantToUpdate = await dbContext.Plants.FindAsync(plantData.Plant.Id);
-                if(plantToUpdate != null)
+                if (plantToUpdate != null)
                 {
                     plantToUpdate.Status = newStatus;
                     plantToUpdate.UpdatedAt = nowUtc;
@@ -173,11 +173,11 @@ public class WaterStressAnalysisService : BackgroundService
                 // --- FIN DE LA CORRECCIÓN ---
             }
         }
-        
+
         await dbContext.SaveChangesAsync(token);
         _logger.LogInformation("Ciclo de análisis completado para el cultivo: {CropName}", crop.Name);
     }
-    
+
     private float? CalculateCanopyTemperature(PlantRawDataDto plantData)
     {
         var lastCapture = plantData.ThermalCaptures.OrderByDescending(tc => tc.RecordedAtServer).FirstOrDefault();
@@ -212,7 +212,7 @@ public class WaterStressAnalysisService : BackgroundService
                 return stats.Avg_Temp; // Fallback a avg_temp si la máscara falla
             }
         }
-        
+
         return stats.Avg_Temp; // Fallback si no hay máscara
     }
 
@@ -238,7 +238,7 @@ public class WaterStressAnalysisService : BackgroundService
         {
             return PlantStatus.RECOVERING;
         }
-        
+
         // Si ya estaba en recuperación y sigue óptimo, se considera recuperado.
         if (previousStatus == PlantStatus.RECOVERING && newStatus == PlantStatus.OPTIMAL)
         {
@@ -271,7 +271,7 @@ public class WaterStressAnalysisService : BackgroundService
         catch { /* Ignorar error */ }
         return null;
     }
-    
+
     // DTOs internos para el parseo de JSON
     private class ThermalMask
     {

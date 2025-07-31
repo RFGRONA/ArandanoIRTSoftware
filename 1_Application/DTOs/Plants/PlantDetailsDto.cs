@@ -20,6 +20,6 @@ public class PlantDetailsDto
 
     [Display(Name = "Última Actualización")]
     public DateTime UpdatedAt { get; set; }
-    
+
     public string? ThermalMaskData { get; set; }
 }

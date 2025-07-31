@@ -17,9 +17,9 @@ public class PlantService : IPlantService
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public PlantService(
-        ApplicationDbContext context, 
-        ILogger<PlantService> logger, 
-        IHttpContextAccessor httpContextAccessor) 
+        ApplicationDbContext context,
+        ILogger<PlantService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _logger = logger;
@@ -126,7 +126,7 @@ public class PlantService : IPlantService
         {
             var plantSummaries = await _context.Plants
                 .AsNoTracking()
-                .Include(p => p.Crop) 
+                .Include(p => p.Crop)
                 .Select(p => new PlantSummaryDto
                 {
                     Id = p.Id,
@@ -210,7 +210,7 @@ public class PlantService : IPlantService
         {
             var existingPlant = await _context.Plants.FindAsync(plantDto.Id);
             if (existingPlant == null) return Result.Failure("Planta no encontrada para actualizar.");
-            
+
             existingPlant.Name = plantDto.Name;
             existingPlant.CropId = plantDto.CropId;
             existingPlant.ExperimentalGroup = plantDto.ExperimentalGroup.Value;
@@ -357,7 +357,7 @@ public class PlantService : IPlantService
                 Text = e.ToString()
             }).ToList();
     }
-    
+
     private async Task AddStatusHistoryAsync(Plant plant, PlantStatus status, string observation, int? userId)
     {
         var historyRecord = new PlantStatusHistory

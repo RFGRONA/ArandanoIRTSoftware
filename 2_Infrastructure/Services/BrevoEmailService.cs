@@ -29,7 +29,7 @@ public class BrevoEmailService : IEmailService
         var attachment = new SendSmtpEmailAttachment(content: attachmentContent, name: attachmentName);
         return await SendEmailInternalAsync(toEmail, toName, subject, htmlContent, new List<SendSmtpEmailAttachment> { attachment });
     }
-    
+
     private async Task<Result> SendEmailInternalAsync(string toEmail, string toName, string subject, string htmlContent, List<SendSmtpEmailAttachment>? attachments)
     {
         if (string.IsNullOrEmpty(_brevoSettings.ApiKey))
@@ -49,22 +49,22 @@ public class BrevoEmailService : IEmailService
         try
         {
             var sendSmtpEmail = new SendSmtpEmail(
-                sender: sender, 
-                to: to, 
-                bcc: null, 
-                cc: null, 
-                htmlContent: htmlContent, 
-                textContent: null, 
-                subject: subject, 
-                replyTo: null, 
-                attachment: attachments, 
-                headers: null, 
-                templateId: null, 
-                _params: null, 
-                messageVersions: null, 
+                sender: sender,
+                to: to,
+                bcc: null,
+                cc: null,
+                htmlContent: htmlContent,
+                textContent: null,
+                subject: subject,
+                replyTo: null,
+                attachment: attachments,
+                headers: null,
+                templateId: null,
+                _params: null,
+                messageVersions: null,
                 tags: null
             );
-            
+
             var result = await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
             _logger.LogInformation("Correo enviado exitosamente a {ToEmail}. MessageId: {MessageId}", toEmail, result.MessageId);
             return Result.Success();

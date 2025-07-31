@@ -43,7 +43,7 @@ public class AlertTriggerService : IAlertTriggerService
         }
 
         var cacheKey = $"grafana_alert_group_{alertType}";
-    
+
         // 2. "Traducimos" el tipo de alerta a un resumen en español
         string summary;
         switch (alertType)
@@ -108,7 +108,7 @@ public class AlertTriggerService : IAlertTriggerService
                 await _alertService.SendGenericAlertEmailAsync(admin.Email, admin.FirstName, viewModel);
         }
     }
-    
+
     public async Task SendGroupedAlertSummaryAsync(string alertType, AlertGroupState group)
     {
         // 1. Obtenemos la lista de administradores que deben ser notificados para este tipo de alerta
@@ -138,7 +138,7 @@ public class AlertTriggerService : IAlertTriggerService
             Message = $"Se han detectado {group.Count} alerta(s) de '{group.Summary}' en la última hora. Por favor, revise los logs del sistema para más detalles.",
             Severity = "Critical" // O podrías pasarlo desde Grafana también
         };
-    
+
         // 3. Enviamos el correo a cada destinatario
         foreach (var admin in recipients)
         {
@@ -147,10 +147,10 @@ public class AlertTriggerService : IAlertTriggerService
 
         _logger.LogInformation("Resumen de alertas para '{AlertType}' enviado a {RecipientCount} administradores.", alertType, recipients.Count);
     }
-    
+
     public async Task TriggerAnomalyAlertAsync(int plantId, string plantName)
     {
-        var usersToNotify = await _userService.GetAllUsersAsync(); 
+        var usersToNotify = await _userService.GetAllUsersAsync();
         if (!usersToNotify.Any()) return;
 
         foreach (var user in usersToNotify)
@@ -169,8 +169,8 @@ public class AlertTriggerService : IAlertTriggerService
     public async Task TriggerMaskCreationAlertAsync(List<string> plantNames)
     {
         if (!plantNames.Any()) return;
-        
-        var usersToNotify = await _userService.GetAllUsersAsync(); 
+
+        var usersToNotify = await _userService.GetAllUsersAsync();
         if (!usersToNotify.Any()) return;
 
         foreach (var user in usersToNotify)
@@ -184,10 +184,10 @@ public class AlertTriggerService : IAlertTriggerService
         }
         _logger.LogInformation("Alerta de creación de máscara enviada para {Count} plantas.", plantNames.Count);
     }
-    
+
     public async Task TriggerStressAlertAsync(int plantId, string plantName, PlantStatus newStatus, PlantStatus previousStatus, float cwsiValue)
     {
-        var usersToNotify = await _userService.GetAllUsersAsync(); 
+        var usersToNotify = await _userService.GetAllUsersAsync();
         if (!usersToNotify.Any()) return;
 
         // Construir la URL una sola vez
@@ -207,7 +207,7 @@ public class AlertTriggerService : IAlertTriggerService
             };
             await _alertService.SendStressAlertEmailAsync(user.Email, viewModel);
         }
-    
+
         _logger.LogInformation("Disparando alerta de cambio de estado para la planta {PlantName}. Nuevo estado: {NewStatus}", plantName, newStatus);
     }
 }

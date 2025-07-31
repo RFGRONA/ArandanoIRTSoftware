@@ -119,7 +119,7 @@ public class AlertService : IAlertService
                 htmlContent);
         }
     }
-    
+
     // --- Alerta Genérica ---
     public async Task SendGenericAlertEmailAsync(string email, string name, GenericAlertViewModel model)
     {
@@ -138,42 +138,42 @@ public class AlertService : IAlertService
             _logger.LogError(ex, "Error al enviar la alerta genérica a {Email}", email);
         }
     }
-    
+
     // --- Alertas de Análisis ---
     public async Task SendAnomalyAlertEmailAsync(string recipientEmail, AnomalyAlertViewModel viewModel)
     {
         string htmlContent = await _razorRenderer.RenderViewToStringAsync(
-            "/Views/Shared/EmailTemplates/_AnomalyAlertEmail.cshtml", 
+            "/Views/Shared/EmailTemplates/_AnomalyAlertEmail.cshtml",
             viewModel
         );
 
         await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Alerta de Comportamiento Anómalo", htmlContent);
         _logger.LogInformation("Alerta de comportamiento anómalo enviada a {RecipientEmail}", recipientEmail);
-        
+
     }
 
     public async Task SendMaskCreationAlertEmailAsync(string recipientEmail, MaskCreationAlertViewModel viewModel)
     {
         string htmlContent = await _razorRenderer.RenderViewToStringAsync(
-            "/Views/Shared/EmailTemplates/_MaskCreationAlertEmail.cshtml", 
+            "/Views/Shared/EmailTemplates/_MaskCreationAlertEmail.cshtml",
             viewModel
         );
-        
+
         await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Acción Requerida: Crear Máscaras Térmicas", htmlContent);
         _logger.LogInformation("Alerta de creación de máscara enviada a {RecipientEmail}", recipientEmail);
     }
-    
+
     public async Task SendStressAlertEmailAsync(string recipientEmail, StressAlertViewModel viewModel)
     {
         string htmlContent = await _razorRenderer.RenderViewToStringAsync(
-            "/Views/Shared/EmailTemplates/_StressAlertEmail.cshtml", 
+            "/Views/Shared/EmailTemplates/_StressAlertEmail.cshtml",
             viewModel
         );
-    
+
         await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, $"Alerta de Estrés: {viewModel.PlantName}", htmlContent);
         _logger.LogInformation("Alerta de estrés para la planta {PlantName} enviada a {RecipientEmail}", viewModel.PlantName, recipientEmail);
     }
-    
+
     public async Task SendReportByEmailAsync(string recipientEmail, string plantName, byte[] pdfAttachment)
     {
         var subject = $"Reporte de Estado Hídrico: {plantName}";

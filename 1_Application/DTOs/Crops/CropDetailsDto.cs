@@ -16,6 +16,6 @@ public class CropDetailsDto
     public DateTime CreatedAt { get; set; }
     [Display(Name = "Última Actualización")]
     public DateTime UpdatedAt { get; set; }
-   
+
     public CropSettings CropSettings { get; set; } = new();
 }

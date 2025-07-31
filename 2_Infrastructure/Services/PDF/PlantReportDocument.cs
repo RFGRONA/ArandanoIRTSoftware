@@ -60,13 +60,13 @@ public class PlantReportDocument : IDocument
         {
             column.Spacing(25);
             column.Item().Element(ComposeSummary);
-            
+
             column.Item().Text("Evolución del Índice de Estrés Hídrico (CWSI)").Style(Styles.Header);
             column.Item().Image(GraphGenerator.CreateCwsiGraph(_model.AnalysisData, 0.3f, 0.5f));
-            
+
             column.Item().Text("Evolución de Temperaturas").Style(Styles.Header);
             column.Item().Image(GraphGenerator.CreateTemperatureGraph(_model.AnalysisData));
-            
+
             if (_model.ObservationData.Any())
             {
                 column.Item().Element(ComposeObservationsTable);
@@ -99,13 +99,13 @@ public class PlantReportDocument : IDocument
             column.Item().AlignCenter().Text(value).Bold().FontSize(14);
         });
     }
-    
+
     private void ComposeObservationsTable(IContainer container)
     {
         container.Column(column =>
         {
             column.Item().Text("Bitácora de Observaciones Manuales").Style(Styles.Header);
-            
+
             column.Item().Table(table =>
             {
                 table.ColumnsDefinition(columns =>
@@ -131,7 +131,7 @@ public class PlantReportDocument : IDocument
             });
         });
     }
-    
+
     // Clase estática interna para los estilos reutilizables
     private static class Styles
     {

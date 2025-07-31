@@ -32,8 +32,8 @@ public interface IDataQueryService
     Task<Result<ThermalStatsDto>> GetThermalStatsForDashboardAsync(TimeSpan duration, int? cropId, int? plantId,
         int? deviceId);
 
-    Task<Result<int>> GetActiveDevicesCountAsync(int? cropId, int? plantId); 
-    Task<Result<int>> GetMonitoredPlantsCountAsync(int? cropId); 
+    Task<Result<int>> GetActiveDevicesCountAsync(int? cropId, int? plantId);
+    Task<Result<int>> GetMonitoredPlantsCountAsync(int? cropId);
     Task<Result<SensorDataDisplayDto?>> GetLatestAmbientDataAsync(int? cropId, int? plantId, int? deviceId);
     Task<Result<List<PlantRawDataDto>>> GetRawDataForAnalysisAsync(List<int> plantIds, DateTime startTime, DateTime endTime);
     Task<Result<(ThermalDataDto? Stats, string? ImagePath)>> GetLatestCaptureForMaskAsync(int plantId);

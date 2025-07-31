@@ -25,7 +25,7 @@ public interface IAlertService
 
     // --- Alerta Genérica ---
     Task SendGenericAlertEmailAsync(string email, string name, GenericAlertViewModel model);
-    
+
     // --- Alertas de Análisis ---
     Task SendAnomalyAlertEmailAsync(string recipientEmail, AnomalyAlertViewModel viewModel);
     Task SendMaskCreationAlertEmailAsync(string recipientEmail, MaskCreationAlertViewModel viewModel);
