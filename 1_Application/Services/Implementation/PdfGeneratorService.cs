@@ -24,6 +24,9 @@ public class PdfGeneratorService : IPdfGeneratorService
 
     public async Task<byte[]> GeneratePlantReportAsync(int plantId, DateTime startDate, DateTime endDate)
     {
+        var correctStartDate = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Local).ToUniversalTime();
+        var correctEndDate = DateTime.SpecifyKind(endDate.Date, DateTimeKind.Local).AddDays(1).AddTicks(-1).ToUniversalTime();
+
         // 1. OBTENER DATOS PRINCIPALES
         var plant = await _context.Plants
             .AsNoTracking()
@@ -40,7 +43,7 @@ public class PdfGeneratorService : IPdfGeneratorService
 
         var analysisData = await _context.AnalysisResults
             .AsNoTracking()
-            .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= startDate && ar.RecordedAt <= endDate)
+            .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= correctStartDate && ar.RecordedAt <= correctEndDate)
             .OrderBy(ar => ar.RecordedAt)
             .Select(ar => new AnalysisResultDataPoint
             {

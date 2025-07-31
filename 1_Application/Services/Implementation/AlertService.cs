@@ -1,3 +1,4 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Analysis;
@@ -118,7 +119,8 @@ public class AlertService : IAlertService
                 htmlContent);
         }
     }
-
+    
+    // --- Alerta Genérica ---
     public async Task SendGenericAlertEmailAsync(string email, string name, GenericAlertViewModel model)
     {
         try
@@ -137,6 +139,7 @@ public class AlertService : IAlertService
         }
     }
     
+    // --- Alertas de Análisis ---
     public async Task SendAnomalyAlertEmailAsync(string recipientEmail, AnomalyAlertViewModel viewModel)
     {
         string htmlContent = await _razorRenderer.RenderViewToStringAsync(
@@ -158,5 +161,29 @@ public class AlertService : IAlertService
         
         await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Acción Requerida: Crear Máscaras Térmicas", htmlContent);
         _logger.LogInformation("Alerta de creación de máscara enviada a {RecipientEmail}", recipientEmail);
+    }
+    
+    public async Task SendStressAlertEmailAsync(string recipientEmail, StressAlertViewModel viewModel)
+    {
+        string htmlContent = await _razorRenderer.RenderViewToStringAsync(
+            "/Views/Shared/EmailTemplates/_StressAlertEmail.cshtml", 
+            viewModel
+        );
+    
+        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, $"Alerta de Estrés: {viewModel.PlantName}", htmlContent);
+        _logger.LogInformation("Alerta de estrés para la planta {PlantName} enviada a {RecipientEmail}", viewModel.PlantName, recipientEmail);
+    }
+    
+    public async Task SendReportByEmailAsync(string recipientEmail, string plantName, byte[] pdfAttachment)
+    {
+        var subject = $"Reporte de Estado Hídrico: {plantName}";
+        var body = $"<p>Hola,</p><p>Adjunto encontrarás el reporte de estado hídrico para la planta <strong>{plantName}</strong>.</p><p>Saludos,<br>Sistema Arandano IRT</p>";
+
+        var attachmentName = $"Reporte_{plantName.Replace(" ", "_")}_{DateTime.UtcNow.ToColombiaTime():yyyyMMdd}.pdf";
+
+        // Asumimos que IEmailService tiene un método que acepta archivos adjuntos.
+        // La implementación dependerá de Brevo, pero típicamente aceptan un array de bytes.
+        await _emailService.SendEmailWithAttachmentAsync(recipientEmail, "Usuario", subject, body, pdfAttachment, attachmentName);
+        _logger.LogInformation("Reporte en PDF para la planta {PlantName} enviado a {RecipientEmail}", plantName, recipientEmail);
     }
 }

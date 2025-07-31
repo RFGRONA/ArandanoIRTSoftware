@@ -147,12 +147,6 @@ public class AlertTriggerService : IAlertTriggerService
 
         _logger.LogInformation("Resumen de alertas para '{AlertType}' enviado a {RecipientCount} administradores.", alertType, recipients.Count);
     }
-
-    public Task TriggerStressAlertsAsync()
-    {
-        _logger.LogInformation("Este método se implementará en la Fase 4.");
-        return Task.CompletedTask;
-    }
     
     public async Task TriggerAnomalyAlertAsync(int plantId, string plantName)
     {
@@ -189,5 +183,31 @@ public class AlertTriggerService : IAlertTriggerService
             await _alertService.SendMaskCreationAlertEmailAsync(user.Email, viewModel);
         }
         _logger.LogInformation("Alerta de creación de máscara enviada para {Count} plantas.", plantNames.Count);
+    }
+    
+    public async Task TriggerStressAlertAsync(int plantId, string plantName, PlantStatus newStatus, PlantStatus previousStatus, float cwsiValue)
+    {
+        var usersToNotify = await _userService.GetAllUsersAsync(); 
+        if (!usersToNotify.Any()) return;
+
+        // Construir la URL una sola vez
+        var baseUrl = _configuration["BaseUrl"]; // Asegúrate de tener "BaseUrl" en appsettings.json
+        var analysisUrl = $"{baseUrl}/Admin/Analytics/Details/{plantId}";
+
+        foreach (var user in usersToNotify)
+        {
+            var viewModel = new StressAlertViewModel
+            {
+                UserName = user.FirstName,
+                PlantName = plantName,
+                NewStatus = newStatus.ToString().Replace("_", " "),
+                PreviousStatus = previousStatus.ToString().Replace("_", " "),
+                CwsiValue = cwsiValue,
+                CtaButtonUrl = analysisUrl
+            };
+            await _alertService.SendStressAlertEmailAsync(user.Email, viewModel);
+        }
+    
+        _logger.LogInformation("Disparando alerta de cambio de estado para la planta {PlantName}. Nuevo estado: {NewStatus}", plantName, newStatus);
     }
 }
