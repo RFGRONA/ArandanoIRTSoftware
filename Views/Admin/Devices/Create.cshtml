@@ -3,19 +3,92 @@
     ViewData["Title"] = "Registrar Nuevo Dispositivo";
     Layout = "_AdminLayout";
 }
-<h1>@ViewData["Title"]</h1>
-<hr />
-<div class="row">
-    <div class="col-md-8"> @* Un poco más ancho para el formulario *@
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Estilos para el textarea autoajustable */
+        textarea.auto-grow {
+            resize: none;
+            overflow-y: hidden;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
         <form asp-action="Create">
-            <partial name="_DeviceFormPartial" model="Model" />
-            <div class="form-group mt-3">
-                <input type="submit" value="Registrar Dispositivo" class="btn btn-success" />
-                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            <div class="card form-card">
+                <div class="card-body">
+                    @* Contenido del formulario integrado para mayor claridad *@
+                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label">Nombre del Dispositivo</label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MacAddress" class="form-label">Dirección MAC (Opcional)</label>
+                        <input asp-for="MacAddress" class="form-control" />
+                        <span asp-validation-for="MacAddress" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">Descripción</label>
+                        <textarea asp-for="Description" class="form-control auto-grow" rows="3"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PlantId" class="form-label">Planta Asignada</label>
+                        <select asp-for="PlantId" class="form-select" asp-items="Model.AvailablePlants">
+                            <option value="">-- Seleccione una Planta --</option>
+                        </select>
+                        <span asp-validation-for="PlantId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DataCollectionIntervalMinutes" class="form-label">Intervalo de Recolección de Datos (minutos)</label>
+                        <input asp-for="DataCollectionIntervalMinutes" type="number" class="form-control" />
+                        <span asp-validation-for="DataCollectionIntervalMinutes" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Index" class="btn btn-secondary-outline">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Registrar Dispositivo
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 </div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.querySelector('textarea.auto-grow');
+
+            if (textarea) {
+                const adjustHeight = () => {
+                    textarea.style.height = 'auto'; // Resetea la altura para recalcular
+                    textarea.style.height = (textarea.scrollHeight) + 'px'; // Ajusta la altura al contenido
+                };
+
+                // Llama a la función cuando el usuario escribe
+                textarea.addEventListener('input', adjustHeight);
+
+                // Ajusta la altura inicial por si hay contenido precargado
+                adjustHeight();
+            }
+        });
+    </script>
 }
