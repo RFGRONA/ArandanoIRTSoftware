@@ -1,0 +1,350 @@
+/* =============================================
+   VARIABLES GLOBALES Y ESTILOS BASE
+   ============================================= */
+:root {
+    --primary-color: #5D3EBF;
+    --primary-light: #f4f2ff;
+    --background-color: #F8F9FA;
+    --card-background: #FFFFFF;
+    --text-color: #495057;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --success-color: #198754;
+}
+
+/* =============================================
+   ESTRUCTURA DE PÁGINA (HEADER)
+   ============================================= */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.page-header.flex-column {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.page-header.text-center {
+    justify-content: center;
+    flex-direction: column;
+}
+
+/* =============================================
+   TARJETAS Y FORMULARIOS (CREATE & EDIT)
+   ============================================= */
+.form-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.form-card .card-body {
+    padding: 2rem;
+}
+
+.form-card .card-footer {
+    background-color: var(--background-color);
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.form-control, .form-select {
+    border-radius: 0.5rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(93, 62, 191, 0.25);
+}
+
+textarea.auto-grow {
+    resize: none;
+    overflow-y: hidden;
+}
+
+/* =============================================
+   VISTAS DE DETALLES (READ)
+   ============================================= */
+.details-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.details-card .card-body {
+    padding: 2.5rem;
+}
+
+.details-card .card-footer {
+    background-color: var(--background-color);
+    padding: 1.25rem 2.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.details-list dt {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.details-list dd {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* =============================================
+   VISTAS DE ELIMINACIÓN (DELETE)
+   ============================================= */
+.delete-confirmation-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    border-top: 5px solid var(--danger-color);
+}
+
+.delete-confirmation-card .card-body {
+    padding: 3.5rem;
+}
+
+.delete-confirmation-card .card-footer {
+    background-color: var(--background-color);
+    padding: 1.5rem 3.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.delete-warning {
+    text-align: center;
+}
+
+.delete-warning .fa-exclamation-triangle {
+    color: var(--danger-color);
+    font-size: 3.5rem;
+}
+
+.delete-warning h3 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    color: var(--danger-color);
+}
+
+.delete-warning .lead {
+    font-size: 1.3rem;
+    margin-top: 1rem;
+}
+
+.item-to-delete {
+    color: var(--text-color);
+    font-weight: 700;
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 1.4rem;
+}
+
+/* =============================================
+   ESTILOS ESPECÍFICOS: CREAR OBSERVACIÓN
+   ============================================= */
+.form-notice {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-left: 4px solid var(--primary-color);
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.rating-selector {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.rating-selector input[type="radio"] {
+    display: none;
+}
+
+.rating-selector label {
+    cursor: pointer;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    border: 2px solid var(--border-color);
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.rating-selector label .fa-face-frown { color: var(--danger-color); }
+.rating-selector label .fa-face-meh { color: var(--warning-color); }
+.rating-selector label .fa-face-smile { color: var(--success-color); }
+
+.rating-selector label .rating-text {
+    display: block;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.rating-selector input[type="radio"]:checked + label {
+    border-color: var(--primary-color);
+    background-color: var(--primary-light);
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+
+/* =============================================
+   COMPONENTES GENERALES (BOTONES, MODALES)
+   ============================================= */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    font-weight: bold;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+.btn-primary:hover {
+    background-color: #4a319a;
+    border-color: #4a319a;
+}
+
+.btn-secondary-outline {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+.btn-secondary-outline:hover {
+    background-color: #f8f9fa;
+    color: var(--text-color);
+    border-color: #ced4da;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    border: 1px solid var(--danger-color);
+}
+.btn-danger:hover {
+    background-color: #b02a37;
+    border-color: #a52834;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: #000;
+    border: 1px solid var(--warning-color);
+}
+.btn-warning:hover {
+    background-color: #ffca2c;
+    border-color: #ffca2c;
+}
+
+/* --- ESTILOS MEJORADOS PARA MODALES --- */
+.modal-content {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+}
+
+/* Modal de confirmación estándar */
+.modal-header {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+}
+
+.modal-header .btn-close {
+    filter: invert(25%) sepia(58%) saturate(3078%) hue-rotate(243deg) brightness(91%) contrast(92%);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.modal-footer {
+    background-color: var(--background-color);
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+/* Modal de advertencia final (irreversible) */
+#confirmModal2 .modal-content {
+    border-top: 5px solid var(--danger-color);
+}
+
+#confirmModal2 .modal-header {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+#confirmModal2 .modal-header .modal-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+#confirmModal2 .modal-header .btn-close {
+    filter: none;
+}
+
+#confirmModal2 .modal-body {
+    text-align: center;
+    padding: 2rem;
+}
+
+#confirmModal2 .modal-body .fw-bold {
+    font-size: 1.2rem;
+    color: var(--danger-color);
+}

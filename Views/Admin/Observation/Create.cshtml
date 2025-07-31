@@ -4,44 +4,77 @@
     Layout = "_AdminLayout";
 }
 
-<h1>@ViewData["Title"]</h1>
-<p class="text-muted">Las observaciones son inmutables y no se pueden editar ni eliminar una vez guardadas.</p>
-<hr/>
+@section Styles {
+ <link rel="stylesheet" href="~/css/createObservation.css" asp-append-version="true" /> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+}
 
-<div class="row">
-    <div class="col-md-8">
-        <form id="createObservationForm" asp-action="Create" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="page-header text-center">
+    <h1>@ViewData["Title"]</h1>
+</div>
 
-            <div class="mb-3">
-                <label asp-for="PlantId" class="form-label"></label>
-                <select asp-for="PlantId" class="form-select" asp-items="Model.AvailablePlants">
-                    <option value="">-- Seleccione una Planta --</option>
-                </select>
-                <span asp-validation-for="PlantId" class="text-danger"></span>
-            </div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="form-notice">
+            <i class="fas fa-info-circle me-2"></i>
+            Las observaciones son inmutables y no se pueden editar ni eliminar una vez guardadas.
+        </div>
 
-            <div class="mb-3">
-                <label asp-for="Description" class="form-label"></label>
-                <textarea asp-for="Description" class="form-control" rows="6"></textarea>
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
+        <form id="createObservationForm" asp-action="Create" method="post" class="mt-4">
+            <div class="card form-card">
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-            <div class="mb-3">
-                <label asp-for="SubjectiveRating" class="form-label"></label>
-                <input asp-for="SubjectiveRating" type="number" class="form-control" min="1" max="3"/>
-                <span asp-validation-for="SubjectiveRating" class="text-danger"></span>
-            </div>
+                    <div class="mb-4">
+                        <label asp-for="PlantId" class="form-label">Planta Observada</label>
+                        <select asp-for="PlantId" class="form-select" asp-items="Model.AvailablePlants">
+                            <option value="">-- Seleccione una Planta --</option>
+                        </select>
+                        <span asp-validation-for="PlantId" class="text-danger"></span>
+                    </div>
 
-            <div class="form-group mt-4">
-                @* Este botón NO envía el formulario, solo abre el primer modal *@
-                <button type="button" id="startConfirmation" class="btn btn-success">Guardar Observación</button>
-                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                    <div class="mb-4">
+                        <label asp-for="Description" class="form-label">Descripción</label>
+                        <textarea asp-for="Description" class="form-control auto-grow" rows="6" placeholder="Describe lo que observaste..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="SubjectiveRating" class="form-label d-block text-center mb-3">Calificación Subjetiva</label>
+                        <div class="rating-selector">
+                            <input type="radio" asp-for="SubjectiveRating" id="rating-mala" value="1" />
+                            <label for="rating-mala">
+                                <i class="fas fa-face-frown fa-2x"></i>
+                                <span class="rating-text">Mala</span>
+                            </label>
+
+                            <input type="radio" asp-for="SubjectiveRating" id="rating-regular" value="2" />
+                            <label for="rating-regular">
+                                <i class="fas fa-face-meh fa-2x"></i>
+                                <span class="rating-text">Regular</span>
+                            </label>
+
+                            <input type="radio" asp-for="SubjectiveRating" id="rating-buena" value="3" />
+                            <label for="rating-buena">
+                                <i class="fas fa-face-smile fa-2x"></i>
+                                <span class="rating-text">Buena</span>
+                            </label>
+                        </div>
+                        <span asp-validation-for="SubjectiveRating" class="text-danger d-block text-center mt-2"></span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Index" class="btn btn-secondary-outline">Cancelar</a>
+                    <button type="button" id="startConfirmation" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Observación
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
+<!-- Modales  -->
 <div class="modal fade" id="confirmModal1" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -53,7 +86,7 @@
                 ¿Estás seguro de que quieres guardar esta observación?
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" id="confirmStep1" class="btn btn-primary">Confirmar</button>
             </div>
         </div>
@@ -63,8 +96,8 @@
 <div class="modal fade" id="confirmModal2" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger">¡Acción Irreversible!</h5>
+            <div class="modal-header modal-header-danger">
+                <h5 class="modal-title">¡Acción Irreversible!</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -73,8 +106,9 @@
                 <p>¿Deseas continuar?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="confirmStep2" class="btn btn-danger">Confirmar y Guardar Definitivamente
+                <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="confirmStep2" class="btn btn-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar y Guardar
                 </button>
             </div>
         </div>
@@ -83,26 +117,35 @@
 
 
 @section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     <script>
-        $(document).ready(function () {
+        document.addEventListener('DOMContentLoaded', function () {
             const confirmModal1 = new bootstrap.Modal(document.getElementById('confirmModal1'));
             const confirmModal2 = new bootstrap.Modal(document.getElementById('confirmModal2'));
             const form = document.getElementById('createObservationForm');
 
-            $('#startConfirmation').on('click', function () {
+            document.getElementById('startConfirmation').addEventListener('click', function () {
                 confirmModal1.show();
             });
 
-            $('#confirmStep1').on('click', function () {
+            document.getElementById('confirmStep1').addEventListener('click', function () {
                 confirmModal1.hide();
                 confirmModal2.show();
             });
 
-            $('#confirmStep2').on('click', function () {
-                // Solo en este punto se envía el formulario
+            document.getElementById('confirmStep2').addEventListener('click', function () {
                 form.submit();
             });
+            
+            const textarea = document.querySelector('textarea.auto-grow');
+            if (textarea) {
+                const adjustHeight = () => {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = (textarea.scrollHeight) + 'px';
+                };
+                textarea.addEventListener('input', adjustHeight);
+                adjustHeight();
+            }
         });
     </script>
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
