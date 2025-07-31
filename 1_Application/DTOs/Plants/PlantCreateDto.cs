@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ArandanoIRT.Web._0_Domain.Enums;
 using Microsoft.AspNetCore.Mvc.Rendering;
 

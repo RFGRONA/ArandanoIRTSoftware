@@ -12,7 +12,6 @@ public class PlantEditDto : IPlantFormData
 
     public string Name { get; set; } = string.Empty;
     public int CropId { get; set; }
-    public PlantStatus? Status { get; set; }
     public ExperimentalGroupType? ExperimentalGroup { get; set; }
     public IEnumerable<SelectListItem> AvailableExperimentalGroups { get; set; } = new List<SelectListItem>();
 }

@@ -6,6 +6,7 @@ using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
@@ -13,11 +14,16 @@ public class PlantService : IPlantService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PlantService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public PlantService(ApplicationDbContext context, ILogger<PlantService> logger)
+    public PlantService(
+        ApplicationDbContext context, 
+        ILogger<PlantService> logger, 
+        IHttpContextAccessor httpContextAccessor) 
     {
         _context = context;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<Result<IEnumerable<PlantSummaryDto>>> GetPlantsByCropAsync(int cropId)
@@ -52,6 +58,8 @@ public class PlantService : IPlantService
 
     public async Task<Result<int>> CreatePlantAsync(PlantCreateDto plantDto)
     {
+        // Usamos una transacción para asegurar que la planta y su historial se creen juntos
+        await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var newPlant = new Plant
@@ -65,13 +73,23 @@ public class PlantService : IPlantService
             };
 
             _context.Plants.Add(newPlant);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // Guardamos para obtener el ID de la nueva planta
 
-            _logger.LogInformation("Planta creada con ID: {PlantId}", newPlant.Id);
+            // --- INICIO DE LA CORRECCIÓN ---
+            // 4. Añadir el estado inicial al historial
+            var currentUserId = GetCurrentUserId();
+            await AddStatusHistoryAsync(newPlant, newPlant.Status, "Planta creada.", currentUserId);
+            await _context.SaveChangesAsync();
+            // --- FIN DE LA CORRECCIÓN ---
+
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Planta creada con ID: {PlantId} por el usuario ID: {UserId}", newPlant.Id, currentUserId ?? 0);
             return Result.Success(newPlant.Id);
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             _logger.LogError(ex, "Excepción al crear planta: {PlantName}", plantDto.Name);
             return Result.Failure<int>($"Error interno: {ex.Message}");
         }
@@ -172,7 +190,6 @@ public class PlantService : IPlantService
                 Id = plant.Id,
                 Name = plant.Name,
                 CropId = plant.CropId,
-                Status = plant.Status,
                 ExperimentalGroup = plant.ExperimentalGroup,
                 AvailableCrops = await GetCropsForSelectionAsync(),
                 AvailableExperimentalGroups = GetExperimentalGroupsForSelection()
@@ -188,24 +205,26 @@ public class PlantService : IPlantService
 
     public async Task<Result> UpdatePlantAsync(PlantEditDto plantDto)
     {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var existingPlant = await _context.Plants.FindAsync(plantDto.Id);
             if (existingPlant == null) return Result.Failure("Planta no encontrada para actualizar.");
-
+            
             existingPlant.Name = plantDto.Name;
             existingPlant.CropId = plantDto.CropId;
-            existingPlant.Status = plantDto.Status.Value;
             existingPlant.ExperimentalGroup = plantDto.ExperimentalGroup.Value;
             existingPlant.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             _logger.LogInformation("Planta ID: {PlantId} actualizada.", plantDto.Id);
             return Result.Success();
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             _logger.LogError(ex, "Excepción al actualizar planta ID: {PlantId}", plantDto.Id);
             return Result.Failure($"Error interno: {ex.Message}");
         }
@@ -337,5 +356,29 @@ public class PlantService : IPlantService
                 Value = e.ToString(),
                 Text = e.ToString()
             }).ToList();
+    }
+    
+    private async Task AddStatusHistoryAsync(Plant plant, PlantStatus status, string observation, int? userId)
+    {
+        var historyRecord = new PlantStatusHistory
+        {
+            PlantId = plant.Id,
+            Status = status,
+            Observation = observation,
+            UserId = userId, // Puede ser null si el sistema lo cambia
+            ChangedAt = DateTime.UtcNow
+        };
+        await _context.PlantStatusHistories.AddAsync(historyRecord);
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdString = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(userIdString, out var userId))
+        {
+            return userId;
+        }
+        _logger.LogWarning("No se pudo obtener el ID del usuario actual desde el HttpContext.");
+        return null; // Devuelve null si no hay un usuario logueado
     }
 }

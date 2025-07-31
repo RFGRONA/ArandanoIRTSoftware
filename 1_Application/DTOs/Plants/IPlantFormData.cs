@@ -15,10 +15,6 @@ public interface IPlantFormData
     [Display(Name = "Cultivo Asociado")]
     int CropId { get; set; }
 
-    [Required(ErrorMessage = "Debe seleccionar un estado.")]
-    [Display(Name = "Estado")]
-    PlantStatus? Status { get; set; }
-
     [Required(ErrorMessage = "Debe seleccionar un grupo experimental.")]
     [Display(Name = "Grupo Experimental")]
     ExperimentalGroupType? ExperimentalGroup { get; set; }

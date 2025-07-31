@@ -58,6 +58,9 @@
     <a asp-controller="PlantStatus" asp-action="Change" asp-route-id="@Model.Id" class="btn btn-info">Cambiar Estado</a>
     |
     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar</a> |
+    <a asp-action="Change" asp-controller="PlantStatus" asp-route-id="@Model.Id" class="btn btn-warning">
+        <i class="fas fa-exchange-alt"></i> Cambiar Estado
+    </a> |
     <a asp-action="CreateMask" asp-controller="Analytics" asp-route-id="@Model.Id" class="btn btn-info">
         <i class="fas fa-draw-polygon"></i> Crear/Editar Máscara Térmica
     </a> |
