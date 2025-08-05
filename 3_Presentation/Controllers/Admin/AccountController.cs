@@ -1,9 +1,11 @@
+using System.Text;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
@@ -12,18 +14,21 @@ public class AccountController : Controller
 {
     private readonly ILogger<AccountController> _logger;
     private readonly SignInManager<User> _signInManager;
-    private readonly IUserService _userService; // Ya lo teníamos
+    private readonly IUserService _userService; 
     private readonly IAlertService _alertService;
+    private readonly UserManager<User> _userManager;
 
     public AccountController(
         SignInManager<User> signInManager,
         IUserService userService,
         IAlertService alertService,
+        UserManager<User> userManager,
         ILogger<AccountController> logger)
     {
         _signInManager = signInManager;
         _userService = userService;
         _alertService = alertService;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -45,7 +50,7 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var result = await _userService.LoginUserAsync(model); // El servicio ya usa el DTO correcto
+        var (result, justLockedOut) = await _userService.LoginUserAsync(model);
 
         if (result.Succeeded)
         {
@@ -53,10 +58,26 @@ public class AccountController : Controller
             return RedirectToLocal(model.ReturnUrl);
         }
 
-        if (result.IsLockedOut)
+        // Si la cuenta se acaba de bloquear en este intento, generamos el enlace y enviamos la alerta.
+        if (justLockedOut)
         {
-            _logger.LogWarning("Cuenta de usuario {Email} bloqueada.", model.Email);
-            ModelState.AddModelError("", "Esta cuenta ha sido bloqueada, por favor intente más tarde.");
+            _logger.LogWarning("Cuenta de usuario {Email} bloqueada. Generando alerta con enlace de reseteo.", model.Email);
+            ModelState.AddModelError("", "Esta cuenta ha sido bloqueada por demasiados intentos fallidos. Por favor, revise su correo electrónico.");
+        
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user != null)
+            {
+                var forgotPasswordUrl = Url.Action("ForgotPassword", "Account", null, Request.Scheme);
+                if (forgotPasswordUrl != null)
+                {
+                    await _alertService.TriggerFailedLoginAlertAsync(user, forgotPasswordUrl);
+                }
+            }
+        }
+        else if (result.IsLockedOut)
+        {
+            _logger.LogWarning("Intento de login en cuenta ya bloqueada: {Email}", model.Email);
+            ModelState.AddModelError("", "Esta cuenta ya se encuentra bloqueada, por favor inténtelo más tarde.");
         }
         else
         {

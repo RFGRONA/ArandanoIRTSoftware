@@ -24,14 +24,15 @@ public class AlertService : IAlertService
     }
 
     // --- Alertas de Seguridad ---
-    public async Task TriggerFailedLoginAlertAsync(User user)
+    public async Task TriggerFailedLoginAlertAsync(User user, string forgotPasswordUrl)
     {
         try
         {
             var viewModel = new FailedLoginAlertViewModel
             {
                 UserName = user.FirstName,
-                AlertTime = DateTime.UtcNow
+                AlertTime = DateTime.UtcNow,
+                ForgotPasswordUrl = forgotPasswordUrl 
             };
 
             var body = await _razorRenderer.RenderViewToStringAsync(

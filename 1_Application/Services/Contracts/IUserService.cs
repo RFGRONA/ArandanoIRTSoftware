@@ -13,7 +13,7 @@ public interface IUserService
 {
     Task<IEnumerable<SelectListItem>> GetUsersForSelectionAsync();
     Task<Result> RegisterUserAsync(RegisterDto model);
-    Task<SignInResult> LoginUserAsync(LoginDto model);
+    Task<(SignInResult Result, bool JustLockedOut)> LoginUserAsync(LoginDto model);
 
     Task<Result<(string Name, string ResetLink)>> GeneratePasswordResetAsync(ForgotPasswordDto model,
         IUrlHelper urlHelper, string scheme);

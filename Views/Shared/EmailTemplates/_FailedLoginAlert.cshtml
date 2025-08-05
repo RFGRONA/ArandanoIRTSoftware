@@ -1,8 +1,4 @@
-@*
-    Este modelo es una tupla de C#. Es una forma limpia de pasar múltiples
-    piezas de datos a la vista sin necesidad de crear una clase DTO específica.
-*@
-@model (string UserName, DateTime AlertTime, string ResetLink)
+@model FailedLoginAlertViewModel
 @{
     Layout = "_EmailLayout.cshtml";
     ViewData["Title"] = "Alerta de Seguridad de la Cuenta";
@@ -25,7 +21,7 @@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
     <tr>
         <td align="center">
-            <a href="@Model.ResetLink" class="button">Restablecer mi Contraseña</a>
+            <a href="@Model.ForgotPasswordUrl" class="button">Asegurar mi Cuenta</a>
         </td>
     </tr>
 </table>

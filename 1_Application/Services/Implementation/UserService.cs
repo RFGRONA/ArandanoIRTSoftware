@@ -41,31 +41,29 @@ public class UserService : IUserService
         _alertService = alertService;
     }
 
-    public async Task<SignInResult> LoginUserAsync(LoginDto model)
+    public async Task<(SignInResult Result, bool JustLockedOut)> LoginUserAsync(LoginDto model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
         if (user == null)
-            // Usuario no existe, manejamos el fallo de forma estándar.
-            return await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
-
-
+        {
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, lockoutOnFailure: true);
+            return (result, false); // No hay usuario, no se puede bloquear
+        }
         // 1. Verificamos si el usuario está a UN intento de ser bloqueado.
         //    Usamos la configuración de Identity en lugar de un número fijo (5).
         var isAboutToLockOut = user.AccessFailedCount == _userManager.Options.Lockout.MaxFailedAccessAttempts - 1;
 
         // 2. Realizamos el intento de login.
-        var result = await _signInManager.PasswordSignInAsync(user, model.Password, true, true);
+        var signInResult = await _signInManager.PasswordSignInAsync(user, model.Password, true, true);
 
         // 3. Si el intento resultó en un bloqueo Y sabíamos que estaba a punto de ocurrir, enviamos la alerta.
-        if (isAboutToLockOut && result.IsLockedOut)
+        if (isAboutToLockOut && signInResult.IsLockedOut)
         {
-            _logger.LogWarning("La cuenta para {Email} ha sido bloqueada. Enviando alerta.", user.Email);
-
-            // Pasamos la instancia 'user' que ya teníamos, la cual es válida para la notificación.
-            await _alertService.TriggerFailedLoginAlertAsync(user);
+            _logger.LogWarning("La cuenta para {Email} ha sido bloqueada en este intento.", user.Email);
+            return (signInResult, true); 
         }
 
-        return result;
+        return (signInResult, false);
     }
 
     public async Task<Result> RegisterUserAsync(RegisterDto model)

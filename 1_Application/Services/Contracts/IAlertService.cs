@@ -8,7 +8,7 @@ namespace ArandanoIRT.Web._1_Application.Services.Contracts;
 public interface IAlertService
 {
     // --- Alertas de Seguridad ---
-    Task TriggerFailedLoginAlertAsync(User user);
+    Task TriggerFailedLoginAlertAsync(User user, string forgotPasswordUrl);
 
     // --- Notificaciones de Cuenta ---
     Task SendPasswordResetEmailAsync(string userEmail, string userName, string resetLink);
