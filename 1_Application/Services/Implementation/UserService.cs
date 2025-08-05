@@ -60,7 +60,7 @@ public class UserService : IUserService
         if (isAboutToLockOut && signInResult.IsLockedOut)
         {
             _logger.LogWarning("La cuenta para {Email} ha sido bloqueada en este intento.", user.Email);
-            return (signInResult, true); 
+            return (signInResult, true);
         }
 
         return (signInResult, false);

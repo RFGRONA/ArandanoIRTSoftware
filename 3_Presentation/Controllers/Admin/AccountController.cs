@@ -14,7 +14,7 @@ public class AccountController : Controller
 {
     private readonly ILogger<AccountController> _logger;
     private readonly SignInManager<User> _signInManager;
-    private readonly IUserService _userService; 
+    private readonly IUserService _userService;
     private readonly IAlertService _alertService;
     private readonly UserManager<User> _userManager;
 
@@ -63,7 +63,7 @@ public class AccountController : Controller
         {
             _logger.LogWarning("Cuenta de usuario {Email} bloqueada. Generando alerta con enlace de reseteo.", model.Email);
             ModelState.AddModelError("", "Esta cuenta ha sido bloqueada por demasiados intentos fallidos. Por favor, revise su correo electrónico.");
-        
+
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user != null)
             {

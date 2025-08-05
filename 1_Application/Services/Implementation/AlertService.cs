@@ -32,7 +32,7 @@ public class AlertService : IAlertService
             {
                 UserName = user.FirstName,
                 AlertTime = DateTime.UtcNow,
-                ForgotPasswordUrl = forgotPasswordUrl 
+                ForgotPasswordUrl = forgotPasswordUrl
             };
 
             var body = await _razorRenderer.RenderViewToStringAsync(
