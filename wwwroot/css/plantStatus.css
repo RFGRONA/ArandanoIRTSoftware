@@ -94,10 +94,10 @@
             white-space: nowrap;
         }
 
+        .status-optimal { background-color: var(--success-color); }
         .status-healthy { background-color: var(--success-color); }
         .status-mild-stress { background-color: var(--warning-color); color: #000; }
         .status-severe-stress { background-color: var(--danger-color); }
         .status-recovering { background-color: var(--info-color); color: #000; }
+        .status-unknown { background-color: var(--text-muted); color: white; }
         .status-default { background-color: var(--text-muted); }
-        .status-unknown { background-color: #6c757d; color: white; }
-

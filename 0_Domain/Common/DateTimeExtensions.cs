@@ -81,4 +81,21 @@ public static class DateTimeExtensions
         var colombiaTime = utcNow.ToColombiaTime();
         return colombiaTime.Hour >= startHour && colombiaTime.Hour < endHour;
     }
+    
+    public static DateTime ToSafeUniversalTime(this DateTime dt)
+    {
+        if (dt.Kind == DateTimeKind.Utc)
+        {
+            return dt; // Ya es UTC, no se necesita conversión.
+        }
+
+        // Para Local o Unspecified, asumimos que es hora de Colombia y la convertimos a UTC.
+        var colombiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+        
+        // TimeZoneInfo.ConvertTimeToUtc requiere que la fecha sea Unspecified o coincida con la zona de origen.
+        // Forzamos el Kind a Unspecified para una conversión segura y predecible.
+        var unspecifiedDateTime = DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
+        
+        return TimeZoneInfo.ConvertTimeToUtc(unspecifiedDateTime, colombiaTimeZone);
+    }
 }

@@ -20,20 +20,25 @@ public static class GraphGenerator
             return DrawPlaceholder(surface, "No hay datos de CWSI para mostrar");
         }
 
-        // Configuración de Pinceles
-        var axisPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true, StrokeWidth = 1 };
-        var gridPaint = new SKPaint { Color = SKColors.LightGray, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0) };
         var textPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true, TextSize = 12 };
         var dataPaint = new SKPaint { Color = SKColors.DodgerBlue, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
 
         // Dibujar Ejes
         DrawAxes(canvas, textPaint, data.First().Timestamp, data.Last().Timestamp, 0f, 1f, "CWSI");
 
-        // Dibujar Líneas de Umbral
-        DrawThresholdLine(canvas, textPaint, thresholdIncipient, "Estrés Incipiente", SKColors.Orange, 0f, 1f);
-        DrawThresholdLine(canvas, textPaint, thresholdCritical, "Estrés Crítico", SKColors.Red, 0f, 1f);
+        // --- INICIO DE LA CORRECCIÓN #1: DIBUJAR LÍNEAS SIN TEXTO ---
+        // Dibujamos las líneas de umbral sin intentar añadirles el texto al final
+        var incipientPaint = new SKPaint { Color = SKColors.Orange, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 4, 4 }, 0), IsAntialias = true };
+        var criticalPaint = new SKPaint { Color = SKColors.Red, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 4, 4 }, 0), IsAntialias = true };
 
-        // Dibujar Datos
+        float yIncipient = MapY(thresholdIncipient, 0f, 1f);
+        canvas.DrawLine(Padding, yIncipient, Width - Padding, yIncipient, incipientPaint);
+
+        float yCritical = MapY(thresholdCritical, 0f, 1f);
+        canvas.DrawLine(Padding, yCritical, Width - Padding, yCritical, criticalPaint);
+        // --- FIN DE LA CORRECCIÓN #1 ---
+
+        // Dibujar Datos (sin cambios)
         var path = new SKPath();
         path.MoveTo(MapCoordinates(data[0].Timestamp, data[0].CwsiValue, data.First().Timestamp, data.Last().Timestamp, 0f, 1f));
         foreach (var point in data.Skip(1))
@@ -41,6 +46,21 @@ public static class GraphGenerator
             path.LineTo(MapCoordinates(point.Timestamp, point.CwsiValue, data.First().Timestamp, data.Last().Timestamp, 0f, 1f));
         }
         canvas.DrawPath(path, dataPaint);
+
+        // --- INICIO DE LA CORRECCIÓN #2: DIBUJAR LEYENDA PERSONALIZADA ---
+        // Dibujamos los cuadros de leyenda en la parte superior del gráfico
+        float legendY = Padding - 45; // Posición vertical de la leyenda
+        float legendX = Width - Padding - 250; // Posición horizontal
+        
+        // Leyenda para Estrés Incipiente
+        canvas.DrawRect(legendX, legendY, 15, 10, incipientPaint);
+        canvas.DrawText("Estrés Incipiente", legendX + 20, legendY + 10, textPaint);
+
+        // Leyenda para Estrés Crítico
+        legendX += 130; // Mover a la derecha para la siguiente leyenda
+        canvas.DrawRect(legendX, legendY, 15, 10, criticalPaint);
+        canvas.DrawText("Estrés Crítico", legendX + 20, legendY + 10, textPaint);
+        // --- FIN DE LA CORRECCIÓN #2 ---
 
         return EncodeSurfaceToPng(surface);
     }
@@ -89,10 +109,17 @@ public static class GraphGenerator
         canvas.DrawPath(ambientPath, ambientPaint);
 
         // Leyenda
-        canvas.DrawRect(Width - Padding - 90, Padding - 30, 10, 10, canopyPaint);
-        canvas.DrawText("T. Canopia", Width - Padding - 75, Padding - 20, textPaint);
-        canvas.DrawRect(Width - Padding - 90, Padding - 15, 10, 10, ambientPaint);
-        canvas.DrawText("T. Ambiente", Width - Padding - 75, Padding - 5, textPaint);
+        float legendY = Padding - 45; // Misma posición vertical que el otro gráfico
+        float legendX = Width - Padding - 250; // Posición horizontal inicial
+
+        // Leyenda para T. Canopia
+        canvas.DrawRect(legendX, legendY, 15, 10, canopyPaint);
+        canvas.DrawText("T. Canopia", legendX + 20, legendY + 10, textPaint);
+
+        // Leyenda para T. Ambiente
+        legendX += 110; // Mover a la derecha para la siguiente leyenda
+        canvas.DrawRect(legendX, legendY, 15, 10, ambientPaint);
+        canvas.DrawText("T. Ambiente", legendX + 20, legendY + 10, textPaint);
 
         return EncodeSurfaceToPng(surface);
     }

@@ -1,4 +1,5 @@
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Reports;
 
@@ -19,6 +20,7 @@ public class PlantReportModel
     // Datos para Gráficos y Tablas
     public List<AnalysisResultDataPoint> AnalysisData { get; set; } = new();
     public List<ObservationDataPoint> ObservationData { get; set; } = new();
+    public List<PlantStatusHistory> StatusHistory { get; set; } = new();
 }
 
 public class AnalysisResultDataPoint

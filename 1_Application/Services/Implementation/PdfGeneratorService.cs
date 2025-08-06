@@ -1,9 +1,11 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Reports;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Services.Pdf;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 
@@ -18,16 +20,14 @@ public class PdfGeneratorService : IPdfGeneratorService
     {
         _context = context;
         _logger = logger;
-        // Configura la licencia de QuestPDF (Community Free)
-        QuestPDF.Settings.License = LicenseType.Community;
+        Settings.License = LicenseType.Community;
     }
 
     public async Task<byte[]> GeneratePlantReportAsync(int plantId, DateTime startDate, DateTime endDate)
     {
-        var correctStartDate = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Local).ToUniversalTime();
-        var correctEndDate = DateTime.SpecifyKind(endDate.Date, DateTimeKind.Local).AddDays(1).AddTicks(-1).ToUniversalTime();
+        var queryStartDate = startDate.Date.ToSafeUniversalTime();
+        var queryEndDate = endDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 
-        // 1. OBTENER DATOS PRINCIPALES
         var plant = await _context.Plants
             .AsNoTracking()
             .Include(p => p.Crop)
@@ -36,14 +36,12 @@ public class PdfGeneratorService : IPdfGeneratorService
         if (plant == null)
         {
             _logger.LogError("No se pudo generar el reporte: Planta con ID {PlantId} no encontrada.", plantId);
-            // Podríamos devolver un PDF de error o lanzar una excepción.
-            // Por ahora, devolvemos un array de bytes vacío.
             return Array.Empty<byte>();
         }
 
         var analysisData = await _context.AnalysisResults
             .AsNoTracking()
-            .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= correctStartDate && ar.RecordedAt <= correctEndDate)
+            .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= queryStartDate && ar.RecordedAt < queryEndDate)
             .OrderBy(ar => ar.RecordedAt)
             .Select(ar => new AnalysisResultDataPoint
             {
@@ -54,29 +52,30 @@ public class PdfGeneratorService : IPdfGeneratorService
             })
             .ToListAsync();
 
+        // --- INICIO DE LA CORRECCIÓN: OBTENER TODOS LOS DATOS ---
         var observationData = await _context.Observations
             .AsNoTracking()
             .Include(o => o.User)
-            .Where(o => o.PlantId == plantId && o.CreatedAt >= startDate && o.CreatedAt <= endDate)
+            .Where(o => o.PlantId == plantId && o.CreatedAt >= queryStartDate && o.CreatedAt < queryEndDate)
             .OrderBy(o => o.CreatedAt)
             .Select(o => new ObservationDataPoint
             {
                 Timestamp = o.CreatedAt,
-                UserName = o.User.FirstName, // Asumiendo que User.FirstName no es nulo
+                UserName = o.User.FirstName,
                 Description = o.Description
             })
             .ToListAsync();
 
-        // 2. CALCULAR MÉTRICAS DE RESUMEN
         var statusHistory = await _context.PlantStatusHistories
-            .Where(h => h.PlantId == plantId && h.ChangedAt >= startDate && h.ChangedAt <= endDate)
+            .Where(h => h.PlantId == plantId && h.ChangedAt >= queryStartDate && h.ChangedAt < queryEndDate)
+            .OrderBy(h => h.ChangedAt) // Ordenar para la tabla de eventos
             .ToListAsync();
+        // --- FIN DE LA CORRECCIÓN ---
 
         var mildStressAlerts = statusHistory.Count(h => h.Status == PlantStatus.MILD_STRESS);
         var severeStressAlerts = statusHistory.Count(h => h.Status == PlantStatus.SEVERE_STRESS);
         var anomalyAlerts = statusHistory.Count(h => h.Status == PlantStatus.UNKNOWN);
 
-        // 3. POBLAR EL MODELO DEL REPORTE
         var reportModel = new PlantReportModel
         {
             PlantName = plant.Name,
@@ -88,10 +87,10 @@ public class PdfGeneratorService : IPdfGeneratorService
             SevereStressAlerts = severeStressAlerts,
             AnomalyAlerts = anomalyAlerts,
             AnalysisData = analysisData,
-            ObservationData = observationData
+            ObservationData = observationData,
+            StatusHistory = statusHistory 
         };
 
-        // 4. GENERAR EL PDF
         _logger.LogInformation("Generando reporte en PDF para la planta {PlantName}", plant.Name);
         var document = new PlantReportDocument(reportModel);
         byte[] pdfBytes = document.GeneratePdf();

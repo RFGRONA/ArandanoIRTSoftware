@@ -1,3 +1,4 @@
+@using System.Globalization
 @model ArandanoIRT.Web._1_Application.DTOs.Analysis.AnalysisDetailsViewModel
 @{
     ViewData["Title"] = $"Análisis de {Model.PlantName}";
@@ -7,7 +8,9 @@
 <div class="page-header d-flex justify-content-between align-items-center">
     <h1>@ViewData["Title"] <small class="text-muted fs-5">(@Model.CropName)</small></h1>
     <div class="btn-group">
-        <a asp-action="GenerateReport" asp-route-plantId="@Model.PlantId" asp-route-startDate="@Model.StartDate.ToString("o")" asp-route-endDate="@Model.EndDate.ToString("o")" class="btn btn-success">
+        <a asp-action="GenerateReport" asp-route-plantId="@Model.PlantId"
+           asp-route-startDate="@Model.StartDate.ToString("o")" asp-route-endDate="@Model.EndDate.ToString("o")"
+           class="btn btn-success">
             <i class="fas fa-download"></i> Descargar PDF
         </a>
         <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#emailReportModal">
@@ -21,11 +24,12 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label class="form-label fw-bold">Fecha Inicio</label>
-                <input type="date" name="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                <input type="date" name="startDate" class="form-control"
+                       value="@Model.StartDate.ToString("yyyy-MM-dd")"/>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Fecha Fin</label>
-                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"/>
             </div>
             <div class="col-md-4">
                 <button type="submit" class="btn btn-primary w-100">
@@ -58,8 +62,9 @@
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
-    
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Datos del CWSI desde el ViewModel
@@ -70,27 +75,27 @@
                 data: cwsiData,
                 options: {
                     responsive: true,
-                    scales: { y: { beginAtZero: true, max: 1 } },
+                    scales: {y: {beginAtZero: true, max: 1}},
                     plugins: {
                         annotation: {
                             annotations: {
                                 incipientStressLine: {
                                     type: 'line',
-                                    yMin: @Model.CwsiThresholdIncipient,
-                                    yMax: @Model.CwsiThresholdIncipient,
+                                    yMin: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
+                                    yMax: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
                                     borderColor: 'rgb(255, 159, 64)',
                                     borderWidth: 2,
                                     borderDash: [6, 6],
-                                    label: { content: 'Estrés Incipiente', enabled: true, position: 'end' }
+                                    label: {content: 'Estrés Incipiente', enabled: true, position: 'end'}
                                 },
                                 criticalStressLine: {
                                     type: 'line',
-                                    yMin: @Model.CwsiThresholdCritical,
-                                    yMax: @Model.CwsiThresholdCritical,
+                                    yMin: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
+                                    yMax: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
                                     borderColor: 'rgb(255, 99, 132)',
                                     borderWidth: 2,
                                     borderDash: [6, 6],
-                                    label: { content: 'Estrés Crítico', enabled: true, position: 'end' }
+                                    label: {content: 'Estrés Crítico', enabled: true, position: 'end'}
                                 }
                             }
                         }
@@ -104,7 +109,7 @@
             new Chart(ctxTemp, {
                 type: 'line',
                 data: tempData,
-                options: { responsive: true }
+                options: {responsive: true}
             });
         });
     </script>
@@ -119,15 +124,16 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo seleccionado.</p>
-                    
-                    <input type="hidden" name="plantId" value="@Model.PlantId" />
-                    <input type="hidden" name="startDate" value="@Model.StartDate.ToString("o")" />
-                    <input type="hidden" name="endDate" value="@Model.EndDate.ToString("o")" />
+                    <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo
+                        seleccionado.</p>
+
+                    <input type="hidden" name="plantId" value="@Model.PlantId"/>
+                    <input type="hidden" name="startDate" value="@Model.StartDate.ToString("o")"/>
+                    <input type="hidden" name="endDate" value="@Model.EndDate.ToString("o")"/>
 
                     <div class="mb-3">
                         <label for="recipientEmail" class="form-label">Correo Electrónico del Destinatario</label>
-                        <input type="email" class="form-control" id="recipientEmail" name="recipientEmail" 
+                        <input type="email" class="form-control" id="recipientEmail" name="recipientEmail"
                                value="@User.Identity.Name" required>
                     </div>
                 </div>

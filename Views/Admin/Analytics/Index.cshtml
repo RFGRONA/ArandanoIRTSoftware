@@ -25,6 +25,14 @@
 </div>
 <p class="lead mb-4">Supervisa el estado actual de todas tus plantas y accede a los análisis detallados.</p>
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 @if (!Model.Any())
 {
     <div class="alert alert-info">No hay cultivos registrados en el sistema.</div>

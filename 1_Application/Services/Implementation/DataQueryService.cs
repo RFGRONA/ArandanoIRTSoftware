@@ -15,7 +15,6 @@ namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
 public class DataQueryService : IDataQueryService
 {
-    private readonly TimeZoneInfo _colombiaZone;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DataQueryService> _logger;
 
@@ -23,17 +22,6 @@ public class DataQueryService : IDataQueryService
     {
         _context = context;
         _logger = logger;
-        try
-        {
-            _colombiaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
-        }
-        catch (TimeZoneNotFoundException tzex)
-        {
-            _logger.LogCritical(tzex,
-                "La zona horaria 'America/Bogota' no se encontró en el sistema. Las conversiones de fecha pueden ser incorrectas.");
-            // Fallback a la zona UTC si no se encuentra la de Colombia para evitar que la aplicación falle al iniciar.
-            _colombiaZone = TimeZoneInfo.Utc;
-        }
     }
 
     public async Task<Result<PagedResultDto<SensorDataDisplayDto>>> GetSensorDataAsync(DataQueryFilters filters)
@@ -514,15 +502,14 @@ public class DataQueryService : IDataQueryService
         {
             var latestCapture = await _context.ThermalCaptures
                 .AsNoTracking()
-                .Where(tc => tc.PlantId == plantId && tc.RgbImagePath != null && EF.Functions.JsonExists(tc.ThermalDataStats, "temperatures"))
+                .Where(tc =>
+                    tc.PlantId == plantId && tc.RgbImagePath != null &&
+                    EF.Functions.JsonExists(tc.ThermalDataStats, "temperatures"))
                 .OrderByDescending(tc => tc.RecordedAtServer)
                 .Select(tc => new { tc.ThermalDataStats, tc.RgbImagePath }) // Seleccionamos ambos campos
                 .FirstOrDefaultAsync();
 
-            if (latestCapture == null)
-            {
-                return Result.Success<(ThermalDataDto? Stats, string? ImagePath)>((null, null));
-            }
+            if (latestCapture == null) return Result.Success<(ThermalDataDto? Stats, string? ImagePath)>((null, null));
 
             var thermalStats = DeserializeThermalStats(latestCapture.ThermalDataStats, 0);
             return Result.Success((thermalStats, latestCapture.RgbImagePath));
@@ -530,7 +517,8 @@ public class DataQueryService : IDataQueryService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error obteniendo la última captura para la máscara de la planta {PlantId}", plantId);
-            return Result.Failure<(ThermalDataDto? Stats, string? ImagePath)>("Error interno al obtener datos de la captura.");
+            return Result.Failure<(ThermalDataDto? Stats, string? ImagePath)>(
+                "Error interno al obtener datos de la captura.");
         }
     }
 
@@ -543,25 +531,21 @@ public class DataQueryService : IDataQueryService
     private float? GetLightValueFromJson(string? extraDataJson)
     {
         if (string.IsNullOrWhiteSpace(extraDataJson)) return null;
-
         try
         {
             using var jsonDoc = JsonDocument.Parse(extraDataJson);
             if (jsonDoc.RootElement.TryGetProperty("light", out var lightElement) &&
-                lightElement.TryGetSingle(out var lightValue)) return lightValue;
+                lightElement.TryGetSingle(out var lightValue))
+                return lightValue;
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "No se pudo parsear el JSON de ExtraData para obtener 'light'. Contenido: {Json}",
-                extraDataJson);
+            _logger.LogWarning(ex, "No se pudo parsear el JSON de ExtraData. Contenido: {Json}", extraDataJson);
         }
 
         return null;
     }
 
-    /// <summary>
-    ///     Parsea de forma segura el campo de estadísticas térmicas (JSON).
-    /// </summary>
     private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson, long entityId)
     {
         if (string.IsNullOrEmpty(thermalDataJson)) return null;
@@ -599,5 +583,22 @@ public static class PredicateBuilder
     {
         var invokedExpr = Expression.Invoke(expr2, expr1.Parameters);
         return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(expr1.Body, invokedExpr), expr1.Parameters);
+    }
+}
+
+public static class DateTimeExtensions
+{
+    public static DateTime ToColombiaTime(this DateTime utcDateTime)
+    {
+        try
+        {
+            var colombiaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+            return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, colombiaZone);
+        }
+        catch
+        {
+            // Fallback a la hora local del servidor si la zona no se encuentra
+            return utcDateTime.ToLocalTime();
+        }
     }
 }
