@@ -132,7 +132,7 @@ public class AnalyticsService : IAnalyticsService
         var queryStartDate = finalStartDate.Date.ToSafeUniversalTime();
         var queryEndDate = finalEndDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 
-        _logger.LogInformation("Ejecutando consulta de análisis para PlantId {PlantId} en el rango de fechas (UTC): {StartDate} a {EndDate}", 
+        _logger.LogInformation("Ejecutando consulta de análisis para PlantId {PlantId} en el rango de fechas (UTC): {StartDate} a {EndDate}",
             plantId, queryStartDate.ToUniversalTime(), queryEndDate.ToUniversalTime());
 
         var analysisData = await _context.AnalysisResults
@@ -140,7 +140,7 @@ public class AnalyticsService : IAnalyticsService
             .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= queryStartDate && ar.RecordedAt < queryEndDate)
             .OrderBy(ar => ar.RecordedAt)
             .ToListAsync();
-        
+
         // Si no se encontraron datos en el rango solicitado, buscamos la última fecha disponible.
         if (!analysisData.Any())
         {
@@ -168,13 +168,13 @@ public class AnalyticsService : IAnalyticsService
                     .ToListAsync();
             }
         }
-        
+
         if (!analysisData.Any())
         {
             _logger.LogWarning("No se encontraron datos de análisis para la planta {PlantId} en ningún rango.", plantId);
             return Result.Failure<AnalysisDetailsViewModel>("No hay datos de análisis disponibles para esta planta en el periodo seleccionado o en su historial.");
         }
-            
+
         _logger.LogInformation("Consulta completada. Se encontraron {Count} registros de análisis.", analysisData.Count);
 
         // 4. Formatear datos para Chart.js

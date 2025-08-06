@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize] 
+[Authorize]
 public class AnalyticsController : BaseAdminController
 {
     private readonly IPlantService _plantService;

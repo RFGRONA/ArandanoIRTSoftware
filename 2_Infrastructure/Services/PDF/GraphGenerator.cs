@@ -51,7 +51,7 @@ public static class GraphGenerator
         // Dibujamos los cuadros de leyenda en la parte superior del gráfico
         float legendY = Padding - 45; // Posición vertical de la leyenda
         float legendX = Width - Padding - 250; // Posición horizontal
-        
+
         // Leyenda para Estrés Incipiente
         canvas.DrawRect(legendX, legendY, 15, 10, incipientPaint);
         canvas.DrawText("Estrés Incipiente", legendX + 20, legendY + 10, textPaint);

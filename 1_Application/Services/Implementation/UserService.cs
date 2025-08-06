@@ -250,7 +250,7 @@ public class UserService : IUserService
     {
         return await _userManager.Users.ToListAsync();
     }
-    
+
     public async Task<Result<IEnumerable<UserDto>>> GetAllUsersForManagementAsync()
     {
         try
@@ -330,13 +330,13 @@ public class UserService : IUserService
 
         // Si pasa todas las validaciones, proceder con la eliminación.
         var result = await _userManager.DeleteAsync(userToDelete);
-        
+
         if (result.Succeeded)
         {
             _logger.LogInformation("Usuario {UserId} ha sido eliminado por el administrador {AdminId}.", userIdToDelete, currentUserId);
             return Result.Success();
         }
-        
+
         var errors = string.Join(", ", result.Errors.Select(e => e.Description));
         return Result.Failure($"No se pudo eliminar al usuario: {errors}");
     }

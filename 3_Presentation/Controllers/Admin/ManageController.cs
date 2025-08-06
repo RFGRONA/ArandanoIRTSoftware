@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize] 
+[Authorize]
 public class ManageController : Controller
 {
     private readonly UserManager<User> _userManager;

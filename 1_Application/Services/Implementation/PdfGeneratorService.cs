@@ -88,7 +88,7 @@ public class PdfGeneratorService : IPdfGeneratorService
             AnomalyAlerts = anomalyAlerts,
             AnalysisData = analysisData,
             ObservationData = observationData,
-            StatusHistory = statusHistory 
+            StatusHistory = statusHistory
         };
 
         _logger.LogInformation("Generando reporte en PDF para la planta {PlantName}", plant.Name);

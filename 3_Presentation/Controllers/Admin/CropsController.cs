@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize] 
+[Authorize]
 public class CropsController : BaseAdminController
 {
     private readonly ICropService _cropService;

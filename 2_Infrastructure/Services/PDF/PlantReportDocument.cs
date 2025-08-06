@@ -57,11 +57,11 @@ public class PlantReportDocument : IDocument
         container.Column(column =>
         {
             // --- Contenido de la PRIMERA PÁGINA ---
-            column.Item().PaddingTop(3); 
-            
+            column.Item().PaddingTop(3);
+
             // 1. Resumen Ejecutivo (los cuadros de métricas)
             column.Item().Element(ComposeSummaryMetrics);
-            
+
             // 2. Gráficos
             if (!_model.AnalysisData.Any())
             {
@@ -75,7 +75,7 @@ public class PlantReportDocument : IDocument
                     graphContainer.Item().Text("Evolución del Índice de Estrés Hídrico (CWSI)").Style(Styles.Header);
                     graphContainer.Item().Image(GraphGenerator.CreateCwsiGraph(_model.AnalysisData, 0.3f, 0.5f));
                 });
-                
+
                 column.Item().Column(graphContainer =>
                 {
                     graphContainer.Spacing(10); // Reducimos el espacio aquí
@@ -171,7 +171,7 @@ public class PlantReportDocument : IDocument
             });
         });
     }
-    
+
     private void ComposeEventsTable(IContainer container)
     {
         container.Column(column =>
@@ -215,7 +215,7 @@ public class PlantReportDocument : IDocument
         public static TextStyle Subtitle => TextStyle.Default.FontSize(10).FontColor(Colors.Grey.Darken1);
         public static TextStyle Header => TextStyle.Default.FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
     }
-    
+
     private string GenerateDiagnosisText()
     {
         if (_model.MaxCwsi == null) return "No hay suficientes datos para generar un diagnóstico.";
