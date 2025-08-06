@@ -1,0 +1,143 @@
+@using ArandanoIRT.Web._1_Application.DTOs.Admin
+@model IEnumerable<UserDto>
+
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+    Layout = "_AdminLayout";
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+    <div class="header-actions">
+        @* Botón que lleva a la gestión de invitaciones *@
+        <a asp-area="Admin" asp-controller="Invitation" asp-action="Index" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Generar Invitación
+        </a>
+    </div>
+</div>
+
+<p class="lead mb-4">Administra los usuarios del sistema, asciende roles y elimina cuentas.</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>Nombre Completo</th>
+                <th>Correo Electrónico</th>
+                <th>Rol</th>
+                <th>Fecha de Registro</th>
+                <th style="width: 20%;">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>
+                            @if (user.Role == "Administrador")
+                            {
+                                <span class="badge bg-success">@user.Role</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@user.Role</span>
+                            }
+                        </td>
+                        <td>@user.RegisteredDate.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @if (user.Role == "Usuario Estándar")
+                            {
+                                <div class="action-buttons">
+                                    <form asp-action="PromoteToAdmin" asp-route-id="@user.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="button" class="btn-action promote" title="Ascender a Administrador"
+                                                data-bs-toggle="modal" data-bs-target="#promoteUserModal"
+                                                data-userid="@user.Id" data-username="@user.FullName">
+                                            <i class="fas fa-user-shield"></i>
+                                        </button>
+                                    </form>
+                                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn-action delete" title="Eliminar Usuario">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">N/A</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center py-4">No hay usuarios registrados en el sistema.</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="promoteUserModal" tabindex="-1" aria-labelledby="promoteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="promoteUserModalLabel">Confirmar Cambio de Rol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea ascender al usuario <strong id="userNameToPromote"></strong> a Administrador?</p>
+                <div class="alert alert-warning">
+                    <strong>Atención:</strong> Esta acción no se puede revertir.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <form id="promoteForm" asp-action="PromoteToAdmin" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Sí, Ascender</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var promoteUserModal = document.getElementById('promoteUserModal');
+            promoteUserModal.addEventListener('show.bs.modal', function (event) {
+                // Botón que disparó el modal
+                var button = event.relatedTarget;
+
+                // Extraer información de los atributos data-*
+                var userId = button.getAttribute('data-userid');
+                var userName = button.getAttribute('data-username');
+
+                // Actualizar el contenido del modal
+                var modalBody = promoteUserModal.querySelector('.modal-body #userNameToPromote');
+                modalBody.textContent = userName;
+
+                // Actualizar el 'action' del formulario para que apunte al usuario correcto
+                var form = promoteUserModal.querySelector('#promoteForm');
+                form.action = '/Admin/UserManagement/PromoteToAdmin/' + userId;
+            });
+        });
+    </script>
+}

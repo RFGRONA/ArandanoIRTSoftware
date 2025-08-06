@@ -23,4 +23,7 @@ public interface IUserService
     Task<Result> UpdateProfileAsync(ClaimsPrincipal userPrincipal, ProfileInfoDto model);
     Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate);
     Task<List<User>> GetAllUsersAsync();
+    Task<Result<IEnumerable<UserDto>>> GetAllUsersForManagementAsync();
+    Task<Result> PromoteToAdminAsync(int userIdToPromote);
+    Task<Result> DeleteUserAsync(int userIdToDelete, int currentUserId);
 }

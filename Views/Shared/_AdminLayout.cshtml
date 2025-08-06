@@ -28,15 +28,14 @@
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Devices" asp-action="Index"><i class="fas fa-server fa-fw"></i><span>Dispositivos</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="PlantStatus" asp-action="History"><i class="fas fa-history fa-fw"></i><span>Historial de Estados</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Observation" asp-action="Index"><i class="fas fa-book-open fa-fw"></i><span>Bitácora</span></a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="UserManagement" asp-action="Index"><i class="fas fa-users-cog fa-fw"></i><span>Usuarios</span></a></li>
 
                 <li class="nav-title">Visualizar Datos</li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="AmbientData" asp-action="Index"><i class="fas fa-cloud-sun fa-fw"></i><span>Datos Ambientales</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Captures" asp-action="Index"><i class="fas fa-camera fa-fw"></i><span>Capturas</span></a></li>
                 
-                <ul class="nav-section">
-                    <li class="nav-title">Análisis</li>
-                    <li><a class="nav-link" asp-area="Admin" asp-controller="Analytics" asp-action="Index"><i class="fas fa-chart-bar fa-fw"></i><span>Analíticas y Reportes</span></a></li>
-                </ul>
+                <li class="nav-title">Análisis</li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Analytics" asp-action="Index"><i class="fas fa-chart-bar fa-fw"></i><span>Analíticas y Reportes</span></a></li>
             </ul>
         </nav>
         <div class="sidebar-footer">
@@ -49,7 +48,6 @@
                 <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="userInfoDropdown">
                     <li><a class="dropdown-item" asp-area="Admin" asp-controller="Manage" asp-action="Index"><i class="fas fa-user-edit fa-fw"></i> Mi Perfil</a></li>
                     <li><a class="dropdown-item" asp-area="Admin" asp-controller="Support" asp-action="Index"><i class="fas fa-question-circle fa-fw"></i> Solicitar Ayuda</a></li>
-                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Invitation" asp-action="Index"><i class="fas fa-user-plus fa-fw"></i> Gestionar Invitaciones</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">

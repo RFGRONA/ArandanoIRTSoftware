@@ -250,4 +250,94 @@ public class UserService : IUserService
     {
         return await _userManager.Users.ToListAsync();
     }
+    
+    public async Task<Result<IEnumerable<UserDto>>> GetAllUsersForManagementAsync()
+    {
+        try
+        {
+            var users = await _userManager.Users.OrderBy(u => u.FirstName).ToListAsync();
+            var userDtos = new List<UserDto>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                userDtos.Add(new UserDto
+                {
+                    Id = user.Id,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    Email = user.Email,
+                    Role = roles.Contains("Admin") ? "Administrador" : "Usuario Estándar",
+                    RegisteredDate = user.CreatedAt.ToLocalTime() // Mostramos la hora local
+                });
+            }
+            return Result.Success<IEnumerable<UserDto>>(userDtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener la lista de usuarios para gestión.");
+            return Result.Failure<IEnumerable<UserDto>>("Ocurrió un error al cargar los usuarios.");
+        }
+    }
+
+    public async Task<Result> PromoteToAdminAsync(int userIdToPromote)
+    {
+        var user = await _userManager.FindByIdAsync(userIdToPromote.ToString());
+        if (user == null)
+        {
+            return Result.Failure("Usuario no encontrado.");
+        }
+
+        var isAlreadyAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+        if (isAlreadyAdmin)
+        {
+            // No es un error, pero la operación es innecesaria.
+            return Result.Success();
+        }
+
+        var result = await _userManager.AddToRoleAsync(user, "Admin");
+
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("Usuario {UserId} ha sido ascendido a Administrador.", userIdToPromote);
+            return Result.Success();
+        }
+
+        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+        return Result.Failure($"No se pudo ascender al usuario: {errors}");
+    }
+
+    public async Task<Result> DeleteUserAsync(int userIdToDelete, int currentUserId)
+    {
+        // Regla de Seguridad 1: Un administrador no puede eliminarse a sí mismo.
+        if (userIdToDelete == currentUserId)
+        {
+            return Result.Failure("No puedes eliminar tu propia cuenta de administrador.");
+        }
+
+        var userToDelete = await _userManager.FindByIdAsync(userIdToDelete.ToString());
+        if (userToDelete == null)
+        {
+            // El usuario ya no existe, consideramos la operación exitosa.
+            return Result.Success();
+        }
+
+        // Regla de Seguridad 2: No se puede eliminar a otro administrador.
+        var isUserAdmin = await _userManager.IsInRoleAsync(userToDelete, "Admin");
+        if (isUserAdmin)
+        {
+            return Result.Failure("No está permitido eliminar a un usuario administrador.");
+        }
+
+        // Si pasa todas las validaciones, proceder con la eliminación.
+        var result = await _userManager.DeleteAsync(userToDelete);
+        
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("Usuario {UserId} ha sido eliminado por el administrador {AdminId}.", userIdToDelete, currentUserId);
+            return Result.Success();
+        }
+        
+        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+        return Result.Failure($"No se pudo eliminar al usuario: {errors}");
+    }
 }
