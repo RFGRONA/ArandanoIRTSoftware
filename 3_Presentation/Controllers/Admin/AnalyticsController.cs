@@ -2,11 +2,13 @@ using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._3_Presentation.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
+[Authorize] 
 public class AnalyticsController : BaseAdminController
 {
     private readonly IPlantService _plantService;

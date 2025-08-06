@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize] // Proteger todo el controlador
+[Authorize] 
 public class ObservationController : Controller
 {
     private readonly IObservationService _observationService;

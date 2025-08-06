@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class DashboardController : Controller
 {
     private readonly ICropService _cropService;

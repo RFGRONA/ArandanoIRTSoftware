@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
+[Authorize(Roles = "Admin")]
 public class InvitationController : Controller
 {
     private readonly IInvitationService _invitationService;

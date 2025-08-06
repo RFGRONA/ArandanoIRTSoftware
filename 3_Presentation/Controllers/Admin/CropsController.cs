@@ -1,11 +1,13 @@
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Crops;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
+[Authorize] 
 public class CropsController : BaseAdminController
 {
     private readonly ICropService _cropService;

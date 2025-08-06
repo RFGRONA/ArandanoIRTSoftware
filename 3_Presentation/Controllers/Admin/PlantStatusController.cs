@@ -2,12 +2,13 @@ using System.Security.Claims;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-// [Authorize(Roles = "Admin")] // Puedes descomentar esto cuando la autenticación esté lista
+[Authorize]
 public class PlantStatusController : Controller
 {
     private readonly IPlantService _plantService;

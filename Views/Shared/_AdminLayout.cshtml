@@ -25,10 +25,13 @@
                 <li class="nav-title">Gestión</li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Crops" asp-action="Index"><i class="fas fa-leaf fa-fw"></i><span>Cultivos</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Plants" asp-action="Index"><i class="fas fa-seedling fa-fw"></i><span>Plantas</span></a></li>
-                <li><a class="nav-link" asp-area="Admin" asp-controller="Devices" asp-action="Index"><i class="fas fa-server fa-fw"></i><span>Dispositivos</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="PlantStatus" asp-action="History"><i class="fas fa-history fa-fw"></i><span>Historial de Estados</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Observation" asp-action="Index"><i class="fas fa-book-open fa-fw"></i><span>Bitácora</span></a></li>
-                <li><a class="nav-link" asp-area="Admin" asp-controller="UserManagement" asp-action="Index"><i class="fas fa-users-cog fa-fw"></i><span>Usuarios</span></a></li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Devices" asp-action="Index"><i class="fas fa-server fa-fw"></i><span>Dispositivos</span></a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="UserManagement" asp-action="Index"><i class="fas fa-users-cog fa-fw"></i><span>Usuarios</span></a></li>
+                }
 
                 <li class="nav-title">Visualizar Datos</li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="AmbientData" asp-action="Index"><i class="fas fa-cloud-sun fa-fw"></i><span>Datos Ambientales</span></a></li>

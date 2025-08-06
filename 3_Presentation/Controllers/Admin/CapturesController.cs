@@ -10,7 +10,7 @@ using ArandanoIRT.Web._1_Application.Services.Contracts;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class CapturesController : Controller
 {
     private readonly IDataQueryService _dataQueryService;

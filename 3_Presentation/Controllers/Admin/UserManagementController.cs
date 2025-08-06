@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")] // Proteger todo el controlador para que solo los administradores puedan acceder
+[Authorize(Roles = "Admin")]
 public class UserManagementController : BaseAdminController
 {
     private readonly IUserService _userService;
