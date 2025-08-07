@@ -1,0 +1,99 @@
+:root {
+    --primary-color: #5D3EBF;
+    --primary-light: #f4f2ff;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-gray: #f8f9fa;
+    --border-color: #e9ecef;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem;
+}
+
+/* --- Tarjeta de Detalles Principal --- */
+.details-card {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.details-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.details-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.details-header h4 {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+.details-list dt {
+    font-weight: 600;
+    color: #343a40;
+}
+
+.details-list dd {
+    color: #495057;
+}
+
+.detail-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+/* --- Barra de Acciones --- */
+.actions-bar {
+    background-color: var(--light-gray);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end; 
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1rem;
+    transition: all 0.2s ease-in-out;
+    text-decoration: none;
+    border: none;
+}
+
+.action-btn i {
+    font-size: 0.9em;
+}
+
+/* Estilos de cada botón si se quieren cambiar en un futuro */
+.action-btn.btn-edit { background-color: var(--warning-color); color: #212529; }
+.action-btn.btn-edit:hover { background-color: #ffca2c; }
+
+.action-btn.btn-status { background-color: var(--info-color); color: #212529; }
+.action-btn.btn-status:hover { background-color: #31d2f2; }
+
+.action-btn.btn-mask { background-color: var(--primary-color); color: white; }
+.action-btn.btn-mask:hover { background-color: #4a319a; }
+
+.action-btn.btn-back { background-color: transparent; color: var(--secondary-color); border: 1px solid var(--border-color); }
+.action-btn.btn-back:hover { background-color: var(--border-color); }
+

@@ -4,72 +4,60 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/invitation.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="~/css/data-tables.css" asp-append-version="true" />
 }
 
 <div class="page-header">
+    <a asp-area="Admin" asp-controller="UserManagement" asp-action="Index" class="btn btn-back">
+        <i class="fas fa-arrow-left me-2"></i>Volver a Usuarios
+    </a>
     <h1>@ViewData["Title"]</h1>
 </div>
 
-<p class="lead text-center mb-4">
-    Completa el formulario para generar y enviar un código de invitación de un solo uso a un nuevo usuario.
-</p>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="alert alert-success text-center">
-                <h4 class="alert-heading">¡Invitación Generada!</h4>
-                <p>Se ha generado un nuevo código de invitación. Cópialo y envíalo al nuevo usuario para que pueda registrarse.</p>
-                <hr>
-                <div class="input-group mt-3">
-                    <input type="text" id="invitationCode" class="form-control" value="@TempData["SuccessMessage"]" readonly>
-                    <button class="btn btn-outline-success" type="button" onclick="copyCode()">
-                        <i class="fas fa-copy"></i> Copiar
-                    </button>
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="invitation-success-card">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
                 </div>
+                <h4>¡Invitación Enviada!</h4>
+                <p>@TempData["SuccessMessage"]</p>
             </div>
-        </div>
-    </div>
-}
+        }
 
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+        @if (TempData["ErrorMessage"] != null)
+        {
             <div class="alert alert-danger text-center">
                 <strong>Error:</strong> @TempData["ErrorMessage"]
             </div>
-        </div>
-    </div>
-}
+        }
 
-
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card table-card">
-            <div class="card-body p-4">
+        <div class="card form-card mt-4">
+            <div class="card-body">
+                <div class="form-header">
+                    <i class="fas fa-paper-plane"></i>
+                    <h5>Nuevo Usuario</h5>
+                    <p class="text-muted">Completa el formulario para generar y enviar un código de invitación de un solo uso.</p>
+                </div>
                 <form asp-action="Generate" method="post">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-6">
-                            <label for="email" class="form-label fw-bold">Correo Electrónico del Invitado</label>
-                            <input type="email" name="email" id="email" class="form-control" required/>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Tipo de Rol</label>
-                            <select name="isAdmin" class="form-select">
-                                <option value="false">Usuario Estándar</option>
-                                <option value="true">Administrador</option>
-                            </select>
-                        </div>
-                        <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-primary w-100 py-2">
-                                <i class="fas fa-paper-plane me-2"></i>Generar y Enviar Invitación
-                            </button>
-                        </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo Electrónico del Invitado</label>
+                        <input type="email" name="email" id="email" class="form-control" required/>
                     </div>
+                    <div class="mb-4">
+                        <label class="form-label">Tipo de Rol</label>
+                        <select name="isAdmin" class="form-select">
+                            <option value="false">Usuario Estándar</option>
+                            <option value="true">Administrador</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Generar y Enviar Invitación
+                    </button>
                 </form>
             </div>
         </div>
@@ -77,26 +65,4 @@
 </div>
 
 @section Scripts {
-    <script>
-        function copyCode() {
-            const input = document.getElementById('invitationCode');
-            input.select();
-            input.setSelectionRange(0, 99999); // Para dispositivos móviles
-            
-            // Usamos el portapapeles del navegador
-            navigator.clipboard.writeText(input.value).then(() => {
-                // Opcional: Mostrar una pequeña notificación de que se copió
-                const copyButton = document.querySelector('.btn-outline-success');
-                const originalText = copyButton.innerHTML;
-                copyButton.innerHTML = '<i class="fas fa-check"></i> Copiado';
-                
-                setTimeout(() => {
-                    copyButton.innerHTML = originalText;
-                }, 2000);
-
-            }).catch(err => {
-                console.error('Error al copiar el código: ', err);
-            });
-        }
-    </script>
 }

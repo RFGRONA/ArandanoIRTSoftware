@@ -1,0 +1,117 @@
+:root {
+    --primary-color: #5D3EBF;
+    --primary-light: #f4f2ff;
+    --background-color: #F8F9FA;
+    --card-background: #FFFFFF;
+    --text-color: #495057;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem;
+    --success-color: #5D3EBF;
+    --info-color: #0dcaf0;
+}
+
+/* --- Encabezado de Página --- */
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.header-actions .btn {
+    font-weight: 600;
+}
+
+/* --- Tarjeta de Filtros --- */
+.filter-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.filter-card .form-control {
+    border-radius: 0.5rem;
+    padding: 0.8rem 1rem;
+}
+
+/* --- Tarjetas de Gráficos (Dashboard) --- */
+.dashboard-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.dashboard-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.dashboard-card .card-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: 50%;
+    font-size: 1.2rem;
+}
+
+.dashboard-card .card-header-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.dashboard-card .card-body {
+    padding: 1.5rem;
+}
+
+/* --- Botones --- */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+}
+.btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
+.btn-primary:hover { background-color: #4a319a; border-color: #4a319a; }
+.btn-success { background-color: var(--success-color); border-color: var(--success-color); }
+.btn-success:hover { background-color: #3c0daa; border-color: #000000; }
+.btn-info { background-color: var(--info-color); border-color: var(--info-color); color: #000; }
+.btn-info:hover { background-color: #17afce; border-color: #000000; }
+
+.btn-secondary-outline {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+.btn-secondary-outline:hover {
+    background-color: #f8f9fa;
+    color: var(--text-color);
+    border-color: #ced4da;
+}
+
+/* --- Modal --- */
+.modal-header {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-bottom: none;
+}
+.modal-header .modal-title { font-weight: 600; }
+.modal-footer {
+    background-color: var(--background-color);
+    border-top: 1px solid var(--border-color);
+}
+
