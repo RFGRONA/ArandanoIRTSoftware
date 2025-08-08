@@ -1,5 +1,6 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
+using ArandanoIRT.Web._1_Application.Helper;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -33,13 +34,17 @@ public class InvitationService : IInvitationService
         
         try
         {
+            // 1. Generar un código público, más corto y legible
+            var publicCode = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+
+            // 2. Generar el hash seguro que se guardará en la base de datos
+            var hashedCode = SecurityHelper.GenerateInvitationHash(publicCode, email);
+            
             var newInvitation = new InvitationCode
             {
-                // Genera un código único y difícil de adivinar
-                Code = Guid.NewGuid().ToString("N"),
-                // Define una fecha de expiración, por ejemplo, 7 días a partir de ahora
+                Code = hashedCode, // Guardamos el HASH en la BD
                 ExpiresAt = DateTime.UtcNow.AddDays(7),
-                IsAdmin = isAdmin, // Asigna el rol según el parámetro 
+                IsAdmin = isAdmin,
                 CreatedByUserId = createdByUserId,
                 IsUsed = false
             };
@@ -47,7 +52,10 @@ public class InvitationService : IInvitationService
             _context.InvitationCodes.Add(newInvitation);
             await _context.SaveChangesAsync();
 
+            // 3. Enviar el código PÚBLICO por correo, no el hash
+            newInvitation.Code = publicCode; 
             await _alertService.SendInvitationEmailAsync(email, "Nuevo Usuario", newInvitation);
+            
             return Result.Success(newInvitation);
         }
         catch (Exception ex)
@@ -57,13 +65,17 @@ public class InvitationService : IInvitationService
         }
     }
 
-    public async Task<Result<InvitationCode>> ValidateCodeAsync(string code)
+    public async Task<Result<InvitationCode>> ValidateCodeAsync(string code, string email)
     {
         if (string.IsNullOrWhiteSpace(code))
             return Result.Failure<InvitationCode>("El código de invitación no puede estar vacío.");
 
+        // 1. Recrear el hash a partir de los datos proporcionados por el usuario
+        var hashedCodeToValidate = SecurityHelper.GenerateInvitationHash(code, email);
+
+        // 2. Buscar el hash en la base de datos
         var invitation = await _context.InvitationCodes
-            .FirstOrDefaultAsync(c => c.Code == code);
+            .FirstOrDefaultAsync(c => c.Code == hashedCodeToValidate);
 
         if (invitation == null) return Result.Failure<InvitationCode>("El código de invitación no es válido.");
 

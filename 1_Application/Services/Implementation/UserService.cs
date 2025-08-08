@@ -69,7 +69,7 @@ public class UserService : IUserService
     public async Task<Result> RegisterUserAsync(RegisterDto model)
     {
         // 1. Validar la invitación primero (operación de solo lectura)
-        var invitationResult = await _invitationService.ValidateCodeAsync(model.InvitationCode);
+        var invitationResult = await _invitationService.ValidateCodeAsync(model.InvitationCode, model.Email);
         if (invitationResult.IsFailure) return Result.Failure(invitationResult.ErrorMessage);
         var invitation = invitationResult.Value;
 
