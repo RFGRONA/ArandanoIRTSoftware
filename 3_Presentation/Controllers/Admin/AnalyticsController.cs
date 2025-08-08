@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -105,10 +106,18 @@ public class AnalyticsController : BaseAdminController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveMask(int plantId, string coordinates)
+    public async Task<IActionResult> SaveMask(int id, string coordinates)
     {
-        var result = await _analyticsService.SaveThermalMaskAsync(plantId, coordinates);
-        return HandleServiceResult(result, "Details", new { controller = "Plants", id = plantId });
+        var result = await _analyticsService.SaveThermalMaskAsync(id, coordinates);
+
+        if (result.IsSuccess)
+        {
+            TempData[SuccessMessageKey] = "Máscara guardada exitosamente.";
+            return RedirectToAction("Details", "Plants", new { id = id });
+        }
+        
+        TempData[ErrorMessageKey] = result.ErrorMessage;
+        return RedirectToAction("CreateMask", new { id = id });
     }
 
     [HttpPost]

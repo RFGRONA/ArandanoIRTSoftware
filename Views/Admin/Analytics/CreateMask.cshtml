@@ -34,7 +34,6 @@
     <link rel="stylesheet" href="~/css/mask-creator.css" asp-append-version="true" />
 }
 
-
 <div class="card shadow-sm mask-creator-container">
     <div class="card-header">
         <h4 class="mb-0">@ViewData["Title"]</h4>
@@ -89,7 +88,7 @@
             <div class="col-12 text-end">
                 <form id="maskForm" asp-action="SaveMask" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="plantId" value="@Model.PlantId" />
+                    <input type="hidden" name="id" value="@Model.PlantId" />
                     <input type="hidden" id="coordinates" name="coordinates" />
                     <a asp-controller="Plants" asp-action="Details" asp-route-id="@Model.PlantId" class="btn btn-secondary">Cancelar</a>
                     <button type="submit" class="btn btn-primary">
