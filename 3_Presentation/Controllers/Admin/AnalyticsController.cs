@@ -115,7 +115,7 @@ public class AnalyticsController : BaseAdminController
             TempData[SuccessMessageKey] = "Máscara guardada exitosamente.";
             return RedirectToAction("Details", "Plants", new { id = id });
         }
-        
+
         TempData[ErrorMessageKey] = result.ErrorMessage;
         return RedirectToAction("CreateMask", new { id = id });
     }

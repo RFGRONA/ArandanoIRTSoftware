@@ -31,7 +31,7 @@ public class InvitationService : IInvitationService
             _logger.LogWarning("Intento de crear la primera invitación sin privilegios de administrador.");
             return Result.Failure<InvitationCode>("La primera invitación del sistema debe ser obligatoriamente para un rol de Administrador.");
         }
-        
+
         try
         {
             // 1. Generar un código público, más corto y legible
@@ -39,7 +39,7 @@ public class InvitationService : IInvitationService
 
             // 2. Generar el hash seguro que se guardará en la base de datos
             var hashedCode = SecurityHelper.GenerateInvitationHash(publicCode, email);
-            
+
             var newInvitation = new InvitationCode
             {
                 Code = hashedCode, // Guardamos el HASH en la BD
@@ -53,9 +53,9 @@ public class InvitationService : IInvitationService
             await _context.SaveChangesAsync();
 
             // 3. Enviar el código PÚBLICO por correo, no el hash
-            newInvitation.Code = publicCode; 
+            newInvitation.Code = publicCode;
             await _alertService.SendInvitationEmailAsync(email, "Nuevo Usuario", newInvitation);
-            
+
             return Result.Success(newInvitation);
         }
         catch (Exception ex)

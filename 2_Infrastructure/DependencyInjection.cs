@@ -100,54 +100,54 @@ public static class DependencyInjection
     ///     Adds custom authentication and authorization services.
     /// </summary>
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services)
-{
-    // 1. AÑADIR IDENTITY PRIMERO
-    // Esto configura el sistema principal de usuarios, roles y contraseñas.
-    services.AddIdentity<User, ApplicationRole>(options =>
-        {
-            options.Password.RequireDigit = true;
-            options.Password.RequiredLength = 8;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireLowercase = true;
-            options.User.RequireUniqueEmail = true;
-
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3);
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.AllowedForNewUsers = true;
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
-
-    // 2. CONFIGURAR LA AUTENTICACIÓN Y LA COOKIE DE IDENTITY
-    services.ConfigureApplicationCookie(options =>
     {
-        options.LoginPath = "/Account/Login"; 
-        options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/Account/AccessDenied";
-        
-        options.ExpireTimeSpan = TimeSpan.FromDays(1);
-        options.SlidingExpiration = true;
-    });
+        // 1. AÑADIR IDENTITY PRIMERO
+        // Esto configura el sistema principal de usuarios, roles y contraseñas.
+        services.AddIdentity<User, ApplicationRole>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.User.RequireUniqueEmail = true;
 
-    // Añadimos nuestro esquema personalizado para dispositivos, que es independiente.
-    services.AddAuthentication()
-        .AddScheme<DeviceAuthenticationOptions, DeviceAuthenticationHandler>(
-            DeviceAuthenticationOptions.DefaultScheme, options => { });
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
-    // 3. CONFIGURAR AUTORIZACIÓN (Se mantiene igual)
-    services.AddAuthorization(options =>
-    {
-        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-        options.AddPolicy("DeviceAuthenticated", policy =>
+        // 2. CONFIGURAR LA AUTENTICACIÓN Y LA COOKIE DE IDENTITY
+        services.ConfigureApplicationCookie(options =>
         {
-            policy.AddAuthenticationSchemes(DeviceAuthenticationOptions.DefaultScheme);
-            policy.RequireAuthenticatedUser();
+            options.LoginPath = "/Account/Login";
+            options.LogoutPath = "/Account/Logout";
+            options.AccessDeniedPath = "/Account/AccessDenied";
+
+            options.ExpireTimeSpan = TimeSpan.FromDays(1);
+            options.SlidingExpiration = true;
         });
-    });
 
-    return services;
-}
+        // Añadimos nuestro esquema personalizado para dispositivos, que es independiente.
+        services.AddAuthentication()
+            .AddScheme<DeviceAuthenticationOptions, DeviceAuthenticationHandler>(
+                DeviceAuthenticationOptions.DefaultScheme, options => { });
+
+        // 3. CONFIGURAR AUTORIZACIÓN (Se mantiene igual)
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+            options.AddPolicy("DeviceAuthenticated", policy =>
+            {
+                policy.AddAuthenticationSchemes(DeviceAuthenticationOptions.DefaultScheme);
+                policy.RequireAuthenticatedUser();
+            });
+        });
+
+        return services;
+    }
 
     /// <summary>
     ///     Adds presentation layer services like Controllers and Views.

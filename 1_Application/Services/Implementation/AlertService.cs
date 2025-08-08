@@ -187,12 +187,12 @@ public class AlertService : IAlertService
         {
             PlantName = plantName
         };
-    
+
         // 2. Renderizar la plantilla a HTML
         var body = await _razorRenderer.RenderViewToStringAsync(
-            "~/Views/Shared/EmailTemplates/_ReportByEmail.cshtml", 
+            "~/Views/Shared/EmailTemplates/_ReportByEmail.cshtml",
             viewModel);
-        
+
         var recipientName = "Destinatario del Reporte";
 
         // 3. Enviar el correo usando el cuerpo renderizado y el adjunto
