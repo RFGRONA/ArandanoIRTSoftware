@@ -1,7 +1,9 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Alerts;
 using ArandanoIRT.Web._1_Application.DTOs.Analysis;
+using ArandanoIRT.Web._1_Application.DTOs.Reports;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._3_Presentation.ViewModels;
 
@@ -178,13 +180,23 @@ public class AlertService : IAlertService
     public async Task SendReportByEmailAsync(string recipientEmail, string plantName, byte[] pdfAttachment)
     {
         var subject = $"Reporte de Estado Hídrico: {plantName}";
-        var body = $"<p>Hola,</p><p>Adjunto encontrarás el reporte de estado hídrico para la planta <strong>{plantName}</strong>.</p><p>Saludos,<br>Sistema Arandano IRT</p>";
-
         var attachmentName = $"Reporte_{plantName.Replace(" ", "_")}_{DateTime.UtcNow.ToColombiaTime():yyyyMMdd}.pdf";
 
-        // Asumimos que IEmailService tiene un método que acepta archivos adjuntos.
-        // La implementación dependerá de Brevo, pero típicamente aceptan un array de bytes.
-        await _emailService.SendEmailWithAttachmentAsync(recipientEmail, "Usuario", subject, body, pdfAttachment, attachmentName);
+        // 1. Crear el ViewModel
+        var viewModel = new ReportByEmailViewModel()
+        {
+            PlantName = plantName
+        };
+    
+        // 2. Renderizar la plantilla a HTML
+        var body = await _razorRenderer.RenderViewToStringAsync(
+            "~/Views/Shared/EmailTemplates/_ReportByEmail.cshtml", 
+            viewModel);
+        
+        var recipientName = "Destinatario del Reporte";
+
+        // 3. Enviar el correo usando el cuerpo renderizado y el adjunto
+        await _emailService.SendEmailWithAttachmentAsync(recipientEmail, recipientName, subject, body, pdfAttachment, attachmentName);
         _logger.LogInformation("Reporte en PDF para la planta {PlantName} enviado a {RecipientEmail}", plantName, recipientEmail);
     }
 }
