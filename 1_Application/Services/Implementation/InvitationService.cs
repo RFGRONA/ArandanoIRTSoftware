@@ -22,6 +22,15 @@ public class InvitationService : IInvitationService
 
     public async Task<Result<InvitationCode>> CreateInvitationAsync(string email, bool isAdmin, int? createdByUserId)
     {
+        var isFirstInvitation = !await _context.InvitationCodes.AnyAsync();
+
+        // Si es la primera invitación y no está marcada como "Admin", devolvemos un error.
+        if (isFirstInvitation && !isAdmin)
+        {
+            _logger.LogWarning("Intento de crear la primera invitación sin privilegios de administrador.");
+            return Result.Failure<InvitationCode>("La primera invitación del sistema debe ser obligatoriamente para un rol de Administrador.");
+        }
+        
         try
         {
             var newInvitation = new InvitationCode
