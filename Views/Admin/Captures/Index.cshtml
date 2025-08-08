@@ -4,8 +4,16 @@
     ViewData["Title"] = "Capturas Térmicas y RGB";
     Layout = "_AdminLayout";
     var currentFilters = ViewBag.CurrentFilters as DataQueryFilters ?? new DataQueryFilters();
-    // Creamos un diccionario con los filtros actuales para la paginación
-    var routeData = Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString());
+    var routeData = new RouteValueDictionary();
+    foreach (var key in Context.Request.Query.Keys)
+    {
+        if (!key.Equals("PageNumber", StringComparison.OrdinalIgnoreCase))
+        {
+            routeData[key] = Context.Request.Query[key];
+        }
+    }
+
+    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
@@ -66,13 +74,13 @@
             </div>
             <hr class="filter-divider">
             <div class="row g-3">
-                 <div class="col-md-4">
+                <div class="col-md-4">
                     <label for="StartDate" class="form-label">Desde</label>
-                    <input type="datetime-local" name="StartDate" id="StartDate" class="form-control" value="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input type="date" name="StartDate" id="StartDate" class="form-control" value="@currentFilters.StartDate?.ToString("yyyy-MM-dd")"/>
                 </div>
                 <div class="col-md-4">
                     <label for="EndDate" class="form-label">Hasta</label>
-                    <input type="datetime-local" name="EndDate" id="EndDate" class="form-control" value="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input type="date" name="EndDate" id="EndDate" class="form-control" value="@currentFilters.EndDate?.ToString("yyyy-MM-dd")" max="@maxDate" />
                 </div>
                 <div class="col-md-4 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
@@ -143,13 +151,13 @@ else
                 <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
                 <ul class="pagination">
                     <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData" asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
                     </li>
 
                     @if (Model.PageNumber > 3)
                     {
                         <li class="page-item">
-                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData" asp-route-pageNumber="1">1</a>
+                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="1">1</a>
                         </li>
                         @if (Model.PageNumber > 4)
                         {
@@ -160,7 +168,7 @@ else
                     @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
                     {
                         <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData" asp-route-pageNumber="@i">@i</a>
+                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@i">@i</a>
                         </li>
                     }
 
@@ -171,12 +179,12 @@ else
                             <li class="page-item disabled"><span class="page-link">...</span></li>
                         }
                         <li class="page-item">
-                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData" asp-route-pageNumber="@Model.TotalPages">@Model.TotalPages</a>
+                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@Model.TotalPages">@Model.TotalPages</a>
                         </li>
                     }
 
                     <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData" asp-route-pageNumber="@(Model.PageNumber + 1)">Siguiente</a>
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@(Model.PageNumber + 1)">Siguiente</a>
                     </li>
                 </ul>
             </nav>

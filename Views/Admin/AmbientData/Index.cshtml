@@ -4,6 +4,16 @@
     ViewData["Title"] = "Datos Ambientales";
     Layout = "_AdminLayout";
     var currentFilters = ViewBag.CurrentFilters as DataQueryFilters ?? new DataQueryFilters();
+    
+    var routeData = new RouteValueDictionary();
+    foreach (var key in Context.Request.Query.Keys)
+    {
+        if (!key.Equals("PageNumber", StringComparison.OrdinalIgnoreCase))
+        {
+            routeData[key] = Context.Request.Query[key];
+        }
+    }
+    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
@@ -51,13 +61,13 @@
             </div>
             <hr class="filter-divider">
             <div class="row g-3">
-                 <div class="col-md-4">
+                <div class="col-md-4">
                     <label for="StartDate" class="form-label">Desde</label>
-                    <input type="datetime-local" name="StartDate" id="StartDate" class="form-control" value="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input type="date" name="StartDate" id="StartDate" class="form-control" value="@currentFilters.StartDate?.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-4">
                     <label for="EndDate" class="form-label">Hasta</label>
-                    <input type="datetime-local" name="EndDate" id="EndDate" class="form-control" value="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input type="date" name="EndDate" id="EndDate" class="form-control" value="@currentFilters.EndDate?.ToString("yyyy-MM-dd")" max="@maxDate" />
                 </div>
                 <div class="col-md-4 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
@@ -109,71 +119,39 @@ else
         <nav class="pagination-container" aria-label="Paginación de datos ambientales">
             <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
             <ul class="pagination">
-                <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                    <a class="page-link" asp-action="Index"
-                       asp-route-CropId="@currentFilters.CropId"
-                       asp-route-PlantId="@currentFilters.PlantId"
-                       asp-route-DeviceId="@currentFilters.DeviceId"
-                       asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                       asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                       asp-route-pageNumber="@(Model.PageNumber - 1)"
-                       asp-route-pageSize="@currentFilters.PageSize">Anterior</a>
-                </li>
-
-                @if (Model.PageNumber > 3)
-                {
-                    <li class="page-item">
-                        <a class="page-link" asp-action="Index" asp-route-pageNumber="1"
-                           asp-route-CropId="@currentFilters.CropId" asp-route-PlantId="@currentFilters.PlantId"
-                           asp-route-DeviceId="@currentFilters.DeviceId" asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-pageSize="@currentFilters.PageSize">1</a>
+                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
                     </li>
-                    @if (Model.PageNumber > 4)
+
+                    @if (Model.PageNumber > 3)
                     {
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="1">1</a>
+                        @if (Model.PageNumber > 4)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
                     }
-                }
 
-                @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
-                {
-                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@i"
-                           asp-route-CropId="@currentFilters.CropId" asp-route-PlantId="@currentFilters.PlantId"
-                           asp-route-DeviceId="@currentFilters.DeviceId"
-                           asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-pageSize="@currentFilters.PageSize">@i</a>
-                    </li>
-                }
-
-                @if (Model.PageNumber + 2 < Model.TotalPages)
-                {
-                    @if (Model.PageNumber + 3 < Model.TotalPages)
+                    @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
                     {
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@i">@i</a>
+                        </li>
                     }
-                    <li class="page-item">
-                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@Model.TotalPages"
-                           asp-route-CropId="@currentFilters.CropId" asp-route-PlantId="@currentFilters.PlantId"
-                           asp-route-DeviceId="@currentFilters.DeviceId"
-                           asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-pageSize="@currentFilters.PageSize">@Model.TotalPages</a>
+
+                    @if (Model.PageNumber + 2 < Model.TotalPages)
+                    {
+                        @if (Model.PageNumber + 3 < Model.TotalPages)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@Model.TotalPages">@Model.TotalPages</a>
+                    }
+                    
+                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@(Model.PageNumber + 1)">Siguiente</a>
                     </li>
-                }
-                
-                <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                    <a class="page-link" asp-action="Index"
-                       asp-route-CropId="@currentFilters.CropId"
-                       asp-route-PlantId="@currentFilters.PlantId"
-                       asp-route-DeviceId="@currentFilters.DeviceId"
-                       asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                       asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                       asp-route-pageNumber="@(Model.PageNumber + 1)"
-                       asp-route-pageSize="@currentFilters.PageSize">Siguiente</a>
-                </li>
-            </ul>
+                </ul>
         </nav>
     </div>
     </div>
