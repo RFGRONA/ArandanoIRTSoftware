@@ -43,11 +43,8 @@
         </nav>
         <div class="sidebar-footer">
             <div class="dropdown">
-                <a href="#" class="user-info-toggle" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-user-circle"></i>
-                    <span>Mi Cuenta</span>
-                    <i class="fas fa-chevron-up"></i>
-                </a>
+                @await Component.InvokeAsync("UserInfo")
+                
                 <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="userInfoDropdown">
                     <li><a class="dropdown-item" asp-area="Admin" asp-controller="Manage" asp-action="Index"><i class="fas fa-user-edit fa-fw"></i> Mi Perfil</a></li>
                     <li><a class="dropdown-item" asp-area="Admin" asp-controller="Support" asp-action="Index"><i class="fas fa-question-circle fa-fw"></i> Solicitar Ayuda</a></li>
@@ -58,7 +55,9 @@
                         </form>
                     </li>
                 </ul>
+
             </div>
+
         </div>
     </aside>
 

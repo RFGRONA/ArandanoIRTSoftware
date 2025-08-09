@@ -79,11 +79,11 @@ body {
 }
 
 .sidebar-footer {
-    padding: 1rem;
+    padding: 0.5rem;
     border-top: 1px solid #374151;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column; 
+    gap: 0.5rem;
     font-size: 0.9rem;
 }
 
@@ -207,4 +207,49 @@ body {
         display: block; /* Muestra el header con el botón de menú */
     }
 
+}
+
+/* --- Estilos botón de Usuario --- */
+.user-info-panel {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+.user-info-panel:hover, .user-info-panel[aria-expanded="true"] {
+    background-color: var(--sidebar-active-bg);
+}
+
+.user-details {
+    line-height: 1.2;
+    flex-grow: 1;          
+    min-width: 0;          
+    margin-right: 0.5rem;  
+}
+
+.user-display-name {
+    font-weight: bold;
+    color: #ffffff;
+    font-size: 0.9rem;
+    white-space: nowrap;      
+    overflow: hidden;         
+    text-overflow: ellipsis;  
+}
+
+.user-display-role {
+    font-size: 0.75rem;
+    color: #adb5bd;
+}
+
+.user-info-panel .fa-chevron-up {
+    color: var(--sidebar-text-color);
+    transition: transform 0.2s ease;
+}
+
+.user-info-panel[aria-expanded="true"] .fa-chevron-up {
+    transform: rotate(180deg);
 }
