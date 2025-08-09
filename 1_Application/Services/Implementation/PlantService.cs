@@ -75,12 +75,10 @@ public class PlantService : IPlantService
             _context.Plants.Add(newPlant);
             await _context.SaveChangesAsync(); // Guardamos para obtener el ID de la nueva planta
 
-            // --- INICIO DE LA CORRECCIÓN ---
             // 4. Añadir el estado inicial al historial
             var currentUserId = GetCurrentUserId();
             await AddStatusHistoryAsync(newPlant, newPlant.Status, "Planta creada.", currentUserId);
             await _context.SaveChangesAsync();
-            // --- FIN DE LA CORRECCIÓN ---
 
             await transaction.CommitAsync();
 
@@ -300,11 +298,17 @@ public class PlantService : IPlantService
     {
         var query = _context.PlantStatusHistories.AsNoTracking();
 
-        // Aplicar filtros dinámicamente
         if (plantId.HasValue) query = query.Where(h => h.PlantId == plantId.Value);
         if (userId.HasValue) query = query.Where(h => h.UserId == userId.Value);
-        if (startDate.HasValue) query = query.Where(h => h.ChangedAt.Date >= startDate.Value.Date);
-        if (endDate.HasValue) query = query.Where(h => h.ChangedAt.Date <= endDate.Value.Date);
+        
+        if (startDate.HasValue)
+        {
+            query = query.Where(h => h.ChangedAt >= startDate.Value);
+        }
+        if (endDate.HasValue)
+        {
+            query = query.Where(h => h.ChangedAt <= endDate.Value);
+        }
 
         // Proyectar el resultado al DTO y ordenar por fecha
         var historyList = await query
@@ -315,7 +319,6 @@ public class PlantService : IPlantService
                 PlantName = h.Plant.Name,
                 Status = h.Status.ToString(),
                 Observation = h.Observation,
-                // Si UserId es nulo, fue el sistema. Si no, mostramos el nombre del usuario.
                 Source = h.User == null ? "Sistema" : h.User.FirstName + " " + h.User.LastName,
                 ChangedAt = h.ChangedAt
             })

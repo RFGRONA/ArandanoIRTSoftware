@@ -1,6 +1,6 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using ArandanoIRT.Web._3_Presentation.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -40,12 +40,11 @@ public class DashboardController : Controller
             SelectedPlantId = selectedPlantId
         };
 
-        // --- Poblar Filtros (esta sección no cambia) ---
         var cropsResult = await _cropService.GetAllCropsAsync();
-        if (cropsResult.IsSuccess && cropsResult.Value != null)
+        if (cropsResult.IsSuccess)
             viewModel.AvailableCrops = cropsResult.Value
                 .Select(c => new SelectListItem
-                { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId })
+                    { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId })
                 .OrderBy(s => s.Text).ToList();
         viewModel.AvailableCrops.Insert(0,
             new SelectListItem("Todos los Cultivos", "") { Selected = !selectedCropId.HasValue });
@@ -53,23 +52,20 @@ public class DashboardController : Controller
         if (selectedCropId.HasValue)
         {
             var plantsResult = await _plantService.GetPlantsByCropAsync(selectedCropId.Value);
-            if (plantsResult.IsSuccess && plantsResult.Value != null)
+            if (plantsResult.IsSuccess)
                 viewModel.AvailablePlants = plantsResult.Value
                     .Select(p => new SelectListItem
-                    { Value = p.Id.ToString(), Text = p.Name, Selected = p.Id == selectedPlantId })
+                        { Value = p.Id.ToString(), Text = p.Name, Selected = p.Id == selectedPlantId })
                     .OrderBy(s => s.Text).ToList();
         }
 
         viewModel.AvailablePlants.Insert(0,
             new SelectListItem("Todas las Plantas", "") { Selected = !selectedPlantId.HasValue });
 
-        // --- INICIO DE LA CORRECCIÓN ---
-
         try
         {
             var duration = TimeSpan.FromHours(24);
 
-            // Se ejecutan las tareas una por una (secuencialmente) para evitar conflictos con el DbContext.
             var activeDevicesResult =
                 await _dataQueryService.GetActiveDevicesCountAsync(selectedCropId, selectedPlantId);
             if (activeDevicesResult.IsSuccess) viewModel.ActiveDevicesCount = activeDevicesResult.Value;
@@ -78,9 +74,8 @@ public class DashboardController : Controller
             if (monitoredPlantsResult.IsSuccess) viewModel.PlantsMonitoredCount = monitoredPlantsResult.Value;
 
             var thermalStatsResult =
-                await _dataQueryService.GetThermalStatsForDashboardAsync(duration, selectedCropId, selectedPlantId,
-                    null);
-            if (thermalStatsResult.IsSuccess && thermalStatsResult.Value != null)
+                await _dataQueryService.GetThermalStatsForDashboardAsync(duration, selectedCropId, selectedPlantId);
+            if (thermalStatsResult.IsSuccess)
                 viewModel.ThermalStatistics = thermalStatsResult.Value;
 
             var latestAmbientDataResult =
@@ -89,40 +84,49 @@ public class DashboardController : Controller
                 viewModel.LatestAmbientData = latestAmbientDataResult.Value;
 
             var ambientDataForChartsResult =
-                await _dataQueryService.GetAmbientDataForDashboardAsync(duration, selectedCropId, selectedPlantId,
-                    null);
-            if (ambientDataForChartsResult.IsSuccess && ambientDataForChartsResult.Value != null)
+                await _dataQueryService.GetAmbientDataForDashboardAsync(duration, selectedCropId, selectedPlantId);
+            if (ambientDataForChartsResult.IsSuccess)
             {
                 var data = ambientDataForChartsResult.Value.ToList();
                 if (data.Any())
                 {
-                    // Poblar datos para gráficos
                     viewModel.TemperatureChartData = new TimeSeriesChartDataDto
                     {
                         DataSetLabel = "Temperatura (°C)",
-                        Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
+                        Labels = data.Select(d => d.RecordedAt.ToColombiaTime().ToString("HH:mm")).ToList(),
                         Values = data.Select(d => (float?)d.Temperature).ToList(),
                         BorderColor = "rgb(255, 99, 132)",
-                        BackgroundColor = "rgba(255, 99, 132, 0.2)"
+                        BackgroundColor = "rgba(255, 99, 132, 0.2)",
+                        YAxisOptions = new ChartYAxisOptions { 
+                            BeginAtZero = true,
+                            Min = 0
+                        }
                     };
                     viewModel.HumidityChartData = new TimeSeriesChartDataDto
                     {
                         DataSetLabel = "Humedad (%)",
-                        Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
+                        Labels = data.Select(d => d.RecordedAt.ToColombiaTime().ToString("HH:mm")).ToList(),
                         Values = data.Select(d => (float?)d.Humidity).ToList(),
                         BorderColor = "rgb(54, 162, 235)",
-                        BackgroundColor = "rgba(54, 162, 235, 0.2)"
+                        BackgroundColor = "rgba(54, 162, 235, 0.2)",
+                        YAxisOptions = new ChartYAxisOptions { 
+                            BeginAtZero = true,
+                            Min = 0
+                        }
                     };
                     viewModel.LightChartData = new TimeSeriesChartDataDto
                     {
                         DataSetLabel = "Luz (lx)",
-                        Labels = data.Select(d => d.RecordedAt.ToString("HH:mm")).ToList(),
+                        Labels = data.Select(d => d.RecordedAt.ToColombiaTime().ToString("HH:mm")).ToList(),
                         Values = data.Select(d => d.Light).ToList(),
                         BorderColor = "rgb(255, 205, 86)",
-                        BackgroundColor = "rgba(255, 205, 86, 0.2)"
+                        BackgroundColor = "rgba(255, 205, 86, 0.2)",
+                        YAxisOptions = new ChartYAxisOptions { 
+                            BeginAtZero = true,
+                            Min = 0
+                        }
                     };
 
-                    // Calcular promedios, máximos y mínimos
                     viewModel.AverageAmbientTemperature24h = data.Average(d => d.Temperature);
                     viewModel.MaxAmbientTemperature24h = data.Max(d => d.Temperature);
                     viewModel.MinAmbientTemperature24h = data.Min(d => d.Temperature);
@@ -155,12 +159,10 @@ public class DashboardController : Controller
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Ocurrió una excepción no controlada al cargar los datos del dashboard.");
-            // Opcional: Mostrar un mensaje de error genérico en la vista
+
             ViewData["ErrorMessage"] =
                 "No se pudieron cargar los datos del dashboard. Por favor, intente de nuevo más tarde.";
         }
-
-        // --- FIN DE LA CORRECCIÓN ---
 
         return View(viewModel);
     }

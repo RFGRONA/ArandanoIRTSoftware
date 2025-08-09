@@ -132,7 +132,7 @@ else
                             </ul>
                         </td>
 
-                        <td class="text-center">@item.RecordedAt.ToString("dd/MM/yy HH:mm")</td>
+                        <td class="text-center">@Html.DisplayFor(modelItem => item.RecordedAt)</td>
                     </tr>
                 }
                 </tbody>

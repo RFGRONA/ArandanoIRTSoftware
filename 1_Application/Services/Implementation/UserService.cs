@@ -267,7 +267,7 @@ public class UserService : IUserService
                     FullName = $"{user.FirstName} {user.LastName}",
                     Email = user.Email,
                     Role = roles.Contains("Admin") ? "Administrador" : "Usuario Estándar",
-                    RegisteredDate = user.CreatedAt.ToLocalTime() // Mostramos la hora local
+                    RegisteredDate = user.CreatedAt
                 });
             }
             return Result.Success<IEnumerable<UserDto>>(userDtos);

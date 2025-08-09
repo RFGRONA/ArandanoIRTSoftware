@@ -4,6 +4,6 @@ public class GenericAlertViewModel
 {
     public string Title { get; set; }
     public string Message { get; set; }
-    public string AlertTime { get; set; } = DateTime.UtcNow.ToString("o");
+    public DateTime? AlertTime { get; set; } = DateTime.UtcNow;
     public string Severity { get; set; }
 }

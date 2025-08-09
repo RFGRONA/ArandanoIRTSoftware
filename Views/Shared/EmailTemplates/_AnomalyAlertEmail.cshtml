@@ -1,3 +1,4 @@
+@using ArandanoIRT.Web._0_Domain.Common
 @model (string UserName, string PlantName, int PlantId, DateTime AlertTime, string PlantDetailsLink)
 @{
     Layout = "_EmailLayout.cshtml";
@@ -26,6 +27,6 @@
     </tr>
 </table>
 
-<p><em>Fecha de la alerta (UTC): @Model.AlertTime.ToString("F")</em></p>
+<p><em>Fecha de la alerta (UTC): @Model.AlertTime.ToColombiaTime().ToString("F")</em></p>
 
 <p>Gracias,<br>El equipo de Arandano IRT</p>

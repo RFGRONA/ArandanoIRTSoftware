@@ -1,3 +1,4 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Observations;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -26,12 +27,20 @@ public class ObservationController : Controller
     // GET: Admin/Observation
     public async Task<IActionResult> Index([FromQuery] ObservationQueryFilters filters)
     {
+        if (filters.StartDate.HasValue)
+        {
+            filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        }
+        if (filters.EndDate.HasValue)
+        {
+            filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        }
+        
         var result = await _observationService.GetPagedObservationsAsync(filters);
-
-        // Preparar dropdowns para los filtros
+        
         ViewBag.AvailablePlants = await _plantService.GetPlantsForSelectionAsync();
         ViewBag.AvailableUsers = await _userService.GetUsersForSelectionAsync();
-        ViewBag.CurrentFilters = filters; // Pasar los filtros actuales a la vista
+        ViewBag.CurrentFilters = filters;
 
         return View(result);
     }

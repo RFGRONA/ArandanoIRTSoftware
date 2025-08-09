@@ -1,0 +1,17 @@
+@using ArandanoIRT.Web._0_Domain.Common
+@model DateTime?
+
+@*
+    Este DisplayTemplate intercepta automáticamente cualquier llamada a @Html.DisplayFor()
+    para propiedades de tipo DateTime o DateTime? (nullable).
+
+    Convierte la fecha, que ahora llega consistentemente en UTC desde el backend,
+    a la hora local de Colombia y le da un formato estándar.
+*@
+
+@if (Model.HasValue)
+{
+    // 1. Convierte la fecha UTC a la hora de Colombia.
+    // 2. La formatea a un string legible.
+    @Model.Value.ToColombiaTime().ToString("dd-MM-yyyy hh:mm tt")
+}

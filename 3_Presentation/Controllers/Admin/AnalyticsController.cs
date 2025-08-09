@@ -1,8 +1,6 @@
-using System.Security.Claims;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using ArandanoIRT.Web._3_Presentation.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,7 +40,10 @@ public class AnalyticsController : BaseAdminController
     [HttpGet]
     public async Task<IActionResult> Details(int id, DateTime? startDate, DateTime? endDate)
     {
-        var result = await _analyticsService.GetAnalysisDetailsAsync(id, startDate, endDate);
+        var utcStartDate = startDate?.ToSafeUniversalTime();
+        var utcEndDate = endDate?.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        
+        var result = await _analyticsService.GetAnalysisDetailsAsync(id, utcStartDate, utcEndDate);
 
         if (result.IsFailure)
         {
@@ -56,11 +57,14 @@ public class AnalyticsController : BaseAdminController
     [HttpGet]
     public async Task<IActionResult> GenerateReport(int plantId, DateTime startDate, DateTime endDate)
     {
+        var utcStartDate = startDate.ToSafeUniversalTime();
+        var utcEndDate = endDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        
         // 1. Llamar al servicio que hemos creado para generar el array de bytes del PDF
-        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, startDate, endDate);
+        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, utcStartDate, utcEndDate);
 
         // 2. Comprobar si el servicio devolvió un archivo válido
-        if (pdfBytes == null || pdfBytes.Length == 0)
+        if (pdfBytes.Length == 0)
         {
             TempData["ErrorMessage"] = "No se pudo generar el reporte. Es posible que no haya datos en el periodo seleccionado.";
             return RedirectToAction("Details", new { id = plantId, startDate, endDate });
@@ -124,15 +128,18 @@ public class AnalyticsController : BaseAdminController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendReportByEmail(int plantId, DateTime startDate, DateTime endDate, string recipientEmail)
     {
-        var plant = await _plantService.GetPlantByIdAsync(plantId); // Necesitamos el nombre de la planta
+        var plant = await _plantService.GetPlantByIdAsync(plantId); 
         if (plant.IsFailure || plant.Value == null)
         {
             TempData["ErrorMessage"] = "No se pudo encontrar la planta para enviar el reporte.";
             return RedirectToAction("Index");
         }
+        
+        var utcStartDate = startDate.ToSafeUniversalTime();
+        var utcEndDate = endDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 
-        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, startDate, endDate);
-        if (pdfBytes == null || pdfBytes.Length == 0)
+        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, utcStartDate, utcEndDate);
+        if (pdfBytes.Length == 0)
         {
             TempData["ErrorMessage"] = "No se pudo generar el reporte para enviar.";
             return RedirectToAction("Details", new { id = plantId, startDate, endDate });

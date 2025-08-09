@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -77,7 +78,10 @@ public class PlantStatusController : Controller
     // GET: /Admin/PlantStatus/History
     public async Task<IActionResult> History(int? plantId, int? userId, DateTime? startDate, DateTime? endDate)
     {
-        var history = await _plantService.GetPlantStatusHistoryAsync(plantId, userId, startDate, endDate);
+        var utcStartDate = startDate?.ToSafeUniversalTime();
+        var utcEndDate = endDate?.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        
+        var history = await _plantService.GetPlantStatusHistoryAsync(plantId, userId, utcStartDate, utcEndDate);
 
         ViewBag.Plants = await _plantService.GetPlantsForSelectionAsync();
         ViewBag.Users = await _userService.GetUsersForSelectionAsync();

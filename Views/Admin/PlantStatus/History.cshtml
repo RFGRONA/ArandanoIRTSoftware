@@ -59,7 +59,7 @@
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td>@item.ChangedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@Html.DisplayFor(modelItem => item.ChangedAt)</td>
                         <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
                         <td>
                             @{

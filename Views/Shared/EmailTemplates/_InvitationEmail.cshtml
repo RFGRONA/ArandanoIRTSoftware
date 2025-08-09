@@ -1,3 +1,4 @@
+@using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._0_Domain.Entities.InvitationCode
 @{
     Layout = "_EmailLayout.cshtml";
@@ -14,7 +15,7 @@
     @Model.Code
 </div>
 
-<p>Este código expirará el <strong>@Model.ExpiresAt.ToString("f") (UTC)</strong>.</p>
+<p>Este código expirará el <strong>@Model.ExpiresAt.ToColombiaTime().ToString("F")</strong>.</p>
 
 <p>Para registrarte, haz clic en el botón de abajo y proporciona este código cuando se te solicite.</p>
 

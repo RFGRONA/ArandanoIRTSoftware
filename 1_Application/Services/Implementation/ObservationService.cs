@@ -71,10 +71,13 @@ public class ObservationService : IObservationService
             query = query.Where(o => o.UserId == filters.UserId.Value);
 
         if (filters.StartDate.HasValue)
-            query = query.Where(o => o.CreatedAt.Date >= filters.StartDate.Value.Date);
-
+        {
+            query = query.Where(o => o.CreatedAt >= filters.StartDate.Value);
+        }
         if (filters.EndDate.HasValue)
-            query = query.Where(o => o.CreatedAt.Date <= filters.EndDate.Value.Date);
+        {
+            query = query.Where(o => o.CreatedAt <= filters.EndDate.Value);
+        }
 
         // Contar el total de resultados ANTES de paginar
         var totalCount = await query.CountAsync();

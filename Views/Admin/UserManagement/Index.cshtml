@@ -62,7 +62,7 @@
                                 <span class="role-badge role-user"><i class="fas fa-user"></i> @user.Role</span>
                             }
                         </td>
-                        <td>@user.RegisteredDate.ToString("dd/MM/yyyy")</td>
+                        <td>@Html.DisplayFor(modelItem => user.RegisteredDate)</td> 
                         <td>
                             @if (user.Role == "Usuario Estándar")
                             {

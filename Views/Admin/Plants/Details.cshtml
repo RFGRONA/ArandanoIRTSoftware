@@ -76,12 +76,12 @@ else
 
                 <div class="row detail-item">
                     <dt class="col-sm-4 col-md-3">@Html.DisplayNameFor(model => model.RegisteredAt)</dt>
-                    <dd class="col-sm-8 col-md-9">@Model.RegisteredAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-sm-8 col-md-9">@Html.DisplayFor(model => model.RegisteredAt)</dd>
                 </div>
 
                 <div class="row detail-item">
                     <dt class="col-sm-4 col-md-3">@Html.DisplayNameFor(model => model.UpdatedAt)</dt>
-                    <dd class="col-sm-8 col-md-9">@Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-sm-8 col-md-9">@Html.DisplayFor(model => model.UpdatedAt)</dd>
                 </div>
             </dl>
         </div>

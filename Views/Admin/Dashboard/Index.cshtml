@@ -59,21 +59,21 @@
             <div class="d-flex align-items-center">
                 <div class="kpi-icon icon-temp"><i class="fas fa-thermometer-half"></i></div>
                 <div class="kpi-content ms-3">
-                    <span class="kpi-title">Temperatura Amb.</span>
+                    <span class="kpi-title" data-bs-toggle="tooltip" title="Temperatura Ambiental">Temperatura Amb.</span>
                     <span class="kpi-value">@(Model.LatestAmbientData?.Temperature.ToString("0.0") ?? "-")°C</span>
                 </div>
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label">Máx. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Máximo en las últimas 24 horas">Máx. 24h</span>
                     <span class="detail-value">@(Model.MaxAmbientTemperature24h?.ToString("0.0") ?? "-")°C</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Prom. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Promedio en las últimas 24 horas">Prom. 24h</span>
                     <span class="detail-value">@(Model.AverageAmbientTemperature24h?.ToString("0.0") ?? "-")°C</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Mín. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Mínimo en las últimas 24 horas">Mín. 24h</span>
                     <span class="detail-value">@(Model.MinAmbientTemperature24h?.ToString("0.0") ?? "-")°C</span>
                 </div>
             </div>
@@ -85,21 +85,21 @@
             <div class="d-flex align-items-center">
                 <div class="kpi-icon icon-humidity"><i class="fas fa-tint"></i></div>
                 <div class="kpi-content ms-3">
-                    <span class="kpi-title">Humedad Amb.</span>
+                    <span class="kpi-title" data-bs-toggle="tooltip" title="Humedad Ambiental">Humedad Amb.</span>
                     <span class="kpi-value">@(Model.LatestAmbientData?.Humidity.ToString("0") ?? "-")%</span>
                 </div>
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label">Máx. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Máximo en las últimas 24 horas">Máx. 24h</span>
                     <span class="detail-value">@(Model.MaxAmbientHumidity24h?.ToString("0") ?? "-")%</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Prom. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Promedio en las últimas 24 horas">Prom. 24h</span>
                     <span class="detail-value">@(Model.AverageAmbientHumidity24h?.ToString("0") ?? "-")%</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Mín. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Mínimo en las últimas 24 horas">Mín. 24h</span>
                     <span class="detail-value">@(Model.MinAmbientHumidity24h?.ToString("0") ?? "-")%</span>
                 </div>
             </div>
@@ -117,15 +117,15 @@
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label">Máx. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Máximo en las últimas 24 horas">Máx. 24h</span>
                     <span class="detail-value">@(Model.MaxAmbientLight24h?.ToString("N0") ?? "-") lx</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Prom. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Promedio en las últimas 24 horas">Prom. 24h</span>
                     <span class="detail-value">@(Model.AverageAmbientLight24h?.ToString("N0") ?? "-") lx</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Mín. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Mínimo en las últimas 24 horas">Mín. 24h</span>
                     <span class="detail-value">@(Model.MinAmbientLight24h?.ToString("N0") ?? "-") lx</span>
                 </div>
             </div>
@@ -137,26 +137,24 @@
             <div class="d-flex align-items-center">
                 <div class="kpi-icon icon-thermal"><i class="fas fa-fire"></i></div>
                 <div class="kpi-content ms-3">
-                    <span class="kpi-title">Temperatura Térmica</span>
+                    <span class="kpi-title" data-bs-toggle="tooltip" title="Temperatura Térmica Promedio">Temp. Térmica</span>
                     <span class="kpi-value">@(Model.ThermalStatistics?.LatestAvgTemp?.ToString("0.0") ?? "-")°C</span>
                 </div>
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label">Máx. (última)</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Última temperatura térmica más alta">Máx. (última)</span>
                     <span class="detail-value">@(Model.ThermalStatistics?.LatestMaxTemp?.ToString("0.0") ??
                                                    "-")°C</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Mín. (última)</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Última temperatura térmica más baja">Mín. (última)</span>
                     <span class="detail-value">@(Model.ThermalStatistics?.LatestMinTemp?.ToString("0.0") ??
                                                    "-")°C</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Hora Captura</span>
-                    <span
-                        class="detail-value">@(Model.ThermalStatistics?.LatestThermalReadingTimestamp?.ToString("HH:mm")
-                        ?? "-")</span>
+                    <span class="detail-value">@Html.DisplayFor(model => model.ThermalStatistics.LatestThermalReadingTimestamp)</span> 
                 </div>
             </div>
         </div>
@@ -167,25 +165,25 @@
             <div class="d-flex align-items-center">
                 <div class="kpi-icon"><i class="fas fa-satellite-dish"></i></div>
                 <div class="kpi-content ms-3">
-                    <span class="kpi-title">Dispositivos Activos</span>
+                    <span class="kpi-title" data-bs-toggle="tooltip" title="Dispositivos Activos">Disp. Activos</span>
                     <span class="kpi-value">@Model.ActiveDevicesCount</span>
                 </div>
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label">Última Lect. Amb.</span>
-                    <span class="detail-value">@(Model.LatestAmbientData?.RecordedAt.ToString("HH:mm") ?? "-")</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Última Lectura Ambiental">Última Lect. Amb.</span>
+                    <span class="detail-value">@Html.DisplayFor(model => model.LatestAmbientData.RecordedAt)</span> 
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Temp. Ciudad</span>
+                    <span class="detail-label" data-bs-toggle="tooltip" title="Temperatura en la Ciudad">Temp. Ciudad</span>
                     <span class="detail-value">@(Model.LatestAmbientData?.CityTemperature?.ToString("0.0") ??
                                                    "-")°C</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Clima Ciudad</span>
+                    <span class="detail-label">Clima</span>
                     <span class="detail-value" data-bs-toggle="tooltip" data-bs-placement="bottom"
                           title="@(Model.LatestAmbientData?.CityWeatherCondition)">
-                    @(Model.LatestAmbientData?.CityWeatherCondition?.Length > 30 ? Model.LatestAmbientData.CityWeatherCondition.Substring(0, 30) + "..." : Model.LatestAmbientData?.CityWeatherCondition ?? "-") </span>
+                    @(Model.LatestAmbientData?.CityWeatherCondition?.Length > 20 ? Model.LatestAmbientData.CityWeatherCondition.Substring(0, 30) + "..." : Model.LatestAmbientData?.CityWeatherCondition ?? "-") </span>
                 </div>
             </div>
         </div>
@@ -195,7 +193,6 @@
 
 @* Fila de Gráficos (con corrección de altura) *@
 <div class="row">
-    @* --- CORRECCIÓN DE GRÁFICO: Contenedor con altura fija --- *@
     <div class="col-lg-4 mb-4">
         <div class="card chart-card">
             <div class="card-body">
@@ -228,7 +225,6 @@
     </div>
 </div>
 
-@* Tabla de Últimas Capturas (Reemplazando los KPI cards originales) *@
 <div class="row">
     <div class="col-12">
         <div class="card table-card">
@@ -246,13 +242,13 @@
                         </tr>
                         </thead>
                         <tbody>
-                        @if (Model.RecentCaptures != null && Model.RecentCaptures.Any())
+                        @if (Model.RecentCaptures.Any())
                         {
                             @foreach (var capture in Model.RecentCaptures)
                             {
                                 <tr>
                                     <td>@capture.PlantName</td>
-                                    <td>@capture.RecordedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@Html.DisplayFor(modelItem => capture.RecordedAt)</td>
                                     <td>@capture.MaxTemp?.ToString("0.0")°C</td>
                                     <td>@capture.AvgTemp?.ToString("0.0")°C</td>
                                     <td>@capture.MinTemp?.ToString("0.0")°C</td>
@@ -283,7 +279,7 @@
 
             const chartData = JSON.parse(chartDataJson);
 
-            if (!chartData || !chartData.Values || chartData.Values.length === 0) {
+            if (!chartData || chartData.Values.length === 0) {
                 const context = ctx.getContext('2d');
                 context.clearRect(0, 0, ctx.width, ctx.height);
                 context.textAlign = 'center';
@@ -311,21 +307,21 @@
                     plugins: {legend: {display: false}},
                     scales: {
                         x: {title: {display: false}},
-                        y: {title: {display: true, text: yAxisLabel}}
+                        y: {title: {display: true, text: yAxisLabel}, beginAtZero: true, min: 0}
                     }
                 }
             });
         }
-
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        
 
         document.addEventListener('DOMContentLoaded', function () {
             createTimeSeriesChart('temperatureChart', '@Html.Raw(tempDataJson)', '°C');
             createTimeSeriesChart('humidityChart', '@Html.Raw(humDataJson)', '%');
             createTimeSeriesChart('lightChart', '@Html.Raw(lightDataJson)', 'lx');
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
         });
     </script>
 }

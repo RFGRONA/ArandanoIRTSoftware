@@ -1,3 +1,4 @@
+@using ArandanoIRT.Web._0_Domain.Common
 @*
     Este es el Layout principal para todos los correos.
     Define la estructura, el encabezado, el pie de página y los estilos generales.
@@ -125,7 +126,7 @@
             <!-- Pie de Página -->
             <tr>
                 <td class="footer">
-                    <p>&copy; @DateTime.Now.Year Arandano IRT. Todos los derechos reservados.</p>
+                    <p>&copy; @DateTime.UtcNow.ToColombiaTime().Year Arandano IRT. Todos los derechos reservados.</p>
                 </td>
             </tr>
         </table>

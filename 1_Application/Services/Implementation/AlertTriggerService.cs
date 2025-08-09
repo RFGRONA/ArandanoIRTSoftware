@@ -101,7 +101,8 @@ public class AlertTriggerService : IAlertTriggerService
                 Title = "Alerta de Inactividad de Dispositivo",
                 Message =
                     $"El dispositivo '{device.Name}' (MAC: {device.MacAddress}) no ha reportado datos en el tiempo esperado.",
-                Severity = "Warning"
+                Severity = "Precaución",
+                AlertTime = DateTime.UtcNow
             };
 
             foreach (var admin in adminsToNotify)
@@ -136,7 +137,8 @@ public class AlertTriggerService : IAlertTriggerService
         {
             Title = title,
             Message = $"Se han detectado {group.Count} alerta(s) de '{group.Summary}' en la última hora. Por favor, revise los logs del sistema para más detalles.",
-            Severity = "Critical" // O podrías pasarlo desde Grafana también
+            Severity = "Critico",
+            AlertTime = DateTime.UtcNow
         };
 
         // 3. Enviamos el correo a cada destinatario
@@ -159,7 +161,8 @@ public class AlertTriggerService : IAlertTriggerService
             {
                 UserName = user.FirstName,
                 PlantName = plantName,
-                PlantId = plantId
+                PlantId = plantId,
+                AlertTime = DateTime.UtcNow
             };
             await _alertService.SendAnomalyAlertEmailAsync(user.Email, viewModel);
         }

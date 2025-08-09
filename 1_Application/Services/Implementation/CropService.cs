@@ -90,7 +90,7 @@ public class CropService : ICropService
                     Id = c.Id,
                     Name = c.Name,
                     CityName = c.CityName,
-                    CreatedAt = c.CreatedAt.ToLocalTime()
+                    CreatedAt = c.CreatedAt
                 })
                 .ToListAsync();
 
@@ -116,8 +116,8 @@ public class CropService : ICropService
                     Name = c.Name,
                     Address = c.Address,
                     CityName = c.CityName,
-                    CreatedAt = c.CreatedAt.ToLocalTime(),
-                    UpdatedAt = c.UpdatedAt.ToLocalTime(),
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt,
                     CropSettings = c.CropSettings
                 })
                 .FirstOrDefaultAsync();

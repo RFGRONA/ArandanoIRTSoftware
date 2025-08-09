@@ -185,7 +185,8 @@ public class AlertService : IAlertService
         // 1. Crear el ViewModel
         var viewModel = new ReportByEmailViewModel()
         {
-            PlantName = plantName
+            PlantName = plantName,
+            GenerationDate = DateTime.UtcNow
         };
 
         // 2. Renderizar la plantilla a HTML

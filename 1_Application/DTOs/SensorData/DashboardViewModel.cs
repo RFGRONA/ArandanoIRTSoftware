@@ -15,6 +15,7 @@ public class TimeSeriesChartDataDto
     public float? Tension { get; set; }
     public int? PointRadius { get; set; }
     public int? PointHoverRadius { get; set; }
+    public ChartYAxisOptions YAxisOptions { get; set; } = new ChartYAxisOptions();
 }
 
 // Para las estadísticas térmicas
@@ -66,4 +67,11 @@ public class DashboardViewModel
 
     public List<ThermalCaptureSummaryDto> RecentCaptures { get; set; } = new();
     // ======================================================================
+}
+
+public class ChartYAxisOptions
+{
+    public bool BeginAtZero { get; set; } = true;
+    public int? Min { get; set; } = 0;
+    public int? Max { get; set; } = null;
 }

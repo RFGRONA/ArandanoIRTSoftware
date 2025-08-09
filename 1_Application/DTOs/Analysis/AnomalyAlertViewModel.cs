@@ -7,5 +7,5 @@ public class AnomalyAlertViewModel
     public string UserName { get; set; }
     public string PlantName { get; set; }
     public int PlantId { get; set; }
-    public string AlertTime { get; set; } = DateTime.UtcNow.ToColombiaTime().ToString("g");
+    public DateTime? AlertTime { get; set; } = DateTime.UtcNow;
 }

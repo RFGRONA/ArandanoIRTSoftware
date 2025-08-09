@@ -46,7 +46,7 @@
                     <tr>
                         <td>@Html.DisplayFor(modelItem => item.Name)</td>
                         <td>@Html.DisplayFor(modelItem => item.CityName)</td>
-                        <td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@Html.DisplayFor(modelItem => item.CreatedAt)</td>
                         <td>
                             <div class="action-buttons">
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action edit" title="Editar">

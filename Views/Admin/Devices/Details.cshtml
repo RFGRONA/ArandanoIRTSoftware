@@ -90,18 +90,18 @@ else
                             <span class="status-badge @activationClass">@Model.ActivationDevices.ActivationStatusName</span>
                         </dd>
                     </div>
-                     @if (Model.ActivationDevices.ActivationCodeExpiresAt.HasValue)
+                    @if (Model.ActivationDevices.ActivationCodeExpiresAt.HasValue)
                     {
                         <div class="row detail-item">
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCodeExpiresAt)</dt>
-                            <dd class="col-sm-9">@Model.ActivationDevices.ActivationCodeExpiresAt.Value.ToString("F")</dd>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.ActivationDevices.ActivationCodeExpiresAt)</dd>
                         </div>
                     }
                     @if (Model.ActivationDevices.DeviceActivatedAt.HasValue)
                     {
                         <div class="row detail-item">
                             <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.DeviceActivatedAt)</dt>
-                            <dd class="col-sm-9">@Model.ActivationDevices.DeviceActivatedAt.Value.ToString("F")</dd>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.ActivationDevices.DeviceActivatedAt)</dd>
                         </div>
                     }
                 </dl>
