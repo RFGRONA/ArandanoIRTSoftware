@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
@@ -15,7 +16,7 @@ public class DeviceDetailsDto
     [Display(Name = "Intervalo Recolección (min)")]
     public short DataCollectionTimeMinutes { get; set; }
 
-    [Display(Name = "Estado Dispositivo")] public string DeviceStatusName { get; set; } = string.Empty;
+    [Display(Name = "Estado Dispositivo")] public DeviceStatus Status { get; set; }
     [Display(Name = "Fecha de Registro")] public DateTime RegisteredAt { get; set; }
 
     [Display(Name = "Última Actualización")]
@@ -33,7 +34,7 @@ public class DeviceDetailsDto
         public string? ActivationCode { get; set; }
 
         [Display(Name = "Estado de Activación")]
-        public string? ActivationStatusName { get; set; }
+        public ActivationStatus ActivationStatus { get; set; }
 
         [Display(Name = "Código Expira En")] public DateTime? ActivationCodeExpiresAt { get; set; }
 

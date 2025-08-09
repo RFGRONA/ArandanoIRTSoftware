@@ -1,3 +1,5 @@
+@using ArandanoIRT.Web._0_Domain.Common
+@using ArandanoIRT.Web._0_Domain.Enums
 @model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Plants.PlantStatusHistoryDto>
 
 @{
@@ -63,15 +65,16 @@
                         <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
                         <td>
                             @{
-                                var statusClass = "status-default";
-                                // Normaliza el string para la comparación
-                                var status = item.Status.ToLower().Trim();
-                                if (status == "saludable") { statusClass = "status-healthy"; }
-                                else if (status == "estrés leve") { statusClass = "status-mild-stress"; }
-                                else if (status == "estrés severo") { statusClass = "status-severe-stress"; }
-                                else if (status == "en recuperación") { statusClass = "status-recovering"; }
+                                var statusClass = item.Status switch
+                                {
+                                    PlantStatus.OPTIMAL => "status-healthy",
+                                    PlantStatus.MILD_STRESS => "status-mild-stress",
+                                    PlantStatus.SEVERE_STRESS => "status-severe-stress",
+                                    PlantStatus.RECOVERING => "status-recovering",
+                                    _ => "status-default"
+                                };
                             }
-                            <span class="status-badge @statusClass">@item.Status</span>
+                            <span class="status-badge @statusClass">@item.Status.GetDisplayName()</span>
                         </td>
                         <td>@Html.DisplayFor(modelItem => item.Source)</td>
                         <td>@(item.Observation ?? "N/A")</td>

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
@@ -8,7 +9,7 @@ public class PlantStatusHistoryDto
 
     [Display(Name = "Planta")] public string PlantName { get; set; } = string.Empty;
 
-    [Display(Name = "Estado Asignado")] public string Status { get; set; } = string.Empty;
+    [Display(Name = "Estado Asignado")] public PlantStatus Status { get; set; } 
 
     [Display(Name = "Observación")] public string? Observation { get; set; }
 

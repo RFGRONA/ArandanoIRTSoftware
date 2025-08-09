@@ -32,7 +32,7 @@
 
                     <div class="mb-3">
                         <label asp-for="NewStatus" class="form-label">Nuevo Estado</label>
-                        <select asp-for="NewStatus" class="form-select" asp-items="Html.GetEnumSelectList<PlantStatus>()">
+                        <select asp-for="NewStatus" class="form-select" asp-items="ViewBag.AvailableStatuses">
                             <option value="">-- Seleccione un nuevo estado --</option>
                         </select>
                         <span asp-validation-for="NewStatus" class="text-danger"></span>

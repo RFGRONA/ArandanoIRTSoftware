@@ -1,3 +1,5 @@
+using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -54,6 +56,7 @@ public class PlantsController : BaseAdminController
             AvailableCrops = await _plantService.GetCropsForSelectionAsync(),
             AvailableExperimentalGroups = _plantService.GetExperimentalGroupsForSelection()
         };
+        ViewBag.AvailableStatuses = EnumSelectListExtensions.ToSelectList<PlantStatus>();
         return View(model);
     }
 

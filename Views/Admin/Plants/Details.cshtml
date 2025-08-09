@@ -1,3 +1,5 @@
+@using ArandanoIRT.Web._0_Domain.Common
+@using ArandanoIRT.Web._0_Domain.Enums
 @model ArandanoIRT.Web._1_Application.DTOs.Plants.PlantDetailsDto
 @{
     ViewData["Title"] = "Detalles de la Planta";
@@ -47,15 +49,16 @@ else
                     <dt class="col-sm-4 col-md-3">Estado Actual</dt>
                     <dd class="col-sm-8 col-md-9">
                         @{
-                            var statusClass = "status-default";
-                            var statusName = Model.StatusName ?? "Desconocido";
-                            var status = statusName.ToLower().Trim();
-                            if (status == "saludable") { statusClass = "status-healthy"; }
-                            else if (status == "estrés leve") { statusClass = "status-mild-stress"; }
-                            else if (status == "estrés severo") { statusClass = "status-severe-stress"; }
-                            else if (status == "en recuperación") { statusClass = "status-recovering"; }
+                            var statusClass = Model.Status switch
+                            {
+                                PlantStatus.OPTIMAL => "status-healthy",
+                                PlantStatus.MILD_STRESS => "status-mild-stress",
+                                PlantStatus.SEVERE_STRESS => "status-severe-stress",
+                                PlantStatus.RECOVERING => "status-recovering",
+                                _ => "status-default"
+                            };
                         }
-                        <span class="status-badge @statusClass">@statusName</span>
+                        <span class="status-badge @statusClass">@Model.Status.GetDisplayName()</span>
                     </dd>
                 </div>
 

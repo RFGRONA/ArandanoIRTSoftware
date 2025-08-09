@@ -11,7 +11,5 @@
 
 @if (Model.HasValue)
 {
-    // 1. Convierte la fecha UTC a la hora de Colombia.
-    // 2. La formatea a un string legible.
-    @Model.Value.ToColombiaTime().ToString("dd-MM-yyyy hh:mm tt")
+    @Model.Value.ToColombiaTime().ToString("dd/MM/yyyy HH:mm")
 }

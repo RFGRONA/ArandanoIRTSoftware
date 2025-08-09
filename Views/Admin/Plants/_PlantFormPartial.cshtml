@@ -28,8 +28,7 @@
 {
     <div class="mb-3">
         <label for="Status" class="form-label">Estado Inicial</label>
-        <select id="Status" name="Status" class="form-select"
-                asp-items="Html.GetEnumSelectList<PlantStatus>()">
+        <select id="Status" name="Status" class="form-select" asp-items="ViewBag.AvailableStatuses">
             <option value="">-- Seleccione un Estado Inicial --</option>
         </select>
         @Html.ValidationMessage("Status", "", new { @class = "text-danger" })

@@ -113,6 +113,7 @@ public class DeviceAdminService : IDeviceAdminService
             // Consulta única y eficiente usando proyecciones
             var summaries = await _context.Devices
                 .AsNoTracking()
+                .AsQueryable()
                 .OrderBy(d => d.Name)
                 .Select(d => new DeviceSummaryDto
                 {
@@ -120,15 +121,14 @@ public class DeviceAdminService : IDeviceAdminService
                     Name = d.Name,
                     PlantName = d.Plant != null ? d.Plant.Name : "N/A",
                     CropName = d.Plant != null ? d.Plant.Crop.Name : (d.Crop != null ? d.Crop.Name : "N/A"),
-                    DeviceStatusName = d.Status.ToString(), // Conversión directa del enum a string
-                    // Obtenemos el estado de la activación más reciente
-                    ActivationStatusName = d.DeviceActivations
-                                            .OrderByDescending(a => a.CreatedAt)
-                                            .Select(a => a.Status.ToString())
-                                            .FirstOrDefault() ?? "N/A",
+                    DeviceStatus = d.Status,
+                    ActivationStatus = d.DeviceActivations
+                        .OrderByDescending(a => a.CreatedAt)
+                        .Select(a => (ActivationStatus?)a.Status)
+                        .FirstOrDefault() ?? ActivationStatus.PENDING,
                     RegisteredAt = d.RegisteredAt
                 })
-                .ToListAsync();
+                .ToListAsync<DeviceSummaryDto>();
 
             return Result.Success<IEnumerable<DeviceSummaryDto>>(summaries);
         }
@@ -156,23 +156,22 @@ public class DeviceAdminService : IDeviceAdminService
                     PlantName = d.Plant != null ? d.Plant.Name : "N/A",
                     CropName = d.Plant != null ? d.Plant.Crop.Name : (d.Crop != null ? d.Crop.Name : "N/A"),
                     DataCollectionTimeMinutes = d.DataCollectionIntervalMinutes,
-                    DeviceStatusName = d.Status.ToString(),
+                    Status = d.Status,
                     RegisteredAt = d.RegisteredAt,
                     UpdatedAt = d.UpdatedAt,
-                    // Sub-consulta para obtener datos de la activación más reciente
                     ActivationDevices = d.DeviceActivations
-                                    .OrderByDescending(a => a.CreatedAt)
-                                    .Select(a => new DeviceDetailsDto.DeviceActivationDetailsDto()
-                                    {
-                                        ActivationId = a.Id,
-                                        ActivationCode = a.ActivationCode,
-                                        ActivationStatusName = a.Status.ToString(),
-                                        ActivationCodeExpiresAt = a.ExpiresAt,
-                                        DeviceActivatedAt = a.ActivatedAt
-                                    })
-                                    .FirstOrDefault()
+                        .OrderByDescending(a => a.CreatedAt)
+                        .Select(a => new DeviceDetailsDto.DeviceActivationDetailsDto()
+                        {
+                            ActivationId = a.Id,
+                            ActivationCode = a.ActivationCode,
+                            ActivationStatus = a.Status,
+                            ActivationCodeExpiresAt = a.ExpiresAt,
+                            DeviceActivatedAt = a.ActivatedAt
+                        })
+                        .FirstOrDefault()
                 })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync<DeviceDetailsDto>();
 
             if (details == null)
             {
@@ -316,7 +315,7 @@ public class DeviceAdminService : IDeviceAdminService
             .Select(s => new SelectListItem
             {
                 Value = s.ToString(),
-                Text = s.ToString()
+                Text = s.GetDisplayName()
             })
             .ToList();
     }

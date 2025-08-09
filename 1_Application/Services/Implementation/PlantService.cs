@@ -157,8 +157,8 @@ public class PlantService : IPlantService
                     Name = p.Name,
                     CropName = p.Crop.Name,
                     CropCityName = p.Crop.CityName,
-                    StatusName = p.Status.ToString(),
-                    ExperimentalGroup = p.ExperimentalGroup.ToString(),
+                    Status = p.Status,
+                    ExperimentalGroup = p.ExperimentalGroup,
                     ThermalMaskData = p.ThermalMaskData,
                     RegisteredAt = p.RegisteredAt,
                     UpdatedAt = p.UpdatedAt
@@ -317,7 +317,7 @@ public class PlantService : IPlantService
             {
                 Id = h.Id,
                 PlantName = h.Plant.Name,
-                Status = h.Status.ToString(),
+                Status = h.Status,
                 Observation = h.Observation,
                 Source = h.User == null ? "Sistema" : h.User.FirstName + " " + h.User.LastName,
                 ChangedAt = h.ChangedAt
@@ -357,7 +357,7 @@ public class PlantService : IPlantService
             .Select(e => new SelectListItem
             {
                 Value = e.ToString(),
-                Text = e.ToString()
+                Text = e.GetDisplayName()
             }).ToList();
     }
 

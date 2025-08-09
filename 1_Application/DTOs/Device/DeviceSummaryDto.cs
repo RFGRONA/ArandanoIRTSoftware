@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
@@ -12,9 +13,9 @@ public class DeviceSummaryDto
     [Display(Name = "Cultivo")]
     public string CropName { get; set; } = string.Empty; // Nombre del cultivo (vía planta)
     [Display(Name = "Estado Dispositivo")]
-    public string DeviceStatusName { get; set; } = string.Empty;
+    public DeviceStatus DeviceStatus { get; set; }
     [Display(Name = "Estado Activación")]
-    public string ActivationStatusName { get; set; } = "N/A"; // Ej: PENDING, COMPLETED, EXPIRED
+    public ActivationStatus ActivationStatus { get; set; }
     [Display(Name = "Fecha de Registro")]
     public DateTime RegisteredAt { get; set; }
 }

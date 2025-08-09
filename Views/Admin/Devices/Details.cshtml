@@ -1,3 +1,4 @@
+@using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._1_Application.DTOs.Device.DeviceDetailsDto
 @{
     ViewData["Title"] = "Detalles del Dispositivo";
@@ -63,10 +64,10 @@ else
                     <dd class="col-sm-9">
                         @{
                             var statusClass = "status-inactive";
-                            if (Model.DeviceStatusName.Equals("Activo", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-active"; }
-                            else if (Model.DeviceStatusName.Equals("Error", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-error"; }
+                            if (string.Equals(Model.Status.ToString(), "Activo", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-active"; }
+                            else if (string.Equals(Model.Status.ToString(), "Error", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-error"; }
                         }
-                        <span class="status-badge @statusClass">@Model.DeviceStatusName</span>
+                        <span class="status-badge @statusClass">@Model.Status.GetDisplayName()</span>
                     </dd>
                 </div>
             </dl>
@@ -80,14 +81,14 @@ else
                         <dd class="col-sm-9"><strong>@Html.DisplayFor(model => model.ActivationDevices.ActivationCode)</strong></dd>
                     </div>
                     <div class="row detail-item">
-                        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationStatusName)</dt>
+                        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationStatus)</dt>
                         <dd class="col-sm-9">
                             @{
                                 var activationClass = "status-inactive";
-                                if (Model.ActivationDevices.ActivationStatusName.Equals("Activado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-active"; }
-                                else if (Model.ActivationDevices.ActivationStatusName.Equals("No Asignado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-unassigned"; }
+                                if (string.Equals(Model.ActivationDevices.ActivationStatus.ToString(), "Activado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-active"; }
+                                else if (string.Equals(Model.ActivationDevices.ActivationStatus.ToString(), "No Asignado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-unassigned"; }
                             }
-                            <span class="status-badge @activationClass">@Model.ActivationDevices.ActivationStatusName</span>
+                            <span class="status-badge @activationClass">@Model.ActivationDevices.ActivationStatus.GetDisplayName()</span>
                         </dd>
                     </div>
                     @if (Model.ActivationDevices.ActivationCodeExpiresAt.HasValue)

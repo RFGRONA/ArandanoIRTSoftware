@@ -97,3 +97,19 @@
 .action-btn.btn-back { background-color: transparent; color: var(--secondary-color); border: 1px solid var(--border-color); }
 .action-btn.btn-back:hover { background-color: var(--border-color); }
 
+.status-badge {
+    padding: 0.4em 0.9em;
+    font-size: 0.8em;
+    font-weight: 600;
+    border-radius: 50px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.status-default { background-color: #6c757d; }
+.status-healthy { background-color: #6c757d; }
+.status-mild-stress { background-color: #6c757d; }
+.status-severe-stress { background-color: #6c757d; }
+.status-recovering { background-color: #6c757d; }

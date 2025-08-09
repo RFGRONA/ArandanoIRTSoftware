@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using NpgsqlTypes;
 
 namespace ArandanoIRT.Web._0_Domain.Enums;
@@ -7,7 +8,15 @@ namespace ArandanoIRT.Web._0_Domain.Enums;
 /// </summary>
 public enum ExperimentalGroupType
 {
-    [PgName("MONITORED")] MONITORED,
-    [PgName("CONTROL")] CONTROL,
-    [PgName("STRESS")] STRESS
+    [PgName("MONITORED")] 
+    [Display(Name = "Monitoreado")]
+    MONITORED,
+    
+    [PgName("CONTROL")] 
+    [Display(Name = "Controlado")]
+    CONTROL,
+    
+    [PgName("STRESS")] 
+    [Display(Name = "Estresado")]
+    STRESS
 }

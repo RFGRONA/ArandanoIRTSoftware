@@ -1,3 +1,4 @@
+@using ArandanoIRT.Web._0_Domain.Common
 @model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Device.DeviceSummaryDto>
 @{
     ViewData["Title"] = "Gestión de Dispositivos";
@@ -47,18 +48,18 @@
                         <td>
                             @{
                                 var statusClass = "status-inactive";
-                                if (item.DeviceStatusName.Equals("Activo", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-active"; }
-                                else if (item.DeviceStatusName.Equals("Error", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-error"; }
+                                if (string.Equals(item.DeviceStatus.ToString(), "Activo", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-active"; }
+                                else if (string.Equals(item.DeviceStatus.ToString(), "Error", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-error"; }
                             }
-                            <span class="status-badge @statusClass">@item.DeviceStatusName</span>
+                            <span class="status-badge @statusClass">@item.DeviceStatus.GetDisplayName()</span>
                         </td>
                         <td>
                              @{
                                 var activationClass = "status-inactive";
-                                if (item.ActivationStatusName.Equals("Activado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-active"; }
-                                else if (item.ActivationStatusName.Equals("No Asignado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-unassigned"; }
+                                if (string.Equals(item.ActivationStatus.ToString(), "Activado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-active"; }
+                                else if (string.Equals(item.ActivationStatus.ToString(), "No Asignado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-unassigned"; }
                             }
-                            <span class="status-badge @activationClass">@item.ActivationStatusName</span>
+                            <span class="status-badge @activationClass">@item.ActivationStatus.GetDisplayName()</span>
                         </td>
                         <td>@Html.DisplayFor(modelItem => item.RegisteredAt)</td>
                         <td>

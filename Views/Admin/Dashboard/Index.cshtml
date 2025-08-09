@@ -1,4 +1,5 @@
 @using System.Text.Json
+@using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._3_Presentation.ViewModels.SensorData.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard Principal";
@@ -154,7 +155,7 @@
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Hora Captura</span>
-                    <span class="detail-value">@Html.DisplayFor(model => model.ThermalStatistics.LatestThermalReadingTimestamp)</span> 
+                    <span class="detail-value">@(Model.ThermalStatistics.LatestThermalReadingTimestamp.Value.ToColombiaTime().ToString("HH:mm"))</span>
                 </div>
             </div>
         </div>
@@ -172,7 +173,7 @@
             <div class="summary-details">
                 <div class="detail-row">
                     <span class="detail-label" data-bs-toggle="tooltip" title="Última Lectura Ambiental">Última Lect. Amb.</span>
-                    <span class="detail-value">@Html.DisplayFor(model => model.LatestAmbientData.RecordedAt)</span> 
+                    <span class="detail-value">@(Model.LatestAmbientData.RecordedAt.ToColombiaTime().ToString("HH:mm"))</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label" data-bs-toggle="tooltip" title="Temperatura en la Ciudad">Temp. Ciudad</span>
