@@ -1,6 +1,6 @@
 using ArandanoIRT.Web._0_Domain.Common;
 
-namespace ArandanoIRT.Web._1_Application.DTOs.Analysis;
+namespace ArandanoIRT.Web._3_Presentation.ViewModels.Analysis;
 
 public class StressAlertViewModel
 {

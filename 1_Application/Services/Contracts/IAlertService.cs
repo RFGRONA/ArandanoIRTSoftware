@@ -3,6 +3,8 @@ using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Alerts;
 using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._3_Presentation.ViewModels;
+using ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
+using ArandanoIRT.Web._3_Presentation.ViewModels.Analysis;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
 

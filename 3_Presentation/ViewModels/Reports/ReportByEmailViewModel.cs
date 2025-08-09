@@ -1,6 +1,4 @@
-using ArandanoIRT.Web._0_Domain.Common;
-
-namespace ArandanoIRT.Web._1_Application.DTOs.Reports;
+namespace ArandanoIRT.Web._3_Presentation.ViewModels.Reports;
 
 public class ReportByEmailViewModel
 {

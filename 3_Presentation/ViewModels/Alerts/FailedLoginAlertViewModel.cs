@@ -1,4 +1,4 @@
-namespace ArandanoIRT.Web._1_Application.DTOs.Alerts;
+namespace ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
 
 public class FailedLoginAlertViewModel
 {

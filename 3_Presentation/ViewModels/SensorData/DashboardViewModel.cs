@@ -1,8 +1,9 @@
+using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 // Asegúrate de tener este using para List<>
 
-namespace ArandanoIRT.Web._1_Application.DTOs.SensorData;
+namespace ArandanoIRT.Web._3_Presentation.ViewModels.SensorData;
 
 // Para los datos de gráficos de series temporales
 public class TimeSeriesChartDataDto

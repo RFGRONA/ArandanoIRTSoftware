@@ -3,6 +3,7 @@ using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.DTOs.SensorData;
+using ArandanoIRT.Web._3_Presentation.ViewModels.SensorData;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
 
