@@ -65,26 +65,69 @@ public class DataQueryService : IDataQueryService
                     er.CityTemperature,
                     er.CityHumidity,
                     er.CityWeatherCondition,
-                    er.RecordedAtServer
+                    er.RecordedAtServer,
+                    er.RecordedAtDevice 
                 })
                 .ToListAsync();
 
             // 2. Transformar en memoria
-            var finalData = rawData.Select(er => new SensorDataDisplayDto
+            var finalData = rawData.Select(er =>
             {
-                Id = er.Id,
-                DeviceId = er.DeviceId,
-                DeviceName = er.DeviceName,
-                PlantName = er.PlantName,
-                CropName = er.CropName,
-                Light = GetLightValueFromJson(er.ExtraData),
-                Temperature = er.Temperature,
-                Humidity = er.Humidity,
-                CityTemperature = er.CityTemperature,
-                CityHumidity = er.CityHumidity,
-                CityWeatherCondition = er.CityWeatherCondition,
-                IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
-                RecordedAt = er.RecordedAtServer.ToColombiaTime()
+                float? light = null;
+                var otherData = new Dictionary<string, JsonElement>();
+
+                // Diccionario de traducciones para las claves de ExtraData
+                var keyTranslations = new Dictionary<string, string>
+                {
+                    { "pressure", "Presión (hPa)" }
+                };
+
+                if (!string.IsNullOrWhiteSpace(er.ExtraData))
+                {
+                    try
+                    {
+                        using var jsonDoc = JsonDocument.Parse(er.ExtraData);
+                        foreach (var property in jsonDoc.RootElement.EnumerateObject())
+                        {
+                            // Excluye 'is_night' explícitamente
+                            if (property.NameEquals("is_night"))
+                            {
+                                continue; // Salta a la siguiente propiedad
+                            }
+                            
+                            // Extrae 'light' a su propio campo porque tiene una columna dedicada
+                            if (property.NameEquals("light") && property.Value.TryGetSingle(out var lightValue))
+                            {
+                                light = lightValue;
+                            }
+                            // El resto de campos se van al diccionario con su clave traducida
+                            else
+                            {
+                                var displayName = keyTranslations.GetValueOrDefault(property.Name, property.Name);
+                                otherData[displayName] = property.Value.Clone();
+                            }
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        _logger.LogWarning(ex, "No se pudo parsear ExtraData para el registro ID {Id}", er.Id);
+                    }
+                }
+
+                return new SensorDataDisplayDto
+                {
+                    Id = er.Id,
+                    DeviceName = er.DeviceName,
+                    PlantName = er.PlantName,
+                    Temperature = er.Temperature,
+                    Humidity = er.Humidity,
+                    CityTemperature = er.CityTemperature, 
+                    CityHumidity = er.CityHumidity, 
+                    CityWeatherCondition = er.CityWeatherCondition,
+                    Light = light,
+                    OtherData = otherData.Any() ? otherData : null,
+                    RecordedAt = er.RecordedAtDevice ?? er.RecordedAtServer
+                };
             }).ToList();
 
             return Result.Success(new PagedResultDto<SensorDataDisplayDto>
@@ -127,8 +170,6 @@ public class DataQueryService : IDataQueryService
                     PageSize = filters.PageSize
                 });
 
-            // ================== INICIO DE LA CORRECCIÓN ==================
-
             // 1. Traer datos crudos de la BD, incluyendo el JSON como texto.
             var rawData = await query
                 .OrderByDescending(tc => tc.RecordedAtServer)
@@ -149,7 +190,7 @@ public class DataQueryService : IDataQueryService
             // 2. Transformar los datos en memoria. Ahora sí podemos llamar a los métodos de C#.
             var finalData = rawData.Select(m =>
             {
-                var thermalStats = DeserializeThermalStats(m.ThermalDataStats, m.Id); // Llamada segura
+                var thermalStats = DeserializeThermalStats(m.ThermalDataStats, m.Id); 
                 return new ThermalCaptureSummaryDto
                 {
                     Id = m.Id,
@@ -160,11 +201,9 @@ public class DataQueryService : IDataQueryService
                     MinTemp = thermalStats?.Min_Temp,
                     AvgTemp = thermalStats?.Avg_Temp,
                     RgbImagePath = m.RgbImagePath,
-                    RecordedAt = m.RecordedAtServer.ToColombiaTime() // Llamada segura
+                    RecordedAt = thermalStats?.RecordedAtDevice ?? m.RecordedAtServer 
                 };
             }).ToList();
-
-            // =================== FIN DE LA CORRECCIÓN ====================
 
             return Result.Success(new PagedResultDto<ThermalCaptureSummaryDto>
             {
@@ -269,13 +308,13 @@ public class DataQueryService : IDataQueryService
             {
                 DeviceId = er.DeviceId,
                 DeviceName = er.DeviceName,
-                Light = GetLightValueFromJson(er.ExtraData), // Llamada segura
+                Light = GetLightValueFromJson(er.ExtraData),
                 Temperature = er.Temperature,
                 Humidity = er.Humidity,
                 CityTemperature = er.CityTemperature,
                 CityHumidity = er.CityHumidity,
                 IsNight = er.ExtraData != null && er.ExtraData.Contains("\"is_night\": true"),
-                RecordedAt = er.RecordedAtServer.ToColombiaTime() // Llamada segura
+                RecordedAt = er.RecordedAtServer
             }).ToList();
 
             _logger.LogInformation("Datos ambientales para dashboard recuperados: {Count} puntos.", finalData.Count);
@@ -302,8 +341,6 @@ public class DataQueryService : IDataQueryService
             if (deviceId.HasValue) query = query.Where(tc => tc.DeviceId == deviceId.Value);
             else if (plantId.HasValue) query = query.Where(tc => tc.PlantId == plantId.Value);
             else if (cropId.HasValue) query = query.Where(tc => tc.Device.CropId == cropId.Value);
-
-            // ================== INICIO DE LA CORRECCIÓN ==================
 
             // 1. Traer solo el JSON y la fecha, sin procesar nada.
             var rawCaptures = await query.Select(tc => new { tc.Id, tc.RecordedAtServer, tc.ThermalDataStats })
@@ -332,7 +369,7 @@ public class DataQueryService : IDataQueryService
 
             // 3. Calcular estadísticas sobre la lista ya procesada.
             var latestCapture = rawCaptures.OrderByDescending(x => x.RecordedAtServer).First();
-            var latestStats = thermalStatsList.LastOrDefault(); // El último de la lista ya deserializada
+            var latestStats = thermalStatsList.LastOrDefault();
 
             var dashboardStats = new ThermalStatsDto
             {
@@ -342,10 +379,8 @@ public class DataQueryService : IDataQueryService
                 LatestMaxTemp = latestStats?.Max_Temp,
                 LatestMinTemp = latestStats?.Min_Temp,
                 LatestAvgTemp = latestStats?.Avg_Temp,
-                LatestThermalReadingTimestamp = latestCapture.RecordedAtServer.ToColombiaTime() // Llamada segura
+                LatestThermalReadingTimestamp = latestCapture.RecordedAtServer
             };
-
-            // =================== FIN DE LA CORRECCIÓN ====================
 
             return Result.Success(dashboardStats);
         }
@@ -453,7 +488,7 @@ public class DataQueryService : IDataQueryService
                 CityHumidity = rawResult.CityHumidity,
                 CityWeatherCondition = rawResult.CityWeatherCondition,
                 IsNight = rawResult.ExtraData != null && rawResult.ExtraData.Contains("\"is_night\": true"),
-                RecordedAt = rawResult.RecordedAtServer.ToColombiaTime()
+                RecordedAt = rawResult.RecordedAtServer
             };
 
             return Result.Success(finalResult);
@@ -562,43 +597,4 @@ public class DataQueryService : IDataQueryService
     }
 
     #endregion
-}
-
-// Clase auxiliar para construir predicados dinámicos. Útil si se quiere refactorizar los filtros.
-public static class PredicateBuilder
-{
-    public static Expression<Func<T, bool>> New<T>(bool defaultExpression)
-    {
-        return f => defaultExpression;
-    }
-
-    public static Expression<Func<T, bool>> Or<T>(this Expression<Func<T, bool>> expr1, Expression<Func<T, bool>> expr2)
-    {
-        var invokedExpr = Expression.Invoke(expr2, expr1.Parameters);
-        return Expression.Lambda<Func<T, bool>>(Expression.OrElse(expr1.Body, invokedExpr), expr1.Parameters);
-    }
-
-    public static Expression<Func<T, bool>> And<T>(this Expression<Func<T, bool>> expr1,
-        Expression<Func<T, bool>> expr2)
-    {
-        var invokedExpr = Expression.Invoke(expr2, expr1.Parameters);
-        return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(expr1.Body, invokedExpr), expr1.Parameters);
-    }
-}
-
-public static class DateTimeExtensions
-{
-    public static DateTime ToColombiaTime(this DateTime utcDateTime)
-    {
-        try
-        {
-            var colombiaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
-            return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, colombiaZone);
-        }
-        catch
-        {
-            // Fallback a la hora local del servidor si la zona no se encuentra
-            return utcDateTime.ToLocalTime();
-        }
-    }
 }

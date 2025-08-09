@@ -13,7 +13,7 @@ public class DataSubmissionService : IDataSubmissionService
 {
     private readonly ApplicationDbContext _context;
     private readonly IWeatherService _weatherService;
-    private readonly IFileStorageService _fileStorageService; // Usando la nueva abstracción
+    private readonly IFileStorageService _fileStorageService; 
     private readonly ILogger<DataSubmissionService> _logger;
 
     // El nombre del bucket ahora puede venir de configuración o ser una constante.
@@ -63,13 +63,20 @@ public class DataSubmissionService : IDataSubmissionService
             }
         }
 
-        // Creamos el objeto JSON para el campo ExtraData
-        var extraData = new
+        var extraData = new Dictionary<string, object>();
+
+        if (ambientDataDto.Light.HasValue)
         {
-            light = ambientDataDto.Light,
-            is_night = weatherInfo?.IsNight
-            // Puedes añadir más campos aquí si es necesario
-        };
+            extraData["light"] = ambientDataDto.Light.Value;
+        }
+        if (ambientDataDto.Pressure.HasValue)
+        {
+            extraData["pressure"] = ambientDataDto.Pressure.Value;
+        }
+        if (weatherInfo?.IsNight.HasValue == true)
+        {
+            extraData["is_night"] = weatherInfo.IsNight.Value;
+        }
 
         var sensorDataRecord = new EnvironmentalReading
         {
@@ -80,9 +87,9 @@ public class DataSubmissionService : IDataSubmissionService
             CityTemperature = weatherInfo?.TemperatureCelsius,
             CityHumidity = weatherInfo?.HumidityPercentage,
             CityWeatherCondition = weatherInfo?.ConditionText,
-            ExtraData = JsonSerializer.Serialize(extraData), // Serializamos el objeto a JSON
+            ExtraData = extraData.Any() ? JsonSerializer.Serialize(extraData) : null,
             RecordedAtServer = DateTime.UtcNow,
-            RecordedAtDevice = ambientDataDto.RecordedAtDevice // Asumimos que el DTO trae esta fecha
+            RecordedAtDevice = ambientDataDto.RecordedAtDevice?.ToSafeUniversalTime()
         };
 
         try
@@ -152,10 +159,10 @@ public class DataSubmissionService : IDataSubmissionService
         {
             DeviceId = deviceContext.DeviceId,
             PlantId = deviceContext.PlantId,
-            ThermalDataStats = thermalDataJsonString, // El JSON va al campo de estadísticas
-            RgbImagePath = uploadedImagePath, // Será null si la subida falló o era de noche
+            ThermalDataStats = thermalDataJsonString, 
+            RgbImagePath = uploadedImagePath, 
             RecordedAtServer = recordedAtServer,
-            RecordedAtDevice = thermalDataDto.RecordedAtDevice // Asumimos que el DTO trae esta fecha
+            RecordedAtDevice = thermalDataDto.RecordedAtDevice?.ToSafeUniversalTime()
         };
 
         try

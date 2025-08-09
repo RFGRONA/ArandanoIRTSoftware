@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.SensorData;
 
@@ -18,24 +19,27 @@ public class SensorDataDisplayDto
     [Display(Name = "Luz")]
     public float? Light { get; set; }
 
-    [Display(Name = "Temp. (°C)")]
+    [Display(Name = "Temp. °C")]
     public float Temperature { get; set; }
 
-    [Display(Name = "Humedad (%)")]
+    [Display(Name = "Hum. %")]
     public float Humidity { get; set; }
 
-    [Display(Name = "Temp. Ciudad (°C)")]
+    [Display(Name = "Temp. Ciudad °C")]
     public float? CityTemperature { get; set; }
 
-    [Display(Name = "Hum. Ciudad (%)")]
+    [Display(Name = "Hum. Ciudad %")]
     public float? CityHumidity { get; set; }
 
-    [Display(Name = "¿Noche?")]
-    public bool? IsNight { get; set; }
-
-    [Display(Name = "Condición Ciudad")]
+    [Display(Name = "Clima")]
     public string? CityWeatherCondition { get; set; }
 
     [Display(Name = "Registrado")]
     public DateTime RecordedAt { get; set; }
+    
+    [Display(Name = "Otros Datos")]
+    public Dictionary<string, JsonElement>? OtherData { get; set; }
+    
+    [Display(Name = "¿Noche?")]
+    public bool? IsNight { get; set; }
 }

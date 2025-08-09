@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Json;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.DTOs.SensorData;
@@ -46,6 +47,15 @@ public class AmbientDataController : Controller
             > 200 => 200, // Max
             _ => filters.PageSize
         };
+        
+        if (filters.StartDate.HasValue)
+        {
+            filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        }
+        if (filters.EndDate.HasValue)
+        {
+            filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        }
 
         var result = await _dataQueryService.GetSensorDataAsync(filters);
 

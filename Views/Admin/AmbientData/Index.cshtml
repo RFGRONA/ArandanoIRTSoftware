@@ -92,26 +92,49 @@ else
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Dispositivo</th>
-                        <th>Planta</th>
-                        <th>Luz (lx)</th>
-                        <th>Temp. Amb.</th>
-                        <th>Hum. Amb.</th>
-                        <th>Fecha Registro</th>
+                        <th class="text-center">Dispositivo</th>
+                        <th class="text-center">Planta</th>
+                        <th class="text-center">Temp. °C</th>
+                        <th class="text-center">Hum. %</th>
+                        <th class="text-center">Luz (lx)</th>
+                        <th class="text-center">Temp. Ciudad °C</th>
+                        <th class="text-center">Hum. Ciudad %</th>
+                        <th class="text-center">Clima</th>
+                        <th class="text-center">Otros Datos</th>
+                        <th class="text-center">Fecha Registro</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model.Items)
-                    {
-                        <tr>
-                            <td>@item.DeviceName</td>
-                            <td>@item.PlantName</td>
-                            <td>@(item.Light?.ToString("N0") ?? "-")</td>
-                            <td>@item.Temperature.ToString("0.0")°C</td>
-                            <td>@item.Humidity.ToString("0")%</td>
-                            <td>@item.RecordedAt.ToString("dd/MM/yy HH:mm")</td>
-                        </tr>
-                    }
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td class="text-center">@item.DeviceName</td>
+                        <td class="text-center">@item.PlantName</td>
+                        <td class="text-center">@item.Temperature.ToString("0.0")°C</td>
+                        <td class="text-center">@item.Humidity.ToString("0")%</td>
+                        <td class="text-center">
+                            @(item.Light.HasValue ? item.Light.Value.ToString("N0") : "-")
+                        </td>
+                        <td class="text-center">@(item.CityTemperature?.ToString("0.0") ?? "-")°C</td>
+                        <td class="text-center">@(item.CityHumidity?.ToString("0") ?? "-")%</td>
+                        <td class="text-center">@(item.CityWeatherCondition ?? "N/A")</td>
+                        
+                        <td>
+                            <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
+                                
+                                @if (item.OtherData != null)
+                                {
+                                    @foreach (var extra in item.OtherData)
+                                    {
+                                        <li><strong>@extra.Key:</strong> @extra.Value</li>
+                                    }
+                                }
+                            </ul>
+                        </td>
+
+                        <td class="text-center">@item.RecordedAt.ToString("dd/MM/yy HH:mm")</td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>
