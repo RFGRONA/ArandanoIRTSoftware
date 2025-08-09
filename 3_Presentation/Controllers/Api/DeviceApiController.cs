@@ -79,6 +79,51 @@ public class DeviceApiController : ControllerBase
             Timestamp = DateTime.UtcNow
         });
     }
+    
+    [HttpPost("auth")]
+    [Authorize(Policy = "DeviceAuthenticated")] 
+    public IActionResult AuthenticateDevice()
+    {
+        var deviceContext = GetDeviceIdentityFromClaims();
+        if (deviceContext == null)
+        {
+            return Unauthorized();
+        }
+
+        _logger.LogInformation("Auth check exitoso para DeviceId: {DeviceId}", deviceContext.DeviceId);
+        
+        return Ok(new { status = "authenticated" });
+    }
+
+    [HttpPost("log")]
+    [Authorize(Policy = "DeviceAuthenticated")] // También protegido, requiere token.
+    public IActionResult SubmitLog([FromBody] DeviceLogRequestDto logDto)
+    {
+        var deviceContext = GetDeviceIdentityFromClaims();
+        if (deviceContext == null) return Unauthorized();
+
+        // Usamos el logger del backend para registrar el log que viene del dispositivo.
+        // Esto centraliza todos los logs.
+        var message = $"[DeviceID: {deviceContext.DeviceId}] | {logDto.LogMessage} | Temp: {logDto.InternalDeviceTemperature?.ToString() ?? "N/A"}";
+
+        switch (logDto.LogType.ToUpper())
+        {
+            case "INFO":
+                _logger.LogInformation(message);
+                break;
+            case "WARNING":
+                _logger.LogWarning(message);
+                break;
+            case "ERROR":
+                _logger.LogError(message);
+                break;
+            default:
+                _logger.LogInformation(message); // Default a Info
+                break;
+        }
+
+        return NoContent(); // 204 No Content es una respuesta apropiada para un log recibido.
+    }
 
     // --- Endpoints de Datos (Protegidos) ---
 
