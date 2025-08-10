@@ -1,4 +1,6 @@
 @model ArandanoIRT.Web._1_Application.DTOs.Admin.RegisterDto
+@inject Microsoft.Extensions.Options.IOptions<ArandanoIRT.Web._2_Infrastructure.Settings.TurnstileSettings> TurnstileSettings
+@inject IWebHostEnvironment Env 
 @{
     Layout = null;
     ViewData["Title"] = "Registro de Nuevo Usuario";
@@ -12,6 +14,10 @@
     <title>@ViewData["Title"] - Arandano IRT</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/css/register.css" asp-append-version="true"/> 
+    @if (!Env.IsDevelopment()) 
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
 
 </head>
 <body>
@@ -62,6 +68,10 @@
             <label asp-for="ConfirmPassword" class="form-label"></label>
             <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirma tu contraseña"/>
             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+        </div>
+        
+        <div class="d-flex justify-content-center">
+            <div class="cf-turnstile mb-3" data-sitekey="@TurnstileSettings.Value.SiteKey"></div>
         </div>
 
         <div class="action-buttons">

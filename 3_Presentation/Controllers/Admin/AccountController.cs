@@ -2,6 +2,7 @@ using System.Text;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
+using ArandanoIRT.Web._3_Presentation.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -46,6 +47,7 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [ValidateTurnstile]
     public async Task<IActionResult> Login(LoginDto model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -109,6 +111,7 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [ValidateTurnstile]
     public async Task<IActionResult> Register(RegisterDto model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -148,6 +151,7 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [ValidateTurnstile]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordDto model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -180,6 +184,7 @@ public class AccountController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [ValidateTurnstile]
     public async Task<IActionResult> ResetPassword(ResetPasswordDto model)
     {
         if (!ModelState.IsValid) return View(model);

@@ -1,5 +1,6 @@
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
+using ArandanoIRT.Web._3_Presentation.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,7 @@ public class SupportController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [ValidateTurnstile]
     public async Task<IActionResult> PublicHelp(PublicHelpRequestDto model)
     {
         if (!ModelState.IsValid) return View(model);

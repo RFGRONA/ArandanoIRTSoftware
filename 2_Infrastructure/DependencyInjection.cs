@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.Configure<AnomalyParametersSettings>(configuration.GetSection(AnomalyParametersSettings.SectionName));
         services.Configure<CalibrationReminderSettings>(
             configuration.GetSection(CalibrationReminderSettings.SectionName));
+        services.Configure<TurnstileSettings>(configuration.GetSection(TurnstileSettings.SectionName));
 
         // HTTP Client for Weather API
         services.AddHttpClient("WeatherApi", (serviceProvider, client) =>
@@ -63,6 +64,7 @@ public static class DependencyInjection
             else
                 Log.Warning("BaseUrl for WeatherAPI is not configured.");
         });
+        services.AddHttpClient<ITurnstileService, TurnstileService>();
 
         // Application Services
         services.AddScoped<IWeatherService, WeatherService>();
@@ -81,6 +83,7 @@ public static class DependencyInjection
         services.AddScoped<IEnvironmentalDataProvider, EnvironmentalDataProvider>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
+        services.AddScoped<ITurnstileService, TurnstileService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
