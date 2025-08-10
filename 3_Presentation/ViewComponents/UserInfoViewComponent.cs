@@ -17,6 +17,11 @@ namespace ArandanoIRT.Web._3_Presentation.ViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
+            if (UserClaimsPrincipal.IsInRole("BootstrapAdmin"))
+            {
+                return View("Default", (Name: "ROOT_BOOTSTRAP_USER", Role: "BootstrapAdmin"));
+            }
+            
             if (!_signInManager.IsSignedIn(UserClaimsPrincipal))
             {
                 return Content(string.Empty);

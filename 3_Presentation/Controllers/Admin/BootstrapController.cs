@@ -49,6 +49,12 @@ public class BootstrapController : Controller
         if (await AdminUserExistsAsync()) return NotFound();
 
         if (!ModelState.IsValid) return View(model);
+        
+        if (string.IsNullOrWhiteSpace(_rootCredentials.PasswordHash))
+        {
+            ModelState.AddModelError("", "Credenciales de arranque no configuradas correctamente.");
+            return View(model);
+        }
 
         var isValidRootUser = model.Username == _rootCredentials.Username &&
                               BCrypt.Net.BCrypt.Verify(model.Password, _rootCredentials.PasswordHash);
@@ -57,11 +63,11 @@ public class BootstrapController : Controller
         {
             var claims = new List<Claim>
             {
-                new(ClaimTypes.Name, "ROOT_BOOTSTRAP_USER"),
+                new(ClaimTypes.Name, "Bootstrap User"),
                 new(ClaimTypes.Role, "BootstrapAdmin")
             };
 
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var claimsIdentity = new ClaimsIdentity(claims, IdentityConstants.ApplicationScheme);
             await HttpContext.SignInAsync(IdentityConstants.ApplicationScheme, new ClaimsPrincipal(claimsIdentity));
 
             return RedirectToAction("Index", "Invitation");

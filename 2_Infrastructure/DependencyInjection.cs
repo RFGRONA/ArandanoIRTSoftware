@@ -154,7 +154,24 @@ public static class DependencyInjection
 
             // 3. (MUY IMPORTANTE) Activa la validación del SecurityStamp.
             // Esto fuerza a la aplicación a verificar en cada petición si la sesión sigue siendo válida (p. ej. si la contraseña cambió).
-            options.Events.OnValidatePrincipal = Microsoft.AspNetCore.Identity.SecurityStampValidator.ValidatePrincipalAsync;
+            options.Events.OnValidatePrincipal = async context =>
+            {
+                var principal = context.Principal;
+                if (principal != null)
+                {
+                    // Si la cookie pertenece al usuario bootstrap (por nombre o rol), no validar security stamp
+                    // - IsInRole usa las claims actuales (ClaimTypes.Role)
+                    // - Identity name lo pusiste como "ROOT_BOOTSTRAP_USER"
+                    if (principal.IsInRole("BootstrapAdmin") || principal.Identity?.Name == "ROOT_BOOTSTRAP_USER")
+                    {
+                        // No ejecutamos la validación por security stamp para esta principal
+                        return;
+                    }
+                }
+
+                // Para usuarios "normales", dejamos el comportamiento por defecto (validación contra DB)
+                await SecurityStampValidator.ValidatePrincipalAsync(context);
+            };
         });
 
         // Añadimos nuestro esquema personalizado para dispositivos, que es independiente.
