@@ -120,11 +120,11 @@ public class AmbientDataController : Controller
         };
         return View(emptyPagedResult);
     }
-    
+
     public async Task<IActionResult> DownloadCsv([FromQuery] DataQueryFilters filters)
     {
         _logger.LogInformation("Iniciando descarga CSV de datos ambientales con filtros: {FiltersJson}", JsonSerializer.Serialize(filters));
-    
+
         // Es importante aplicar la misma lógica de fechas que en la acción Index
         if (filters.StartDate.HasValue)
         {

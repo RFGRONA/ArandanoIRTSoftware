@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using ArandanoIRT.Web._1_Application.Services.Contracts; 
+using ArandanoIRT.Web._1_Application.Services.Contracts;
 
 namespace ArandanoIRT.Web._0_Domain.Common
 {
@@ -14,7 +14,7 @@ namespace ArandanoIRT.Web._0_Domain.Common
             if (filters.StartDate.HasValue)
             {
                 var startDateUtc = filters.StartDate.Value;
-                
+
                 var startPredicate = Expression.Lambda<Func<T, bool>>(
                     Expression.GreaterThanOrEqual(dateSelector.Body, Expression.Constant(startDateUtc)),
                     dateSelector.Parameters
@@ -25,7 +25,7 @@ namespace ArandanoIRT.Web._0_Domain.Common
             if (filters.EndDate.HasValue)
             {
                 var endDateUtc = filters.EndDate.Value;
-                
+
                 var endPredicate = Expression.Lambda<Func<T, bool>>(
                     Expression.LessThanOrEqual(dateSelector.Body, Expression.Constant(endDateUtc)),
                     dateSelector.Parameters
