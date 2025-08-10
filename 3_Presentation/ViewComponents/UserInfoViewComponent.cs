@@ -21,7 +21,7 @@ namespace ArandanoIRT.Web._3_Presentation.ViewComponents
             {
                 return View("Default", (Name: "ROOT_BOOTSTRAP_USER", Role: "BootstrapAdmin"));
             }
-            
+
             if (!_signInManager.IsSignedIn(UserClaimsPrincipal))
             {
                 return Content(string.Empty);

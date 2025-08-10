@@ -49,7 +49,7 @@ public class BootstrapController : Controller
         if (await AdminUserExistsAsync()) return NotFound();
 
         if (!ModelState.IsValid) return View(model);
-        
+
         if (string.IsNullOrWhiteSpace(_rootCredentials.PasswordHash))
         {
             ModelState.AddModelError("", "Credenciales de arranque no configuradas correctamente.");
