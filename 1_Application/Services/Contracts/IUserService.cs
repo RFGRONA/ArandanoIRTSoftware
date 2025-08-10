@@ -26,4 +26,9 @@ public interface IUserService
     Task<Result<IEnumerable<UserDto>>> GetAllUsersForManagementAsync();
     Task<Result> PromoteToAdminAsync(int userIdToPromote);
     Task<Result> DeleteUserAsync(int userIdToDelete, int currentUserId);
+
+    Task<Result<string>> InitiateAdminDeletionAsync(int adminToDeleteId, int currentAdminId,
+        string currentAdminPassword, IUrlHelper urlHelper, string scheme);
+
+    Task<Result> ConfirmAdminDeletionAsync(int adminToDeleteId, string token);
 }

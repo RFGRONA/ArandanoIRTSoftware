@@ -1,0 +1,36 @@
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.UserDto
+
+@{
+    ViewData["Title"] = "Confirmar Eliminación de Administrador";
+    Layout = "_AdminLayout";
+}
+
+<div class="card delete-card">
+    <div class="card-header delete-header">
+        <h1 class="mb-0"><i class="fas fa-user-shield me-2"></i> @ViewData["Title"]</h1>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <h4>Está a punto de dar la aprobación final para eliminar permanentemente al siguiente administrador:</h4>
+        </div>
+        
+        <dl class="row mt-4">
+            <dt class="col-sm-4">Nombre Completo:</dt>
+            <dd class="col-sm-8">@Model.FullName</dd>
+            
+            <dt class="col-sm-4">Correo Electrónico:</dt>
+            <dd class="col-sm-8">@Model.Email</dd>
+        </dl>
+    </div>
+    <div class="card-footer delete-actions">
+        <form asp-action="ConfirmDeletion" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="token" value="@ViewBag.Token" />
+            <a asp-action="Index" class="btn btn-secondary-custom">Cancelar y Denegar</a>
+            <button type="submit" class="btn btn-danger-custom">
+                <i class="fas fa-check-circle me-2"></i>Sí, Confirmo la Eliminación
+            </button>
+        </form>
+    </div>
+</div>

@@ -5,6 +5,7 @@ using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
+using ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -46,9 +47,10 @@ public class UserService : IUserService
         var user = await _userManager.FindByEmailAsync(model.Email);
         if (user == null)
         {
-            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, lockoutOnFailure: true);
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, true);
             return (result, false); // No hay usuario, no se puede bloquear
         }
+
         // 1. Verificamos si el usuario está a UN intento de ser bloqueado.
         //    Usamos la configuración de Identity en lugar de un número fijo (5).
         var isAboutToLockOut = user.AccessFailedCount == _userManager.Options.Lockout.MaxFailedAccessAttempts - 1;
@@ -257,19 +259,32 @@ public class UserService : IUserService
         {
             var users = await _userManager.Users.OrderBy(u => u.FirstName).ToListAsync();
             var userDtos = new List<UserDto>();
+            var now = DateTime.UtcNow;
+            const int inactivityDaysThreshold = 30;
 
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
-                userDtos.Add(new UserDto
+                var isAdmin = roles.Contains("Admin");
+
+                var userDto = new UserDto
                 {
                     Id = user.Id,
                     FullName = $"{user.FirstName} {user.LastName}",
                     Email = user.Email,
-                    Role = roles.Contains("Admin") ? "Administrador" : "Usuario Estándar",
-                    RegisteredDate = user.CreatedAt
-                });
+                    Role = isAdmin ? "Administrador" : "Usuario Estándar",
+                    RegisteredDate = user.CreatedAt.ToLocalTime()
+                };
+
+                if (isAdmin && user.LastLoginAt.HasValue)
+                {
+                    var daysInactive = (now - user.LastLoginAt.Value).TotalDays;
+                    if (daysInactive > inactivityDaysThreshold) userDto.IsDeletableByInactivity = true;
+                }
+
+                userDtos.Add(userDto);
             }
+
             return Result.Success<IEnumerable<UserDto>>(userDtos);
         }
         catch (Exception ex)
@@ -282,17 +297,12 @@ public class UserService : IUserService
     public async Task<Result> PromoteToAdminAsync(int userIdToPromote)
     {
         var user = await _userManager.FindByIdAsync(userIdToPromote.ToString());
-        if (user == null)
-        {
-            return Result.Failure("Usuario no encontrado.");
-        }
+        if (user == null) return Result.Failure("Usuario no encontrado.");
 
         var isAlreadyAdmin = await _userManager.IsInRoleAsync(user, "Admin");
         if (isAlreadyAdmin)
-        {
             // No es un error, pero la operación es innecesaria.
             return Result.Success();
-        }
 
         var result = await _userManager.AddToRoleAsync(user, "Admin");
 
@@ -310,34 +320,115 @@ public class UserService : IUserService
     {
         // Regla de Seguridad 1: Un administrador no puede eliminarse a sí mismo.
         if (userIdToDelete == currentUserId)
-        {
             return Result.Failure("No puedes eliminar tu propia cuenta de administrador.");
-        }
 
         var userToDelete = await _userManager.FindByIdAsync(userIdToDelete.ToString());
         if (userToDelete == null)
-        {
             // El usuario ya no existe, consideramos la operación exitosa.
             return Result.Success();
-        }
 
         // Regla de Seguridad 2: No se puede eliminar a otro administrador.
         var isUserAdmin = await _userManager.IsInRoleAsync(userToDelete, "Admin");
-        if (isUserAdmin)
-        {
-            return Result.Failure("No está permitido eliminar a un usuario administrador.");
-        }
+        if (isUserAdmin) return Result.Failure("No está permitido eliminar a un usuario administrador.");
+        
+        var emailOfDeletedUser = userToDelete.Email;
+        var nameOfDeletedUser = userToDelete.FirstName;
 
         // Si pasa todas las validaciones, proceder con la eliminación.
         var result = await _userManager.DeleteAsync(userToDelete);
 
         if (result.Succeeded)
         {
-            _logger.LogInformation("Usuario {UserId} ha sido eliminado por el administrador {AdminId}.", userIdToDelete, currentUserId);
+            _logger.LogInformation("Usuario {UserId} ha sido eliminado por el administrador {AdminId}.", userIdToDelete,
+                currentUserId);
+            if (!string.IsNullOrEmpty(emailOfDeletedUser))
+            {
+                await _alertService.SendAccountDeletedEmailAsync(emailOfDeletedUser, nameOfDeletedUser);
+            }
             return Result.Success();
         }
 
         var errors = string.Join(", ", result.Errors.Select(e => e.Description));
         return Result.Failure($"No se pudo eliminar al usuario: {errors}");
+    }
+
+    public async Task<Result<string>> InitiateAdminDeletionAsync(int adminToDeleteId, int currentAdminId,
+        string currentAdminPassword, IUrlHelper urlHelper, string scheme)
+    {
+        var admins = await _userManager.GetUsersInRoleAsync("Admin");
+        if (admins.Count < 3)
+        {
+            return Result.Failure<string>("La eliminación inmediata de un administrador solo está permitida si existen al menos tres administradores en el sistema.");
+        }
+        // Regla 1: No auto-eliminación
+        if (adminToDeleteId == currentAdminId)
+            return Result.Failure<string>("No puedes eliminar tu propia cuenta de administrador.");
+
+        // Regla 2: Verificar contraseña del iniciador
+        var currentAdmin = await _userManager.FindByIdAsync(currentAdminId.ToString());
+        if (currentAdmin == null || !await _userManager.CheckPasswordAsync(currentAdmin, currentAdminPassword))
+            return Result.Failure<string>("Tu contraseña es incorrecta. La acción ha sido cancelada.");
+
+        var adminToDelete = await _userManager.FindByIdAsync(adminToDeleteId.ToString());
+        if (adminToDelete == null)
+            return Result.Failure<string>("El administrador que intentas eliminar no fue encontrado.");
+
+        // 3. Generar token de un solo uso con propósito específico
+        var tokenProvider = "Default"; // Usamos el proveedor de tokens por defecto de Identity
+        var purpose = $"delete-admin:{adminToDeleteId}";
+        var token = await _userManager.GenerateUserTokenAsync(adminToDelete, tokenProvider, purpose);
+
+        // 4. Generar el enlace de confirmación
+        var confirmationLink = urlHelper.Action("ConfirmDeletion", "UserManagement",
+            new { id = adminToDeleteId, token }, scheme);
+
+        if (string.IsNullOrEmpty(confirmationLink))
+            return Result.Failure<string>("No se pudo generar el enlace de confirmación.");
+
+        // 5. Enviar notificación a los otros administradores
+        var otherAdmins = admins.Where(a => a.Id != currentAdminId && a.Id != adminToDeleteId).ToList();
+
+        await _alertService.SendAdminDeletionRequestEmailAsync(otherAdmins, currentAdmin.FirstName,
+            adminToDelete.FirstName, confirmationLink);
+
+        // Devolvemos el nombre del admin para el mensaje de éxito en el controlador
+        return Result.Success(adminToDelete.FirstName);
+    }
+
+    public async Task<Result> ConfirmAdminDeletionAsync(int adminToDeleteId, string token)
+    {
+        var adminToDelete = await _userManager.FindByIdAsync(adminToDeleteId.ToString());
+        if (adminToDelete == null)
+            return Result.Failure("El administrador a eliminar ya no existe.");
+
+        // 1. Validar el token
+        var tokenProvider = "Default";
+        var purpose = $"delete-admin:{adminToDeleteId}";
+        var isTokenValid = await _userManager.VerifyUserTokenAsync(adminToDelete, tokenProvider, purpose, token);
+
+        if (!isTokenValid)
+            return Result.Failure("El enlace de confirmación no es válido o ha expirado.");
+
+        var emailOfDeletedAdmin = adminToDelete.Email;
+        var nameOfDeletedAdmin = adminToDelete.FirstName;
+
+        // 2. Proceder con la eliminación
+        var result = await _userManager.DeleteAsync(adminToDelete);
+
+        if (result.Succeeded)
+        {
+            _logger.LogWarning(
+                "El administrador {AdminToDeleteId} ha sido eliminado tras confirmación por segunda firma.",
+                adminToDeleteId);
+            
+            if (!string.IsNullOrEmpty(emailOfDeletedAdmin))
+            {
+                await _alertService.SendAccountDeletedEmailAsync(emailOfDeletedAdmin, nameOfDeletedAdmin);
+            }
+            return Result.Success();
+        }
+
+        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+        return Result.Failure($"No se pudo eliminar al administrador: {errors}");
     }
 }

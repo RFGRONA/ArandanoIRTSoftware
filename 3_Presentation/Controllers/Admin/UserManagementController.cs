@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
+using ArandanoIRT.Web._3_Presentation.ViewModels.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,6 +27,7 @@ public class UserManagementController : BaseAdminController
             TempData[ErrorMessageKey] = result.ErrorMessage;
             return View(new List<UserDto>());
         }
+
         return View(result.Value);
     }
 
@@ -62,12 +64,97 @@ public class UserManagementController : BaseAdminController
     }
 
     // POST: /Admin/UserManagement/Delete/5
-    [HttpPost, ActionName("Delete")]
+    [HttpPost]
+    [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
         var result = await _userService.DeleteUserAsync(id, currentUserId);
         return HandleServiceResult(result, nameof(Index), nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAdmin(AdminActionConfirmationViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData[ErrorMessageKey] = "La contraseña es obligatoria para confirmar la eliminación.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        
+        // Llamamos al nuevo método para iniciar la eliminación
+        var result = await _userService.InitiateAdminDeletionAsync(
+            model.AdminToDeleteId, 
+            currentUserId, 
+            model.CurrentAdminPassword,
+            Url, // Pasamos el IUrlHelper
+            Request.Scheme); // Pasamos el esquema (http/https)
+
+        if (result.IsSuccess)
+        {
+            TempData[SuccessMessageKey] = $"Se ha iniciado el proceso para eliminar al administrador '{result.Value}'. Se ha enviado una solicitud de confirmación a los otros administradores.";
+        }
+        else
+        {
+            TempData[ErrorMessageKey] = result.ErrorMessage;
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+    
+
+    // GET: /UserManagement/ConfirmDeletion?id=X&token=Y
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConfirmDeletion(int id, string token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            TempData[ErrorMessageKey] = "El enlace de confirmación no es válido o ha expirado.";
+            return RedirectToAction("Index", "Dashboard"); // Redirigimos al dashboard principal
+        }
+
+        var usersResult = await _userService.GetAllUsersForManagementAsync();
+        var userToDelete = usersResult.Value?.FirstOrDefault(u => u.Id == id);
+
+        if (userToDelete == null)
+        {
+            TempData[ErrorMessageKey] = "El usuario que se intenta eliminar ya no existe.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Pasamos el token a la vista a través de ViewBag para que el formulario lo pueda usar
+        ViewBag.Token = token;
+        return View(userToDelete); // Mostramos la vista de confirmación
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [AllowAnonymous]
+    [ActionName("ConfirmDeletion")] 
+    public async Task<IActionResult> ConfirmDeletionPost(int id, string token)
+    {
+        // Verificamos que el usuario que confirma esté logueado como Admin, como una capa extra de seguridad.
+        if (!User.IsInRole("Admin"))
+        {
+            // Si un usuario no-admin intenta acceder, lo enviamos al login.
+            return RedirectToAction("Login", "Account");
+        }
+
+        var result = await _userService.ConfirmAdminDeletionAsync(id, token);
+
+        if (result.IsSuccess)
+        {
+            // En lugar de TempData, mostramos una vista final de éxito.
+            return View("DeletionCompleted");
+        }
+
+        // Si la confirmación falla (ej. token expirado), lo mostramos en TempData y redirigimos.
+        TempData[ErrorMessageKey] = result.ErrorMessage;
+        return RedirectToAction(nameof(Index));
     }
 }

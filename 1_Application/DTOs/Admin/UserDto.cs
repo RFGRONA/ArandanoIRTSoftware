@@ -13,4 +13,6 @@ public class UserDto
     [Display(Name = "Rol")] public string Role { get; set; }
 
     [Display(Name = "Fecha de Registro")] public DateTime RegisteredDate { get; set; }
+
+    public bool IsDeletableByInactivity { get; set; } = false;
 }

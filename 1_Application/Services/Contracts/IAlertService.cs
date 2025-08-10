@@ -1,8 +1,5 @@
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
-using ArandanoIRT.Web._1_Application.DTOs.Alerts;
-using ArandanoIRT.Web._1_Application.DTOs.Analysis;
-using ArandanoIRT.Web._3_Presentation.ViewModels;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Analysis;
 
@@ -16,6 +13,11 @@ public interface IAlertService
     // --- Notificaciones de Cuenta ---
     Task SendPasswordResetEmailAsync(string userEmail, string userName, string resetLink);
     Task SendPasswordChangedEmailAsync(string userEmail, string userName);
+    Task SendInactivityWarningEmailAsync(User admin, int daysInactive, string loginUrl);
+    Task SendAccountDeletedEmailAsync(string userEmail, string userName);
+
+    Task SendAdminDeletionRequestEmailAsync(List<User> otherAdmins, string initiatingAdminName,
+        string adminToDeleteName, string confirmationLink);
 
     // --- Notificaciones de Registro ---
     Task SendInvitationEmailAsync(string recipientEmail, string recipientName, InvitationCode invitation);

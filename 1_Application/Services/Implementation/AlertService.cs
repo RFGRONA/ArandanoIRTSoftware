@@ -1,13 +1,10 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
-using ArandanoIRT.Web._1_Application.DTOs.Alerts;
-using ArandanoIRT.Web._1_Application.DTOs.Analysis;
-using ArandanoIRT.Web._1_Application.DTOs.Reports;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using ArandanoIRT.Web._3_Presentation.ViewModels;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Analysis;
+using ArandanoIRT.Web._3_Presentation.ViewModels.Emails;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Reports;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
@@ -148,36 +145,39 @@ public class AlertService : IAlertService
     // --- Alertas de Análisis ---
     public async Task SendAnomalyAlertEmailAsync(string recipientEmail, AnomalyAlertViewModel viewModel)
     {
-        string htmlContent = await _razorRenderer.RenderViewToStringAsync(
+        var htmlContent = await _razorRenderer.RenderViewToStringAsync(
             "/Views/Shared/EmailTemplates/_AnomalyAlertEmail.cshtml",
             viewModel
         );
 
-        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Alerta de Comportamiento Anómalo", htmlContent);
+        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Alerta de Comportamiento Anómalo",
+            htmlContent);
         _logger.LogInformation("Alerta de comportamiento anómalo enviada a {RecipientEmail}", recipientEmail);
-
     }
 
     public async Task SendMaskCreationAlertEmailAsync(string recipientEmail, MaskCreationAlertViewModel viewModel)
     {
-        string htmlContent = await _razorRenderer.RenderViewToStringAsync(
+        var htmlContent = await _razorRenderer.RenderViewToStringAsync(
             "/Views/Shared/EmailTemplates/_MaskCreationAlertEmail.cshtml",
             viewModel
         );
 
-        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, "Acción Requerida: Crear Máscaras Térmicas", htmlContent);
+        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName,
+            "Acción Requerida: Crear Máscaras Térmicas", htmlContent);
         _logger.LogInformation("Alerta de creación de máscara enviada a {RecipientEmail}", recipientEmail);
     }
 
     public async Task SendStressAlertEmailAsync(string recipientEmail, StressAlertViewModel viewModel)
     {
-        string htmlContent = await _razorRenderer.RenderViewToStringAsync(
+        var htmlContent = await _razorRenderer.RenderViewToStringAsync(
             "/Views/Shared/EmailTemplates/_StressAlertEmail.cshtml",
             viewModel
         );
 
-        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName, $"Alerta de Estrés: {viewModel.PlantName}", htmlContent);
-        _logger.LogInformation("Alerta de estrés para la planta {PlantName} enviada a {RecipientEmail}", viewModel.PlantName, recipientEmail);
+        await _emailService.SendEmailAsync(recipientEmail, viewModel.UserName,
+            $"Alerta de Estrés: {viewModel.PlantName}", htmlContent);
+        _logger.LogInformation("Alerta de estrés para la planta {PlantName} enviada a {RecipientEmail}",
+            viewModel.PlantName, recipientEmail);
     }
 
     public async Task SendReportByEmailAsync(string recipientEmail, string plantName, byte[] pdfAttachment)
@@ -186,7 +186,7 @@ public class AlertService : IAlertService
         var attachmentName = $"Reporte_{plantName.Replace(" ", "_")}_{DateTime.UtcNow.ToColombiaTime():yyyyMMdd}.pdf";
 
         // 1. Crear el ViewModel
-        var viewModel = new ReportByEmailViewModel()
+        var viewModel = new ReportByEmailViewModel
         {
             PlantName = plantName,
             GenerationDate = DateTime.UtcNow
@@ -200,7 +200,111 @@ public class AlertService : IAlertService
         var recipientName = "Destinatario del Reporte";
 
         // 3. Enviar el correo usando el cuerpo renderizado y el adjunto
-        await _emailService.SendEmailWithAttachmentAsync(recipientEmail, recipientName, subject, body, pdfAttachment, attachmentName);
-        _logger.LogInformation("Reporte en PDF para la planta {PlantName} enviado a {RecipientEmail}", plantName, recipientEmail);
+        await _emailService.SendEmailWithAttachmentAsync(recipientEmail, recipientName, subject, body, pdfAttachment,
+            attachmentName);
+        _logger.LogInformation("Reporte en PDF para la planta {PlantName} enviado a {RecipientEmail}", plantName,
+            recipientEmail);
+    }
+
+    public async Task SendInactivityWarningEmailAsync(User admin, int daysInactive, string loginUrl)
+    {
+        try
+        {
+            var title = "Aviso de Inactividad de Cuenta";
+            var message = "";
+
+            switch (daysInactive)
+            {
+                case 14:
+                    title = "Primer Aviso de Inactividad de Cuenta";
+                    message =
+                        "Este es un recordatorio de que tu cuenta de administrador ha estado inactiva. Por favor, inicia sesión para mantenerla activa.";
+                    break;
+                case 22:
+                    title = "Segundo Aviso de Inactividad de Cuenta";
+                    message =
+                        "Tu cuenta de administrador sigue inactiva. Para evitar que sea marcada para eliminación, por favor, inicia sesión pronto.";
+                    break;
+                case 30:
+                    title = "Aviso Final: Cuenta Marcada para Eliminación por Inactividad";
+                    message =
+                        "Tu cuenta de administrador ha superado los 30 días de inactividad. A partir de ahora, otros administradores podrán eliminarla por razones de seguridad.";
+                    break;
+            }
+
+            var viewModel = new AdminInactivityWarningViewModel
+            {
+                UserName = admin.FirstName,
+                DaysInactive = daysInactive,
+                WarningTitle = title,
+                WarningMessage = message,
+                LoginUrl = loginUrl
+            };
+
+            var body = await _razorRenderer.RenderViewToStringAsync(
+                "~/Views/Shared/EmailTemplates/_AdminInactivityWarningEmail.cshtml",
+                viewModel);
+
+            await _emailService.SendEmailAsync(admin.Email, admin.FirstName, title, body);
+            _logger.LogInformation("Aviso de inactividad de {Days} días enviado al administrador {Email}", daysInactive,
+                admin.Email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al enviar el correo de advertencia de inactividad al usuario {UserId}",
+                admin.Id);
+        }
+    }
+
+    public async Task SendAdminDeletionRequestEmailAsync(List<User> otherAdmins, string initiatingAdminName,
+        string adminToDeleteName, string confirmationLink)
+    {
+        if (!otherAdmins.Any())
+        {
+            _logger.LogWarning(
+                "Se inició una petición de eliminación para {AdminToDelete}, pero no hay otros administradores para notificar y confirmar.",
+                adminToDeleteName);
+            return;
+        }
+
+        _logger.LogInformation(
+            "Enviando solicitud de segunda firma para eliminar a {AdminToDelete} a {Count} administradores.",
+            adminToDeleteName, otherAdmins.Count);
+
+        foreach (var admin in otherAdmins)
+        {
+            var viewModel = new AdminDeletionRequestViewModel
+            {
+                RecipientName = admin.FirstName,
+                InitiatingAdminName = initiatingAdminName,
+                AdminToDeleteName = adminToDeleteName,
+                ConfirmationLink = confirmationLink
+            };
+
+            var body = await _razorRenderer.RenderViewToStringAsync(
+                "~/Views/Shared/EmailTemplates/_AdminDeletionRequestEmail.cshtml",
+                viewModel);
+
+            await _emailService.SendEmailAsync(admin.Email, admin.FirstName, "Solicitud de Segunda Firma Requerida",
+                body);
+        }
+    }
+    
+    public async Task SendAccountDeletedEmailAsync(string userEmail, string userName)
+    {
+        try
+        {
+            var viewModel = new AccountDeletedViewModel { UserName = userName };
+            var body = await _razorRenderer.RenderViewToStringAsync(
+                "~/Views/Shared/EmailTemplates/_AccountDeletedEmail.cshtml",
+                viewModel);
+            
+            await _emailService.SendEmailAsync(userEmail, userName, "Tu cuenta ha sido eliminada", body);
+            _logger.LogInformation("Notificación de eliminación de cuenta enviada a {Email}", userEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al enviar la notificación de eliminación de cuenta a {Email}", userEmail);
+        }
     }
 }
