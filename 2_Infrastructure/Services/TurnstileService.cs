@@ -67,7 +67,7 @@ public class TurnstileService : ITurnstileService
         catch (BrokenCircuitException)
         {
             _logger.LogWarning("Circuit Breaker activado. El servicio de Turnstile no responde. Se está permitiendo el acceso temporalmente sin validación de captcha.");
-            return true; 
+            return true;
         }
         catch (Exception ex)
         {

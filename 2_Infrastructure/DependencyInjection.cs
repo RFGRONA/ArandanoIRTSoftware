@@ -66,14 +66,14 @@ public static class DependencyInjection
             else
                 Log.Warning("BaseUrl for WeatherAPI is not configured.");
         });
-        
+
         services.AddHttpClient<ITurnstileService, TurnstileService>()
             .AddPolicyHandler(
                 HttpPolicyExtensions
                     .HandleTransientHttpError()
                     .CircuitBreakerAsync(
-                        handledEventsAllowedBeforeBreaking: 3, 
-                        durationOfBreak: TimeSpan.FromMinutes(1)
+                        handledEventsAllowedBeforeBreaking: 3,
+                        durationOfBreak: TimeSpan.FromMinutes(3)
                     )
             );
 
@@ -127,7 +127,7 @@ public static class DependencyInjection
                 options.Password.RequireLowercase = true;
                 options.User.RequireUniqueEmail = true;
 
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3);
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
             })
