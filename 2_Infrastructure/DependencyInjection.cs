@@ -122,6 +122,11 @@ public static class DependencyInjection
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
+        
+        services.Configure<SecurityStampValidatorOptions>(options =>
+        {
+            options.ValidationInterval = TimeSpan.Zero;
+        });
 
         // 2. CONFIGURAR LA AUTENTICACIÓN Y LA COOKIE DE IDENTITY
         services.ConfigureApplicationCookie(options =>
@@ -130,8 +135,15 @@ public static class DependencyInjection
             options.LogoutPath = "/Account/Logout";
             options.AccessDeniedPath = "/Account/AccessDenied";
 
-            options.ExpireTimeSpan = TimeSpan.FromDays(1);
-            options.SlidingExpiration = true;
+            // 1. Duración fija de la sesión de 4 horas
+            options.ExpireTimeSpan = TimeSpan.FromHours(4);
+
+            // 2. Desactiva la expiración deslizante para que la sesión termine 4 horas después del login, sin importar la actividad.
+            options.SlidingExpiration = false;
+
+            // 3. (MUY IMPORTANTE) Activa la validación del SecurityStamp.
+            // Esto fuerza a la aplicación a verificar en cada petición si la sesión sigue siendo válida (p. ej. si la contraseña cambió).
+            options.Events.OnValidatePrincipal = Microsoft.AspNetCore.Identity.SecurityStampValidator.ValidatePrincipalAsync;
         });
 
         // Añadimos nuestro esquema personalizado para dispositivos, que es independiente.

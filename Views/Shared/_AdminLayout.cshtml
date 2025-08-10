@@ -73,9 +73,77 @@
         </main>
     </div>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
+    
+    <div class="modal fade" id="session-expiring-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel"><i class="fas fa-exclamation-triangle text-warning"></i> Tu sesión está a punto de expirar</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Su sesión se cerrará automáticamente en <strong id="session-countdown">2</strong> minutos por motivos de seguridad.</p>
+                    <p>Por favor, guarde cualquier trabajo no guardado y vuelva a iniciar sesión para continuar.</p>
+                </div>
+                <div class="modal-footer">
+                    <a asp-area="Admin" asp-controller="Account" asp-action="Login" class="btn btn-primary">Volver a Iniciar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+<script>
+        (function () {
+            // --- Lógica para la Alerta de Expiración de Sesión ---
+
+            // 1. Definimos la duración de la sesión en milisegundos (4 horas)
+            const sessionDuration = 4 * 60 * 60 * 1000;
+            // 2. Definimos con cuánta antelación queremos mostrar el aviso (2 minutos)
+            const warningTime = 2 * 60 * 1000;
+
+            const modalElement = document.getElementById('session-expiring-modal');
+            if (!modalElement) return;
+
+            const sessionModal = new bootstrap.Modal(modalElement);
+            const countdownElement = document.getElementById('session-countdown');
+
+            // 3. Calculamos cuándo mostrar el aviso
+            const showWarningTimeout = sessionDuration - warningTime;
+
+            // 4. Creamos el temporizador para mostrar el modal
+            const warningTimer = setTimeout(function () {
+                sessionModal.show();
+                startCountdown();
+            }, showWarningTimeout);
+            
+            // 5. Creamos un temporizador para forzar el refresco de página cuando la sesión realmente expira
+            //    Esto asegura que si el usuario ignora el modal, sea redirigido.
+            const forceRedirectTimer = setTimeout(function() {
+                // Redirigir a la página de login con un mensaje.
+                window.location.href = '/Account/Login?sessionExpired=true';
+            }, sessionDuration);
+
+            // Función para el contador regresivo en el modal
+            function startCountdown() {
+                let timeLeft = warningTime / 1000; // en segundos
+                countdownElement.textContent = Math.ceil(timeLeft / 60);
+
+                const interval = setInterval(function () {
+                    timeLeft--;
+                    const minutesLeft = Math.ceil(timeLeft / 60);
+                    countdownElement.textContent = minutesLeft > 1 ? `${minutesLeft}` : "menos de 1";
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(interval);
+                    }
+                }, 1000);
+            }
+        })();
+    </script>
+    }
+    
+    </body>
 </html>
