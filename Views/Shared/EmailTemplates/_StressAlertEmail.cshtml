@@ -1,0 +1,19 @@
+@model ArandanoIRT.Web._3_Presentation.ViewModels.Analysis.StressAlertViewModel
+
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Alerta de Cambio de Estado Hídrico</h2>
+<p>Hola @Model.UserName,</p>
+<p>La planta <strong>@Model.PlantName</strong> ha cambiado su estado hídrico.</p>
+<ul>
+    <li><strong>Estado Anterior:</strong> @Model.PreviousStatus</li>
+    <li><strong>Nuevo Estado:</strong> @Model.NewStatus</li>
+    <li><strong>Valor CWSI Registrado:</strong> @Model.CwsiValue.ToString("F2")</li>
+</ul>
+<p>Puedes ver el historial completo y los gráficos de análisis en el panel.</p>
+<a href="@Model.CtaButtonUrl" style="padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+    Ver Análisis Detallado
+</a>
+</body>
+</html>

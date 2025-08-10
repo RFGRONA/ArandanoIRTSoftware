@@ -1,0 +1,162 @@
+@using System.Globalization
+@model ArandanoIRT.Web._3_Presentation.ViewModels.Analysis.AnalysisDetailsViewModel
+@{
+    ViewData["Title"] = $"Análisis de {Model.PlantName}";
+    Layout = "_AdminLayout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"] <small class="text-muted fs-5">(@Model.CropName)</small></h1>
+    <div class="header-actions">
+        <a asp-action="GenerateReport" asp-route-plantId="@Model.PlantId"
+           asp-route-startDate="@Model.StartDate.ToString("o")" asp-route-endDate="@Model.EndDate.ToString("o")"
+           class="btn btn-success">
+            <i class="fas fa-download me-2"></i> Descargar PDF
+        </a>
+        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#emailReportModal">
+            <i class="fas fa-paper-plane me-2"></i> Enviar por Correo
+        </button>
+    </div>
+</div>
+
+<div class="card filter-card mb-4">
+    <form asp-action="Details" asp-route-id="@Model.PlantId" method="get">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Fecha Inicio</label>
+                <input type="date" name="startDate" class="form-control"
+                       value="@Model.StartDate.ToString("yyyy-MM-dd")"/>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Fecha Fin</label>
+                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Filtrar Periodo
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <div class="card-header-icon"><i class="fas fa-water"></i></div>
+                <h5 class="card-header-title">Evolución del Índice de Estrés Hídrico (CWSI)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="cwsiChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <div class="card-header-icon"><i class="fas fa-thermometer-half"></i></div>
+                <h5 class="card-header-title">Evolución de Temperaturas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Enviar Reporte -->
+<div class="modal fade" id="emailReportModal" tabindex="-1" aria-labelledby="emailReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="SendReportByEmail" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="emailReportModalLabel">Enviar Reporte por Correo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo seleccionado.</p>
+
+                    <input type="hidden" name="plantId" value="@Model.PlantId"/>
+                    <input type="hidden" name="startDate" value="@Model.StartDate.ToString("o")"/>
+                    <input type="hidden" name="endDate" value="@Model.EndDate.ToString("o")"/>
+
+                    <div class="mb-3">
+                        <label for="recipientEmail" class="form-label">Correo Electrónico del Destinatario</label>
+                        <input type="email" class="form-control" id="recipientEmail" name="recipientEmail"
+                               value="@User.Identity.Name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i> Enviar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Gráfico CWSI ---
+            const cwsiData = JSON.parse('@Html.Raw(Model.CwsiChartDataJson)');
+            const ctxCswi = document.getElementById('cwsiChart').getContext('2d');
+            new Chart(ctxCswi, {
+                type: 'line',
+                data: cwsiData,
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, max: 1 } },
+                    plugins: {
+                        legend: { position: 'top' },
+                        annotation: {
+                            annotations: {
+                                incipientStressLine: {
+                                    type: 'line',
+                                    yMin: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
+                                    yMax: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
+                                    borderColor: '#ffc107', // Color Warning
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    label: { content: 'Estrés Incipiente', enabled: true, position: 'end', backgroundColor: 'rgba(255, 193, 7, 0.7)' }
+                                },
+                                criticalStressLine: {
+                                    type: 'line',
+                                    yMin: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
+                                    yMax: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
+                                    borderColor: '#dc3545', // Color Danger
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    label: { content: 'Estrés Crítico', enabled: true, position: 'end', backgroundColor: 'rgba(220, 53, 69, 0.7)' }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Gráfico de Temperatura ---
+            const tempData = JSON.parse('@Html.Raw(Model.TempChartDataJson)');
+            const ctxTemp = document.getElementById('tempChart').getContext('2d');
+            new Chart(ctxTemp, {
+                type: 'line',
+                data: tempData,
+                options: { 
+                    responsive: true,
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        });
+    </script>
+}

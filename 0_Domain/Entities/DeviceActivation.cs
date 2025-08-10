@@ -18,7 +18,7 @@ public partial class DeviceActivation
     public DateTime ExpiresAt { get; set; }
 
     public DateTime? ActivatedAt { get; set; }
-    
+
     public ActivationStatus Status { get; set; }
 
     public virtual Device Device { get; set; } = null!;

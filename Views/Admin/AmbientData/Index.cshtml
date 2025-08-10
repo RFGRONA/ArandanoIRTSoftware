@@ -1,197 +1,209 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.Admin.SensorDataDisplayDto>
+@model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.SensorData.SensorDataDisplayDto>
 @using ArandanoIRT.Web._1_Application.Services.Contracts
 @{
-    ViewData["Title"] = "Datos Ambientales Registrados";
+    ViewData["Title"] = "Datos Ambientales";
     Layout = "_AdminLayout";
-    // 'filters' ahora viene de ViewBag.CurrentFilters y es del tipo DataQueryFilters
-    // Se usa para los asp-route-* en la paginación y para los valores iniciales de los campos de filtro.
     var currentFilters = ViewBag.CurrentFilters as DataQueryFilters ?? new DataQueryFilters();
+    
+    var routeData = new RouteValueDictionary();
+    foreach (var key in Context.Request.Query.Keys)
+    {
+        if (!key.Equals("PageNumber", StringComparison.OrdinalIgnoreCase))
+        {
+            routeData[key] = Context.Request.Query[key];
+        }
+    }
+    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
-<h1>@ViewData["Title"]</h1>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success" role="alert">@TempData["SuccessMessage"]</div>
-}
-@if (ViewData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger" role="alert">@ViewData["ErrorMessage"]</div>
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="~/css/data-tables.css" asp-append-version="true" />
 }
 
-@* Formulario de Filtros *@
-<form asp-action="Index" method="get" class="mb-4 p-3 border rounded bg-light">
-    @* Al filtrar con el botón, siempre ir a la página 1 *@
-    <input type="hidden" name="PageNumber" value="1" />
-    @* PageSize se enviará desde el select de abajo *@
-
-    <div class="row g-3 align-items-end">
-        <div class="col-md-3">
-            <label for="CropId" class="form-label">Cultivo</label>
-            @* NAME debe ser "CropId" para que coincida con DataQueryFilters.CropId *@
-            <select name="CropId" id="CropId" class="form-select" asp-items="ViewBag.AvailableCrops">
-                @* La opción "Todos" y la selección se manejan en el controlador al crear ViewBag.AvailableCrops *@
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="PlantId" class="form-label">Planta</label>
-            @* NAME debe ser "PlantId" *@
-            <select name="PlantId" id="PlantId" class="form-select" asp-items="ViewBag.AvailablePlants">
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="DeviceId" class="form-label">Dispositivo</label>
-            @* NAME debe ser "DeviceId" *@
-            <select name="DeviceId" id="DeviceId" class="form-select" asp-items="ViewBag.AvailableDevices">
-            </select>
-        </div>
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+    <div class="header-actions">
+        <a id="download-csv-btn" href="#" 
+           data-download-url="@Url.Action("DownloadCsv", "AmbientData", new { area = "Admin" })" 
+           class="btn btn-outline-secondary">
+            <i class="fas fa-download"></i> Descargar
+        </a>
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-filter"></i> Filtros
+        </button>
     </div>
-    <div class="row g-3 align-items-end mt-2">
-        <div class="col-md-3">
-            <label for="StartDate" class="form-label">Desde</label>
-            @* NAME debe ser "StartDate" *@
-            <input type="datetime-local" name="StartDate" id="StartDate" class="form-control" value="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")" />
-        </div>
-        <div class="col-md-3">
-            <label for="EndDate" class="form-label">Hasta</label>
-            @* NAME debe ser "EndDate" *@
-            <input type="datetime-local" name="EndDate" id="EndDate" class="form-control" value="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")" />
-        </div>
-        <div class="col-md-2">
-            <label for="PageSizeForm" class="form-label">Por Página</label>
-            @* NAME debe ser "PageSize" *@
-            <select name="PageSize" id="PageSizeForm" class="form-select">
-                <option value="10" selected="@(currentFilters.PageSize == 10)">10</option>
-                <option value="25" selected="@(currentFilters.PageSize == 25)">25</option>
-                <option value="50" selected="@(currentFilters.PageSize == 50)">50</option>
-                <option value="100" selected="@(currentFilters.PageSize == 100)">100</option>
-                <option value="200" selected="@(currentFilters.PageSize == 200)">200</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-        </div>
-        <div class="col-md-2">
-            <a asp-action="Index" class="btn btn-outline-secondary w-100">Limpiar Filtros</a>
-        </div>
+</div>
+
+<div class="collapse show" id="filterCollapse">
+    <div class="card filter-card mb-4">
+        <form asp-action="Index" method="get">
+            <input type="hidden" name="PageNumber" value="1" />
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="CropId" class="form-label">Cultivo</label>
+                    <select name="CropId" id="CropId" class="form-select" asp-items="ViewBag.AvailableCrops"></select>
+                </div>
+                <div class="col-md-3">
+                    <label for="PlantId" class="form-label">Planta</label>
+                    <select name="PlantId" id="PlantId" class="form-select" asp-items="ViewBag.AvailablePlants"></select>
+                </div>
+                <div class="col-md-3">
+                    <label for="DeviceId" class="form-label">Dispositivo</label>
+                    <select name="DeviceId" id="DeviceId" class="form-select" asp-items="ViewBag.AvailableDevices"></select>
+                </div>
+                <div class="col-md-3">
+                    <label for="PageSizeForm" class="form-label">Resultados por Página</label>
+                    <select name="PageSize" id="PageSizeForm" class="form-select">
+                        <option value="10" selected="@(currentFilters.PageSize == 10)">10</option>
+                        <option value="25" selected="@(currentFilters.PageSize == 25)">25</option>
+                        <option value="50" selected="@(currentFilters.PageSize == 50)">50</option>
+                    </select>
+                </div>
+            </div>
+            <hr class="filter-divider">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="StartDate" class="form-label">Desde</label>
+                    <input type="date" name="StartDate" id="StartDate" class="form-control" value="@currentFilters.StartDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4">
+                    <label for="EndDate" class="form-label">Hasta</label>
+                    <input type="date" name="EndDate" id="EndDate" class="form-control" value="@currentFilters.EndDate?.ToString("yyyy-MM-dd")" max="@maxDate" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+                    <a asp-action="Index" class="btn btn-light w-100">Limpiar</a>
+                </div>
+            </div>
+        </form>
     </div>
-</form>
+</div>
+
 
 @if (Model == null || !Model.Items.Any())
 {
-    <div class="alert alert-info" role="alert">
-        No hay datos ambientales que coincidan con los filtros aplicados, o no hay datos registrados.
+    <div class="alert alert-info text-center">
+        No se encontraron datos con los filtros aplicados.
     </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped table-hover table-sm">
-            <thead class="table-dark">
-                <tr> @* Corregido: Eliminado <tr> anidado innecesario *@
-                    <th>@Html.DisplayNameFor(model => model.Items.First().DeviceName)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().PlantName)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().CropName)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().Light)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().Temperature)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().Humidity)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().CityTemperature)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().CityHumidity)</th>
-                    <th>@Html.DisplayNameFor(model => model.Items.First().CityWeatherCondition)</th> 
-                    @* Eliminado: Encabezado para IsNight <th>@Html.DisplayNameFor(model => model.Items.First().IsNight)</th> *@
-                    <th>@Html.DisplayNameFor(model => model.Items.First().RecordedAt)</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="card table-card">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="text-center">Dispositivo</th>
+                        <th class="text-center">Planta</th>
+                        <th class="text-center">Temp. °C</th>
+                        <th class="text-center">Hum. %</th>
+                        <th class="text-center">Luz (lx)</th>
+                        <th class="text-center">Temp. Ciudad °C</th>
+                        <th class="text-center">Hum. Ciudad %</th>
+                        <th class="text-center">Clima</th>
+                        <th class="text-center">Otros Datos</th>
+                        <th class="text-center">Fecha Registro</th>
+                    </tr>
+                </thead>
+                <tbody>
                 @foreach (var item in Model.Items)
                 {
                     <tr>
-                        <td>@Html.DisplayFor(modelItem => item.DeviceName)</td>
-                        <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
-                        <td>@Html.DisplayFor(modelItem => item.CropName)</td>
-                        <td>@(item.Light?.ToString("0.##") ?? "N/A")</td> @* Formato con máx. 2 decimales *@
-                        <td>@item.Temperature.ToString("0.##")</td> @* Formato con máx. 2 decimales *@
-                        <td>@item.Humidity.ToString("0.##")</td> @* Formato con máx. 2 decimales *@
-                        <td>@(item.CityTemperature?.ToString("0.##") ?? "N/A")</td> @* Formato con máx. 2 decimales *@
-                        <td>@(item.CityHumidity?.ToString("0.##") ?? "N/A")</td> @* Formato con máx. 2 decimales *@
-                        <td>@Html.DisplayFor(modelItem => item.CityWeatherCondition)</td>
-                        @* Eliminado: Celda para IsNight
-                        <td>
-                            @if (item.IsNight.HasValue)
-                            {
-                                @(item.IsNight.Value ? "Sí" : "No")
-                            }
-                            else
-                            {
-                                <text>N/A</text>
-                            }
+                        <td class="text-center">@item.DeviceName</td>
+                        <td class="text-center">@item.PlantName</td>
+                        <td class="text-center">@item.Temperature.ToString("0.0")°C</td>
+                        <td class="text-center">@item.Humidity.ToString("0")%</td>
+                        <td class="text-center">
+                            @(item.Light.HasValue ? item.Light.Value.ToString("N0") : "-")
                         </td>
-                        *@
-                        <td>@item.RecordedAt.ToString("yyyy-MM-dd HH:mm:ss")</td> 
+                        <td class="text-center">@(item.CityTemperature?.ToString("0.0") ?? "-")°C</td>
+                        <td class="text-center">@(item.CityHumidity?.ToString("0") ?? "-")%</td>
+                        <td class="text-center">@(item.CityWeatherCondition ?? "N/A")</td>
+                        
+                        <td>
+                            <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
+                                
+                                @if (item.OtherData != null)
+                                {
+                                    @foreach (var extra in item.OtherData)
+                                    {
+                                        <li><strong>@extra.Key:</strong> @extra.Value</li>
+                                    }
+                                }
+                            </ul>
+                        </td>
+
+                        <td class="text-center">@Html.DisplayFor(modelItem => item.RecordedAt)</td>
                     </tr>
                 }
-            </tbody>
-        </table>
-    </div>
-
-    @* Paginación *@
-    <nav aria-label="Paginación de datos ambientales">
-        <ul class="pagination justify-content-center">
-            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                <a class="page-link" asp-action="Index"
-                   asp-route-CropId="@currentFilters.CropId"
-                   asp-route-PlantId="@currentFilters.PlantId"
-                   asp-route-DeviceId="@currentFilters.DeviceId"
-                   asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                   asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                   asp-route-pageNumber="@(Model.PageNumber - 1)"
-                   asp-route-pageSize="@currentFilters.PageSize">Anterior</a>
-            </li>
-
-            @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
-            {
-                if (i > 0 && i <= Model.TotalPages)
-                {
-                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-CropId="@currentFilters.CropId"
-                           asp-route-PlantId="@currentFilters.PlantId"
-                           asp-route-DeviceId="@currentFilters.DeviceId"
-                           asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                           asp-route-pageNumber="@i"
-                           asp-route-pageSize="@currentFilters.PageSize">@i</a>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer">
+        <nav class="pagination-container" aria-label="Paginación de datos ambientales">
+            <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
+            <ul class="pagination">
+                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
                     </li>
-                }
-            }
-            @if (Model.PageNumber + 2 < Model.TotalPages)
-            {
-                <li class="page-item disabled"><span class="page-link">...</span></li>
-                <li class="page-item">
-                    <a class="page-link" asp-action="Index"
-                       asp-route-CropId="@currentFilters.CropId"
-                       asp-route-PlantId="@currentFilters.PlantId"
-                       asp-route-DeviceId="@currentFilters.DeviceId"
-                       asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                       asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                       asp-route-pageNumber="@Model.TotalPages"
-                       asp-route-pageSize="@currentFilters.PageSize">@Model.TotalPages</a>
-                </li>
+
+                    @if (Model.PageNumber > 3)
+                    {
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="1">1</a>
+                        @if (Model.PageNumber > 4)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+
+                    @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@i">@i</a>
+                        </li>
+                    }
+
+                    @if (Model.PageNumber + 2 < Model.TotalPages)
+                    {
+                        @if (Model.PageNumber + 3 < Model.TotalPages)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@Model.TotalPages">@Model.TotalPages</a>
+                    }
+                    
+                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())" asp-route-pageNumber="@(Model.PageNumber + 1)">Siguiente</a>
+                    </li>
+                </ul>
+        </nav>
+    </div>
+    </div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadBtn = document.getElementById('download-csv-btn');
+            const filterForm = document.querySelector('.filter-card form');
+
+            function updateDownloadUrl() {
+                if (!filterForm || !downloadBtn) return;
+                const formData = new FormData(filterForm);
+                const params = new URLSearchParams(formData).toString();
+
+                const downloadBaseUrl = downloadBtn.dataset.downloadUrl;
+                const downloadUrl = `${downloadBaseUrl}${params ? '?' + params : ''}`;
+                downloadBtn.setAttribute('href', downloadUrl);
             }
 
-            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                <a class="page-link" asp-action="Index"
-                   asp-route-CropId="@currentFilters.CropId"
-                   asp-route-PlantId="@currentFilters.PlantId"
-                   asp-route-DeviceId="@currentFilters.DeviceId"
-                   asp-route-StartDate="@currentFilters.StartDate?.ToString("yyyy-MM-ddTHH:mm")"
-                   asp-route-EndDate="@currentFilters.EndDate?.ToString("yyyy-MM-ddTHH:mm")"
-                   asp-route-pageNumber="@(Model.PageNumber + 1)"
-                   asp-route-pageSize="@currentFilters.PageSize">Siguiente</a>
-            </li>
-        </ul>
-    </nav>
-    <div class="text-center">
-        <small>Página @Model.PageNumber de @Model.TotalPages (Total: @Model.TotalCount registros)</small>
-    </div>
+            // Actualiza la URL cada vez que un filtro cambie
+            filterForm.addEventListener('change', updateDownloadUrl);
+            
+            // Actualiza la URL al cargar la página
+            updateDownloadUrl();
+        });
+    </script>
 }

@@ -3,73 +3,147 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - AIRT Provisional Admin</title>
+    <title>@ViewData["Title"] - Arandano IRT</title>
+    
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">AIRT Admin</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                        </li>
-                        
-                        @* Menú desplegable "Gestión" *@
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownGestion" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Gestión
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownGestion">
-                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="Crops" asp-action="Index">Cultivos</a></li>
-                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="Plants" asp-action="Index">Plantas</a></li>
-                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="Devices" asp-action="Index">Dispositivos</a></li>
-                            </ul>
-                        </li>
-                        
-                        @* Elementos desagrupados de "Visualizar Datos" *@
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="Admin" asp-controller="AmbientData" asp-action="Index">Datos Ambientales</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="Admin" asp-controller="Captures" asp-action="Index">Capturas (IRT/RGB)</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="form-inline">
-                                <button type="submit" class="nav-link btn btn-link text-dark">Cerrar Sesión</button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a class="sidebar-brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                <span>🫐</span> Arandano IRT
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="fas fa-tachometer-alt fa-fw"></i><span>Dashboard</span></a></li>
+                
+                <li class="nav-title">Gestión</li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Crops" asp-action="Index"><i class="fas fa-leaf fa-fw"></i><span>Cultivos</span></a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Plants" asp-action="Index"><i class="fas fa-seedling fa-fw"></i><span>Plantas</span></a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="PlantStatus" asp-action="History"><i class="fas fa-history fa-fw"></i><span>Historial de Estados</span></a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Observation" asp-action="Index"><i class="fas fa-book-open fa-fw"></i><span>Bitácora</span></a></li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Devices" asp-action="Index"><i class="fas fa-server fa-fw"></i><span>Dispositivos</span></a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="UserManagement" asp-action="Index"><i class="fas fa-users-cog fa-fw"></i><span>Usuarios</span></a></li>
+                }
 
-    <div class="container">
-        <main role="main" class="pb-3">
+                <li class="nav-title">Visualizar Datos</li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="AmbientData" asp-action="Index"><i class="fas fa-cloud-sun fa-fw"></i><span>Datos Ambientales</span></a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Captures" asp-action="Index"><i class="fas fa-camera fa-fw"></i><span>Capturas</span></a></li>
+                
+                <li class="nav-title">Análisis</li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Analytics" asp-action="Index"><i class="fas fa-chart-bar fa-fw"></i><span>Analíticas y Reportes</span></a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="dropdown">
+                @await Component.InvokeAsync("UserInfo")
+                
+                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="userInfoDropdown">
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Manage" asp-action="Index"><i class="fas fa-user-edit fa-fw"></i> Mi Perfil</a></li>
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Support" asp-action="Index"><i class="fas fa-question-circle fa-fw"></i> Solicitar Ayuda</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt fa-fw"></i> Cerrar Sesión</button>
+                        </form>
+                    </li>
+                </ul>
+
+            </div>
+
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <header class="main-header">
+            <button class="btn" id="sidebar-toggler" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+        
+        <main class="content-fluid">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; @DateTime.Now.Year - AIRT Provisional
+    
+    <div class="modal fade" id="session-expiring-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel"><i class="fas fa-exclamation-triangle text-warning"></i> Tu sesión está a punto de expirar</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Su sesión se cerrará automáticamente en <strong id="session-countdown">2</strong> minutos por motivos de seguridad.</p>
+                    <p>Por favor, guarde cualquier trabajo no guardado y vuelva a iniciar sesión para continuar.</p>
+                </div>
+                <div class="modal-footer">
+                    <a asp-area="Admin" asp-controller="Account" asp-action="Login" class="btn btn-primary">Volver a Iniciar Sesión</a>
+                </div>
+            </div>
         </div>
-    </footer>
+    </div>
+    
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+<script>
+        (function () {
+            // --- Lógica para la Alerta de Expiración de Sesión ---
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
+            // 1. Definimos la duración de la sesión en milisegundos (4 horas)
+            const sessionDuration = 4 * 60 * 60 * 1000;
+            // 2. Definimos con cuánta antelación queremos mostrar el aviso (2 minutos)
+            const warningTime = 2 * 60 * 1000;
+
+            const modalElement = document.getElementById('session-expiring-modal');
+            if (!modalElement) return;
+
+            const sessionModal = new bootstrap.Modal(modalElement);
+            const countdownElement = document.getElementById('session-countdown');
+
+            // 3. Calculamos cuándo mostrar el aviso
+            const showWarningTimeout = sessionDuration - warningTime;
+
+            // 4. Creamos el temporizador para mostrar el modal
+            const warningTimer = setTimeout(function () {
+                sessionModal.show();
+                startCountdown();
+            }, showWarningTimeout);
+            
+            // 5. Creamos un temporizador para forzar el refresco de página cuando la sesión realmente expira
+            //    Esto asegura que si el usuario ignora el modal, sea redirigido.
+            const forceRedirectTimer = setTimeout(function() {
+                // Redirigir a la página de login con un mensaje.
+                window.location.href = '/Account/Login?sessionExpired=true';
+            }, sessionDuration);
+
+            // Función para el contador regresivo en el modal
+            function startCountdown() {
+                let timeLeft = warningTime / 1000; // en segundos
+                countdownElement.textContent = Math.ceil(timeLeft / 60);
+
+                const interval = setInterval(function () {
+                    timeLeft--;
+                    const minutesLeft = Math.ceil(timeLeft / 60);
+                    countdownElement.textContent = minutesLeft > 1 ? `${minutesLeft}` : "menos de 1";
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(interval);
+                    }
+                }, 1000);
+            }
+        })();
+    </script>
+    }
+    
+    </body>
 </html>

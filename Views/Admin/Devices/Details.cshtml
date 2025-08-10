@@ -1,72 +1,122 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.DeviceDetailsDto
+@using ArandanoIRT.Web._0_Domain.Common
+@model ArandanoIRT.Web._1_Application.DTOs.Device.DeviceDetailsDto
 @{
     ViewData["Title"] = "Detalles del Dispositivo";
     Layout = "_AdminLayout";
 }
-<h1>@ViewData["Title"]</h1>
-@if (Model == null) { /* ... manejo de no encontrado ... */ return; }
-@if (ViewData["ErrorMessage"] != null) { /* ... manejo de error ... */ }
-@if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+}
 
-<div>
-    <h4>Dispositivo: @Model.Name</h4>
-    <p><strong>ID para Firmware: @Model.Id</strong></p>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Name)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.Name)</dd>
+@if (Model == null)
+{
+    <div class="alert alert-warning">Dispositivo no encontrado.</div>
+    <p><a asp-action="Index" class="btn btn-secondary-outline">Volver al listado</a></p>
+}
+else
+{
+    <div class="page-header">
+        <h1>@ViewData["Title"]</h1>
+        <h4>@Model.Name</h4>
+    </div>
 
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Description)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.Description)</dd>
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
+    @if (ViewData["ErrorMessage"] != null) { <div class="alert alert-danger">@ViewData["ErrorMessage"]</div> }
 
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.PlantName)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.PlantName)</dd>
+    <div class="card details-card">
+        <div class="card-body">
+            <dl class="details-list">
+                <div class="row detail-item">
+                    <dt class="col-sm-3">ID para Firmware</dt>
+                    <dd class="col-sm-9">@Model.Id</dd>
+                </div>
+                <div class="row detail-item">
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Name)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
+                </div>
+                <div class="row detail-item">
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Description)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.Description)</dd>
+                </div>
+                <div class="row detail-item">
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.PlantName)</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.PlantName)</dd>
+                </div>
+                <div class="row detail-item">
+                    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CropName)</dt>
+                    <dd class="col-sm-9">
+                        @Html.DisplayFor(model => model.CropName)
+                        @if (!string.IsNullOrWhiteSpace(Model.CropCityName))
+                        {
+                            <span class="text-muted">(@Html.DisplayFor(model => model.CropCityName))</span>
+                        }
+                    </dd>
+                </div>
+                <div class="row detail-item">
+                    <dt class="col-sm-3">Intervalo de Recolección</dt>
+                    <dd class="col-sm-9">@Html.DisplayFor(model => model.DataCollectionTimeMinutes) minutos</dd>
+                </div>
+                <div class="row detail-item">
+                    <dt class="col-sm-3">Estado del Dispositivo</dt>
+                    <dd class="col-sm-9">
+                        @{
+                            var statusClass = "status-inactive";
+                            if (string.Equals(Model.Status.ToString(), "Activo", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-active"; }
+                            else if (string.Equals(Model.Status.ToString(), "Error", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-error"; }
+                        }
+                        <span class="status-badge @statusClass">@Model.Status.GetDisplayName()</span>
+                    </dd>
+                </div>
+            </dl>
 
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.CropName)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.CropName) (@Html.DisplayFor(model => model.CropCityName))</dd>
-
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DataCollectionTimeMinutes)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.DataCollectionTimeMinutes) minutos</dd>
-
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.DeviceStatusName)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.DeviceStatusName)</dd>
-
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.RegisteredAt)</dt>
-        <dd class="col-sm-8">@Model.RegisteredAt.ToString("F")</dd>
-
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.UpdatedAt)</dt>
-        <dd class="col-sm-8">@Model.UpdatedAt.ToString("F")</dd>
-    </dl>
-
-    <h5 class="mt-4">Información de Activación</h5>
-    @if (Model.ActivationDevices != null && Model.ActivationDevices.ActivationId.HasValue)
-    {
-    <dl class="row">
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCode)</dt>
-        <dd class="col-sm-8"><strong>@Html.DisplayFor(model => model.ActivationDevices.ActivationCode)</strong></dd>
-
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationStatusName)</dt>
-        <dd class="col-sm-8">@Html.DisplayFor(model => model.ActivationDevices.ActivationStatusName)</dd>
-
-        @if (Model.ActivationDevices.ActivationCodeExpiresAt.HasValue)
-        {
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCodeExpiresAt)</dt>
-        <dd class="col-sm-8">@Model.ActivationDevices.ActivationCodeExpiresAt.Value.ToString("F")</dd>
-        }
-        @if (Model.ActivationDevices.DeviceActivatedAt.HasValue)
-        {
-        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.ActivationDevices.DeviceActivatedAt)</dt>
-        <dd class="col-sm-8">@Model.ActivationDevices.DeviceActivatedAt.Value.ToString("F")</dd>
-        }
-    </dl>
-    }
-    else
-    {
-        <p class="text-muted">No hay información de activación generada para este dispositivo (esto no debería suceder si el dispositivo se creó a través de esta interfaz).</p>
-    }
-</div>
-<div class="mt-4">
-    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar Dispositivo</a> |
-    <a asp-action="Index" class="btn btn-secondary">Volver al Listado</a>
-</div>
+            <h5 class="section-title mt-4">Información de Activación</h5>
+            @if (Model.ActivationDevices != null && Model.ActivationDevices.ActivationId.HasValue)
+            {
+                <dl class="details-list">
+                    <div class="row detail-item">
+                        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCode)</dt>
+                        <dd class="col-sm-9"><strong>@Html.DisplayFor(model => model.ActivationDevices.ActivationCode)</strong></dd>
+                    </div>
+                    <div class="row detail-item">
+                        <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationStatus)</dt>
+                        <dd class="col-sm-9">
+                            @{
+                                var activationClass = "status-inactive";
+                                if (string.Equals(Model.ActivationDevices.ActivationStatus.ToString(), "Activado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-active"; }
+                                else if (string.Equals(Model.ActivationDevices.ActivationStatus.ToString(), "No Asignado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-unassigned"; }
+                            }
+                            <span class="status-badge @activationClass">@Model.ActivationDevices.ActivationStatus.GetDisplayName()</span>
+                        </dd>
+                    </div>
+                    @if (Model.ActivationDevices.ActivationCodeExpiresAt.HasValue)
+                    {
+                        <div class="row detail-item">
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationCodeExpiresAt)</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.ActivationDevices.ActivationCodeExpiresAt)</dd>
+                        </div>
+                    }
+                    @if (Model.ActivationDevices.DeviceActivatedAt.HasValue)
+                    {
+                        <div class="row detail-item">
+                            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.DeviceActivatedAt)</dt>
+                            <dd class="col-sm-9">@Html.DisplayFor(model => model.ActivationDevices.DeviceActivatedAt)</dd>
+                        </div>
+                    }
+                </dl>
+            }
+            else
+            {
+                <p class="text-muted">No hay información de activación para este dispositivo.</p>
+            }
+        </div>
+        <div class="card-footer">
+            <a asp-action="Index" class="btn btn-secondary-outline">Volver al Listado</a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                <i class="fas fa-pencil-alt me-2"></i>Editar
+            </a>
+        </div>
+    </div>
+}

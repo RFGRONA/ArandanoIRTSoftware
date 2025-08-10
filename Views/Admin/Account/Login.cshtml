@@ -1,35 +1,66 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.AdminLoginDto
+@inject Microsoft.Extensions.Options.IOptions<ArandanoIRT.Web._2_Infrastructure.Settings.TurnstileSettings> TurnstileSettings
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.LoginDto
+@inject IWebHostEnvironment Env 
 @{
-    ViewData["Title"] = "Inicio de sesión";
-    Layout = "_LayoutAdminLogin"; 
+    Layout = null;
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <section>
-            <form asp-area="Admin" asp-controller="Account" asp-action="Login" asp-route-returnurl="@Model.ReturnUrl" method="post">
-                <h2>@ViewData["Title"]</h2>
-                <hr />
-                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Username" class="form-control" autocomplete="username" aria-required="true" placeholder="usuario" />
-                    <label asp-for="Username" class="form-label"></label>
-                    <span asp-validation-for="Username" class="text-danger"></span>
-                </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="contraseña" />
-                    <label asp-for="Password" class="form-label"></label>
-                    <span asp-validation-for="Password" class="text-danger"></span>
-                </div>
-                @* Podrías añadir un "Recordarme?" si IsPersistent no es suficiente *@
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Iniciar Sesión</button>
-                </div>
-            </form>
-        </section>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Inicio de sesión - Arandano IRT</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true"/>
+    @if (!Env.IsDevelopment()) 
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
+</head>
+<body>
+
+<div class="login-card">
+    <a asp-area="Admin" asp-controller="Support" asp-action="PublicHelp" class="btn-help">?</a>
+
+    <div class="login-header">
+        <span class="emoji">🫐</span>
+        <h1>Inicio de Sesión</h1>
     </div>
+
+    <form method="post">
+        <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" placeholder="Escribe tu correo"/>
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Password" class="form-label">Contraseña</label>
+            <input asp-for="Password" type="password" class="form-control" placeholder="Escribe tu contraseña"/>
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex justify-content-center">
+            <div class="cf-turnstile mb-3" data-sitekey="@TurnstileSettings.Value.SiteKey"></div>
+        </div>
+
+        <div class="form-text text-center mb-3">
+            <a asp-area="Admin" asp-controller="Account" asp-action="ForgotPassword" class="link-sutil">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <div class="action-buttons">
+            <a asp-area="Admin" asp-controller="Account" asp-action="Register" class="btn btn-secondary w-100">Registrarse</a>
+            <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+        </div>
+    </form>
 </div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<partial name="_ValidationScriptsPartial"/>
+
+</body>
+</html>

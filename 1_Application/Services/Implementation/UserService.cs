@@ -1,0 +1,434 @@
+using System.Linq.Expressions;
+using System.Security.Claims;
+using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
+using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.Services.Contracts;
+using ArandanoIRT.Web._2_Infrastructure.Data;
+using ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
+
+namespace ArandanoIRT.Web._1_Application.Services.Implementation;
+
+public class UserService : IUserService
+{
+    private readonly IAlertService _alertService;
+    private readonly ApplicationDbContext _context;
+    private readonly IInvitationService _invitationService;
+    private readonly ILogger<UserService> _logger;
+    private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly SignInManager<User> _signInManager;
+    private readonly UserManager<User> _userManager;
+
+    public UserService(
+        ApplicationDbContext context,
+        UserManager<User> userManager,
+        RoleManager<ApplicationRole> roleManager,
+        SignInManager<User> signInManager,
+        IInvitationService invitationService,
+        IAlertService alertService,
+        ILogger<UserService> logger)
+    {
+        _context = context;
+        _userManager = userManager;
+        _roleManager = roleManager;
+        _signInManager = signInManager;
+        _invitationService = invitationService;
+        _logger = logger;
+        _alertService = alertService;
+    }
+
+    public async Task<(SignInResult Result, bool JustLockedOut)> LoginUserAsync(LoginDto model)
+    {
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null)
+        {
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, true);
+            return (result, false); // No hay usuario, no se puede bloquear
+        }
+
+        // 1. Verificamos si el usuario está a UN intento de ser bloqueado.
+        //    Usamos la configuración de Identity en lugar de un número fijo (5).
+        var isAboutToLockOut = user.AccessFailedCount == _userManager.Options.Lockout.MaxFailedAccessAttempts - 1;
+
+        // 2. Realizamos el intento de login.
+        var signInResult = await _signInManager.PasswordSignInAsync(user, model.Password, true, true);
+
+        // 3. Si el intento resultó en un bloqueo Y sabíamos que estaba a punto de ocurrir, enviamos la alerta.
+        if (isAboutToLockOut && signInResult.IsLockedOut)
+        {
+            _logger.LogWarning("La cuenta para {Email} ha sido bloqueada en este intento.", user.Email);
+            return (signInResult, true);
+        }
+
+        return (signInResult, false);
+    }
+
+    public async Task<Result> RegisterUserAsync(RegisterDto model)
+    {
+        // 1. Validar la invitación primero (operación de solo lectura)
+        var invitationResult = await _invitationService.ValidateCodeAsync(model.InvitationCode, model.Email);
+        if (invitationResult.IsFailure) return Result.Failure(invitationResult.ErrorMessage);
+        var invitation = invitationResult.Value;
+
+        // 2. Crear el usuario
+        var user = new User
+        {
+            UserName = model.Email,
+            Email = model.Email,
+            FirstName = model.FirstName,
+            LastName = model.LastName,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        if (invitation.IsAdmin)
+        {
+            // Si es admin, establecemos sus valores por defecto específicos.
+            user.AccountSettings.EmailOnHelpRequest = true;
+            user.AccountSettings.EmailOnAppFailureAlert = true;
+            user.AccountSettings.EmailOnDeviceFailureAlert = true;
+            user.AccountSettings.EmailOnDeviceInactivity = true;
+        }
+
+        // UserManager.CreateAsync ya guarda el usuario en la BD.
+        var identityResult = await _userManager.CreateAsync(user, model.Password);
+
+        if (!identityResult.Succeeded)
+        {
+            var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+            return Result.Failure(errors);
+        }
+
+        _logger.LogInformation("Usuario {Email} creado en la base de datos.", user.Email);
+
+        // 3. Intentar las operaciones secundarias (asignar rol, marcar código)
+        try
+        {
+            if (invitation.IsAdmin)
+            {
+                if (!await _roleManager.RoleExistsAsync("Admin"))
+                    await _roleManager.CreateAsync(new ApplicationRole { Name = "Admin" });
+                await _userManager.AddToRoleAsync(user, "Admin");
+            }
+
+            // Marcar el código como usado (ahora es una operación separada)
+            await _invitationService.MarkCodeAsUsedAsync(invitation.Id);
+        }
+        catch (Exception ex)
+        {
+            // Si algo falla DESPUÉS de crear el usuario, debemos deshacerlo.
+            _logger.LogError(ex,
+                "Error al asignar rol o marcar invitación para el usuario {Email}. Revirtiendo creación.", user.Email);
+            await _userManager.DeleteAsync(user);
+            return Result.Failure("Ocurrió un error al finalizar el registro. Por favor, intente de nuevo.");
+        }
+
+        // 4. Si todo salió bien, iniciar sesión
+        await _signInManager.SignInAsync(user, false);
+        return Result.Success(user.Id);
+    }
+
+    public async Task<IEnumerable<SelectListItem>> GetUsersForSelectionAsync()
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .OrderBy(u => u.FirstName)
+            .ThenBy(u => u.LastName)
+            .Select(u => new SelectListItem
+            {
+                Value = u.Id.ToString(),
+                Text = u.FirstName + " " + u.LastName
+            })
+            .ToListAsync();
+    }
+
+    public async Task<Result<(string Name, string ResetLink)>> GeneratePasswordResetAsync(ForgotPasswordDto model,
+        IUrlHelper urlHelper, string scheme)
+    {
+        var user = await _userManager.FindByEmailAsync(model.Email);
+
+        // NOTA DE SEGURIDAD: Si el usuario no se encuentra, no devolvemos un error.
+        // Simplemente terminamos el proceso silenciosamente. Esto previene que un atacante
+        // pueda usar este formulario para descubrir qué correos están registrados en el sistema.
+        if (user == null)
+            // Devolvemos un Result exitoso pero con valores vacíos. El controlador no enviará correo.
+            return Result.Success(("", ""));
+
+        // Generar el token de reseteo
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+        // Generar la URL de callback que irá en el correo
+        var callbackUrl = urlHelper.Action(
+            "ResetPassword",
+            "Account",
+            new { token, email = user.Email },
+            scheme);
+
+        if (string.IsNullOrEmpty(callbackUrl))
+            return Result.Failure<(string, string)>("No se pudo generar la URL de reseteo.");
+
+        return Result.Success((user.FirstName, callbackUrl));
+    }
+
+    public async Task<Result> ResetPasswordAsync(ResetPasswordDto model)
+    {
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null)
+            // No revelamos que el usuario no existe por seguridad.
+            return Result.Failure("Ocurrió un error. Por favor, intente de nuevo.");
+
+        // El método ResetPasswordAsync valida el token y actualiza la contraseña.
+        var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return Result.Failure(errors);
+        }
+
+        // Notificar al usuario que su contraseña ha cambiado
+        await _alertService.SendPasswordChangedEmailAsync(user.Email, user.FirstName);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> ChangePasswordAsync(ClaimsPrincipal userPrincipal, ChangePasswordDto model)
+    {
+        var user = await _userManager.GetUserAsync(userPrincipal);
+        if (user == null) return Result.Failure("Usuario no encontrado.");
+
+        // El método ChangePasswordAsync valida la contraseña antigua y establece la nueva.
+        var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return Result.Failure(errors);
+        }
+
+        // Notificar al usuario que su contraseña ha cambiado
+        await _alertService.SendPasswordChangedEmailAsync(user.Email, user.FirstName);
+
+        // Refrescar la cookie de sesión del usuario para actualizar el sello de seguridad
+        await _signInManager.RefreshSignInAsync(user);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> UpdateProfileAsync(ClaimsPrincipal userPrincipal, ProfileInfoDto model)
+    {
+        var user = await _userManager.GetUserAsync(userPrincipal);
+        if (user == null) return Result.Failure("Usuario no encontrado.");
+
+        user.FirstName = model.FirstName;
+        user.LastName = model.LastName;
+        user.AccountSettings = model.AccountSettings;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return Result.Failure(errors);
+        }
+
+        return Result.Success();
+    }
+
+    public async Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate)
+    {
+        var allAdmins = await _userManager.GetUsersInRoleAsync("Admin");
+        var compiledPredicate = predicate.Compile();
+        return allAdmins.Where(u => compiledPredicate(u.AccountSettings)).ToList();
+    }
+
+    public async Task<List<User>> GetAllUsersAsync()
+    {
+        return await _userManager.Users.ToListAsync();
+    }
+
+    public async Task<Result<IEnumerable<UserDto>>> GetAllUsersForManagementAsync()
+    {
+        try
+        {
+            var users = await _userManager.Users.OrderBy(u => u.FirstName).ToListAsync();
+            var userDtos = new List<UserDto>();
+            var now = DateTime.UtcNow;
+            const int inactivityDaysThreshold = 30;
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                var isAdmin = roles.Contains("Admin");
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    Email = user.Email,
+                    Role = isAdmin ? "Administrador" : "Usuario Estándar",
+                    RegisteredDate = user.CreatedAt.ToLocalTime()
+                };
+
+                if (isAdmin && user.LastLoginAt.HasValue)
+                {
+                    var daysInactive = (now - user.LastLoginAt.Value).TotalDays;
+                    if (daysInactive > inactivityDaysThreshold) userDto.IsDeletableByInactivity = true;
+                }
+
+                userDtos.Add(userDto);
+            }
+
+            return Result.Success<IEnumerable<UserDto>>(userDtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener la lista de usuarios para gestión.");
+            return Result.Failure<IEnumerable<UserDto>>("Ocurrió un error al cargar los usuarios.");
+        }
+    }
+
+    public async Task<Result> PromoteToAdminAsync(int userIdToPromote)
+    {
+        var user = await _userManager.FindByIdAsync(userIdToPromote.ToString());
+        if (user == null) return Result.Failure("Usuario no encontrado.");
+
+        var isAlreadyAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+        if (isAlreadyAdmin)
+            // No es un error, pero la operación es innecesaria.
+            return Result.Success();
+
+        var result = await _userManager.AddToRoleAsync(user, "Admin");
+
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("Usuario {UserId} ha sido ascendido a Administrador.", userIdToPromote);
+            return Result.Success();
+        }
+
+        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+        return Result.Failure($"No se pudo ascender al usuario: {errors}");
+    }
+
+    public async Task<Result> DeleteUserAsync(int userIdToDelete, int currentUserId)
+    {
+        // Regla de Seguridad 1: Un administrador no puede eliminarse a sí mismo.
+        if (userIdToDelete == currentUserId)
+            return Result.Failure("No puedes eliminar tu propia cuenta de administrador.");
+
+        var userToDelete = await _userManager.FindByIdAsync(userIdToDelete.ToString());
+        if (userToDelete == null)
+            // El usuario ya no existe, consideramos la operación exitosa.
+            return Result.Success();
+
+        // Regla de Seguridad 2: No se puede eliminar a otro administrador.
+        var isUserAdmin = await _userManager.IsInRoleAsync(userToDelete, "Admin");
+        if (isUserAdmin) return Result.Failure("No está permitido eliminar a un usuario administrador.");
+
+        var emailOfDeletedUser = userToDelete.Email;
+        var nameOfDeletedUser = userToDelete.FirstName;
+
+        // Si pasa todas las validaciones, proceder con la eliminación.
+        var result = await _userManager.DeleteAsync(userToDelete);
+
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("Usuario {UserId} ha sido eliminado por el administrador {AdminId}.", userIdToDelete,
+                currentUserId);
+            if (!string.IsNullOrEmpty(emailOfDeletedUser))
+            {
+                await _alertService.SendAccountDeletedEmailAsync(emailOfDeletedUser, nameOfDeletedUser);
+            }
+            return Result.Success();
+        }
+
+        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+        return Result.Failure($"No se pudo eliminar al usuario: {errors}");
+    }
+
+    public async Task<Result<string>> InitiateAdminDeletionAsync(int adminToDeleteId, int currentAdminId,
+        string currentAdminPassword, IUrlHelper urlHelper, string scheme)
+    {
+        var admins = await _userManager.GetUsersInRoleAsync("Admin");
+        if (admins.Count < 3)
+        {
+            return Result.Failure<string>("La eliminación inmediata de un administrador solo está permitida si existen al menos tres administradores en el sistema.");
+        }
+        // Regla 1: No auto-eliminación
+        if (adminToDeleteId == currentAdminId)
+            return Result.Failure<string>("No puedes eliminar tu propia cuenta de administrador.");
+
+        // Regla 2: Verificar contraseña del iniciador
+        var currentAdmin = await _userManager.FindByIdAsync(currentAdminId.ToString());
+        if (currentAdmin == null || !await _userManager.CheckPasswordAsync(currentAdmin, currentAdminPassword))
+            return Result.Failure<string>("Tu contraseña es incorrecta. La acción ha sido cancelada.");
+
+        var adminToDelete = await _userManager.FindByIdAsync(adminToDeleteId.ToString());
+        if (adminToDelete == null)
+            return Result.Failure<string>("El administrador que intentas eliminar no fue encontrado.");
+
+        // 3. Generar token de un solo uso con propósito específico
+        var tokenProvider = "Default"; // Usamos el proveedor de tokens por defecto de Identity
+        var purpose = $"delete-admin:{adminToDeleteId}";
+        var token = await _userManager.GenerateUserTokenAsync(adminToDelete, tokenProvider, purpose);
+
+        // 4. Generar el enlace de confirmación
+        var confirmationLink = urlHelper.Action("ConfirmDeletion", "UserManagement",
+            new { id = adminToDeleteId, token }, scheme);
+
+        if (string.IsNullOrEmpty(confirmationLink))
+            return Result.Failure<string>("No se pudo generar el enlace de confirmación.");
+
+        // 5. Enviar notificación a los otros administradores
+        var otherAdmins = admins.Where(a => a.Id != currentAdminId && a.Id != adminToDeleteId).ToList();
+
+        await _alertService.SendAdminDeletionRequestEmailAsync(otherAdmins, currentAdmin.FirstName,
+            adminToDelete.FirstName, confirmationLink);
+
+        // Devolvemos el nombre del admin para el mensaje de éxito en el controlador
+        return Result.Success(adminToDelete.FirstName);
+    }
+
+    public async Task<Result> ConfirmAdminDeletionAsync(int adminToDeleteId, string token)
+    {
+        var adminToDelete = await _userManager.FindByIdAsync(adminToDeleteId.ToString());
+        if (adminToDelete == null)
+            return Result.Failure("El administrador a eliminar ya no existe.");
+
+        // 1. Validar el token
+        var tokenProvider = "Default";
+        var purpose = $"delete-admin:{adminToDeleteId}";
+        var isTokenValid = await _userManager.VerifyUserTokenAsync(adminToDelete, tokenProvider, purpose, token);
+
+        if (!isTokenValid)
+            return Result.Failure("El enlace de confirmación no es válido o ha expirado.");
+
+        var emailOfDeletedAdmin = adminToDelete.Email;
+        var nameOfDeletedAdmin = adminToDelete.FirstName;
+
+        // 2. Proceder con la eliminación
+        var result = await _userManager.DeleteAsync(adminToDelete);
+
+        if (result.Succeeded)
+        {
+            _logger.LogWarning(
+                "El administrador {AdminToDeleteId} ha sido eliminado tras confirmación por segunda firma.",
+                adminToDeleteId);
+
+            if (!string.IsNullOrEmpty(emailOfDeletedAdmin))
+            {
+                await _alertService.SendAccountDeletedEmailAsync(emailOfDeletedAdmin, nameOfDeletedAdmin);
+            }
+            return Result.Success();
+        }
+
+        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+        return Result.Failure($"No se pudo eliminar al administrador: {errors}");
+    }
+}

@@ -5,105 +5,38 @@
         <RuntimeIdentifiers>linux-x64;win-x64</RuntimeIdentifiers>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-      <PackageReference Include="EFCore.NamingConventions" Version="8.0.3" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.17" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.17">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.17">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="Minio" Version="6.0.4" />
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
-      <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
-      <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
+        <PackageReference Include="brevo_csharp" Version="1.1.1"/>
+        <PackageReference Include="CsvHelper" Version="33.1.0" />
+        <PackageReference Include="EFCore.NamingConventions" Version="8.0.3"/>
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.18"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.18"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.18">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.18">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.19" />
+        <PackageReference Include="Minio" Version="6.0.4"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11"/>
+        <PackageReference Include="QuestPDF" Version="2025.7.0" />
+        <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
+        <PackageReference Include="SkiaSharp" Version="3.119.0" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.119.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="1_Application\" />
-      <Folder Include="logs\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Update="Views\Admin\Account\Login.cshtml">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Account\AccessDenied.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Account\Login.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\AmbientData\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Captures\Details.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Captures\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Crops\Create.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Crops\Delete.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Crops\Details.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Crops\Edit.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Crops\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Crops\_CropFormPartial.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Dashboard\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\DeviceLogs\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Devices\Create.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Devices\Delete.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Devices\Details.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Devices\Edit.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Devices\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Devices\_DeviceFormPartial.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Plants\Create.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Plants\Delete.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Plants\Details.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Plants\Edit.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Plants\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Admin\Plants\_PlantFormPartial.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Shared\Error.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Shared\_AdminLayout.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Shared\_Layout.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Shared\_LayoutAdminLogin.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\Shared\_ValidationScriptsPartial.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\_ViewImports.cshtml" />
-      <_ContentIncludedByDefault Remove="3_Presentation\Views\_ViewStart.cshtml" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <AdditionalFiles Include="Views\Admin\Account\AccessDenied.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Account\Login.cshtml" />
-      <AdditionalFiles Include="Views\Admin\AmbientData\Index.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Captures\Details.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Captures\Index.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Crops\Create.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Crops\Delete.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Crops\Details.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Crops\Edit.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Crops\Index.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Crops\_CropFormPartial.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Dashboard\Index.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Devices\Create.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Devices\Delete.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Devices\Details.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Devices\Edit.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Devices\Index.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Devices\_DeviceFormPartial.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Plants\Create.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Plants\Delete.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Plants\Details.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Plants\Edit.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Plants\Index.cshtml" />
-      <AdditionalFiles Include="Views\Admin\Plants\_PlantFormPartial.cshtml" />
-      <AdditionalFiles Include="Views\Shared\Error.cshtml" />
-      <AdditionalFiles Include="Views\Shared\_AdminLayout.cshtml" />
-      <AdditionalFiles Include="Views\Shared\_Layout.cshtml" />
-      <AdditionalFiles Include="Views\Shared\_LayoutAdminLogin.cshtml" />
-      <AdditionalFiles Include="Views\Shared\_ValidationScriptsPartial.cshtml" />
-      <AdditionalFiles Include="Views\_ViewImports.cshtml" />
-      <AdditionalFiles Include="Views\_ViewStart.cshtml" />
+        <Folder Include="logs\"/>
     </ItemGroup>
 
 </Project>

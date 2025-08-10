@@ -1,0 +1,30 @@
+@using ArandanoIRT.Web._0_Domain.Common
+@model ArandanoIRT.Web._3_Presentation.ViewModels.Alerts.FailedLoginAlertViewModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Alerta de Seguridad de la Cuenta";
+}
+
+<h1>Alerta de Seguridad</h1>
+
+<p>Hola, @Model.UserName,</p>
+
+<p>Detectamos múltiples intentos fallidos de inicio de sesión en tu cuenta. Por tu seguridad, <strong>tu cuenta ha sido bloqueada temporalmente</strong>.</p>
+
+<div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 16px; margin: 24px 0; border-radius: 8px;">
+    <p style="color: #842029; margin: 0;">
+        <strong>Fecha y Hora del bloqueo (UTC):</strong> @Model.AlertTime.ToColombiaTime().ToString("F")
+    </p>
+</div>
+
+<p>Si no reconoces esta actividad, te recomendamos que asegures tu cuenta inmediatamente restableciendo tu contraseña.</p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
+    <tr>
+        <td align="center">
+            <a href="@Model.ForgotPasswordUrl" class="button">Asegurar mi Cuenta</a>
+        </td>
+    </tr>
+</table>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>

@@ -1,0 +1,9 @@
+@model (string Name, string Role)
+
+<a href="#" class="user-info-panel" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+    <div class="user-details">
+        <div class="user-display-name">@Model.Name</div>
+        <div class="user-display-role">@Model.Role</div>
+    </div>
+    <i class="fas fa-chevron-up ms-auto"></i> @* Ícono de flecha a la derecha *@
+</a>

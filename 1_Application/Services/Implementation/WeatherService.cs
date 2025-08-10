@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Web;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Weather;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using ArandanoIRT.Web.Common;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
@@ -64,7 +64,7 @@ public class WeatherService : IWeatherService
             // aunque JsonPropertyName lo maneja bien.
             var weatherApiResponse = await response.Content.ReadFromJsonAsync<WeatherApiResponse>();
 
-            if (weatherApiResponse?.Current == null || weatherApiResponse.Current.Condition == null) 
+            if (weatherApiResponse?.Current == null || weatherApiResponse.Current.Condition == null)
             {
                 _logger.LogWarning("Respuesta de WeatherAPI no contenía datos 'current' o 'condition' válidos para {CityQuery}.", cityQuery);
                 return Result.Failure<WeatherInfo>("Datos del clima (current o condition) no disponibles en la respuesta de la API.");
@@ -76,7 +76,7 @@ public class WeatherService : IWeatherService
                 TemperatureCelsius = current.TempC,
                 HumidityPercentage = current.Humidity,
                 IsNight = (current.IsDay == 0),
-                ConditionText = current.Condition.Text 
+                ConditionText = current.Condition.Text
             };
 
             _logger.LogInformation("Clima obtenido para {CityQuery}: Temp={TempC}, Hum={Humidity}%, IsNight={IsNight}, Condición='{ConditionText}'",

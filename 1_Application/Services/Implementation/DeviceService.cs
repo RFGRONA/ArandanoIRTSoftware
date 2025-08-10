@@ -1,10 +1,10 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
-using ArandanoIRT.Web.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -13,8 +13,9 @@ namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 public class DeviceService : IDeviceService
 {
     private readonly ApplicationDbContext _context;
-    private readonly TokenSettings _tokenSettings;
     private readonly ILogger<DeviceService> _logger;
+
+    private readonly TokenSettings _tokenSettings;
     // IDataSubmissionService ya no es necesario aquí porque los logs los maneja ILogger.
 
     public DeviceService(
@@ -27,14 +28,14 @@ public class DeviceService : IDeviceService
         _logger = logger;
     }
 
-    public async Task<Result<DeviceActivationResponseDto>> ActivateDeviceAsync(DeviceActivationRequestDto activationRequest)
+    public async Task<Result<DeviceActivationResponseDto>> ActivateDeviceAsync(
+        DeviceActivationRequestDto activationRequest)
     {
-        _logger.LogInformation("Inicio de activación para DeviceId: {DeviceId}, MAC: {MacAddress}", activationRequest.DeviceId, activationRequest.MacAddress);
+        _logger.LogInformation("Inicio de activación para DeviceId: {DeviceId}, MAC: {MacAddress}",
+            activationRequest.DeviceId, activationRequest.MacAddress);
 
         if (string.IsNullOrWhiteSpace(activationRequest.MacAddress))
-        {
             return Result.Failure<DeviceActivationResponseDto>("La dirección MAC es requerida.");
-        }
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
@@ -46,28 +47,30 @@ public class DeviceService : IDeviceService
 
             if (deviceWithMac != null && deviceWithMac.Id != activationRequest.DeviceId)
             {
-                _logger.LogWarning("Intento de activación con MAC {MacAddress} que ya pertenece al DeviceId {ExistingDeviceId}",
+                _logger.LogWarning(
+                    "Intento de activación con MAC {MacAddress} que ya pertenece al DeviceId {ExistingDeviceId}",
                     activationRequest.MacAddress, deviceWithMac.Id);
-                return Result.Failure<DeviceActivationResponseDto>("La dirección MAC ya está registrada para otro dispositivo.");
+                return Result.Failure<DeviceActivationResponseDto>(
+                    "La dirección MAC ya está registrada para otro dispositivo.");
             }
-            
+
             // 2. Buscar el dispositivo y su código de activación PENDIENTE
             var device = await _context.Devices
                 .Include(d => d.DeviceActivations)
                 .FirstOrDefaultAsync(d => d.Id == activationRequest.DeviceId);
 
-            if (device == null)
-            {
-                return Result.Failure<DeviceActivationResponseDto>("Dispositivo no encontrado.");
-            }
+            if (device == null) return Result.Failure<DeviceActivationResponseDto>("Dispositivo no encontrado.");
 
             var activationRecord = device.DeviceActivations
-                .FirstOrDefault(a => a.ActivationCode == activationRequest.ActivationCode && a.Status == ActivationStatus.PENDING);
+                .FirstOrDefault(a =>
+                    a.ActivationCode == activationRequest.ActivationCode && a.Status == ActivationStatus.PENDING);
 
             // --- CASO A: ACTIVACIÓN NUEVA (Código PENDIENTE encontrado) ---
             if (activationRecord != null)
             {
-                _logger.LogInformation("Código PENDIENTE encontrado (ID: {ActivationId}). Procediendo como activación nueva.", activationRecord.Id);
+                _logger.LogInformation(
+                    "Código PENDIENTE encontrado (ID: {ActivationId}). Procediendo como activación nueva.",
+                    activationRecord.Id);
 
                 if (activationRecord.ExpiresAt < DateTime.UtcNow)
                 {
@@ -76,7 +79,7 @@ public class DeviceService : IDeviceService
                     await transaction.CommitAsync();
                     return Result.Failure<DeviceActivationResponseDto>("El código de activación ha expirado.");
                 }
-                
+
                 // Asignar MAC y cambiar estado del dispositivo a ACTIVO
                 device.MacAddress = activationRequest.MacAddress;
                 device.Status = DeviceStatus.ACTIVE;
@@ -108,18 +111,22 @@ public class DeviceService : IDeviceService
                 _logger.LogInformation("Código PENDIENTE no encontrado. Verificando para re-activación.");
 
                 // Validar que la MAC coincida y que el código de activación pertenezca a este dispositivo (aunque ya no esté pendiente)
-                bool isMacValid = device.MacAddress == activationRequest.MacAddress;
-                bool isCodeValid = device.DeviceActivations.Any(a => a.ActivationCode == activationRequest.ActivationCode);
+                var isMacValid = device.MacAddress == activationRequest.MacAddress;
+                var isCodeValid =
+                    device.DeviceActivations.Any(a => a.ActivationCode == activationRequest.ActivationCode);
 
                 if (!isMacValid || !isCodeValid)
                 {
-                    _logger.LogWarning("Fallo de re-activación para DeviceId {DeviceId}. MAC Válida: {IsMacValid}, Código Válido: {IsCodeValid}",
+                    _logger.LogWarning(
+                        "Fallo de re-activación para DeviceId {DeviceId}. MAC Válida: {IsMacValid}, Código Válido: {IsCodeValid}",
                         device.Id, isMacValid, isCodeValid);
-                    return Result.Failure<DeviceActivationResponseDto>("Código de activación o MAC inválidos para re-activación.");
+                    return Result.Failure<DeviceActivationResponseDto>(
+                        "Código de activación o MAC inválidos para re-activación.");
                 }
 
-                _logger.LogInformation("Re-activación legítima detectada para DeviceId: {DeviceId}. Generando nuevos tokens.", device.Id);
-                
+                _logger.LogInformation(
+                    "Re-activación legítima detectada para DeviceId: {DeviceId}. Generando nuevos tokens.", device.Id);
+
                 // Si es una re-activación, el estado del dispositivo ya debería ser ACTIVO, no lo cambiamos.
                 device.UpdatedAt = DateTime.UtcNow;
 
@@ -128,9 +135,11 @@ public class DeviceService : IDeviceService
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                
+
                 // Loguear que hubo una re-activación
-                 _logger.LogWarning("Dispositivo {DeviceId} ha sido re-activado exitosamente con su código original y MAC Address.", device.Id);
+                _logger.LogWarning(
+                    "Dispositivo {DeviceId} ha sido re-activado exitosamente con su código original y MAC Address.",
+                    device.Id);
 
                 return Result.Success(new DeviceActivationResponseDto
                 {
@@ -144,25 +153,25 @@ public class DeviceService : IDeviceService
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            _logger.LogError(ex, "Excepción durante el proceso de activación para DeviceId {DeviceId}", activationRequest.DeviceId);
-            return Result.Failure<DeviceActivationResponseDto>($"Error interno del servidor durante la activación: {ex.Message}");
+            _logger.LogError(ex, "Excepción durante el proceso de activación para DeviceId {DeviceId}",
+                activationRequest.DeviceId);
+            return Result.Failure<DeviceActivationResponseDto>(
+                $"Error interno del servidor durante la activación: {ex.Message}");
         }
     }
 
     public async Task<Result<DeviceAuthResponseDto>> RefreshDeviceTokenAsync(string refreshTokenValue)
     {
         _logger.LogInformation("Intentando refrescar token.");
-        
+
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var tokenRecord = await _context.DeviceTokens
                 .FirstOrDefaultAsync(t => t.RefreshToken == refreshTokenValue && t.Status == TokenStatus.ACTIVE);
-            
+
             if (tokenRecord == null)
-            {
                 return Result.Failure<DeviceAuthResponseDto>("Refresh token inválido o no activo.");
-            }
 
             if (tokenRecord.RefreshTokenExpiresAt < DateTime.UtcNow)
             {
@@ -175,16 +184,14 @@ public class DeviceService : IDeviceService
 
             var device = await _context.Devices.FindAsync(tokenRecord.DeviceId);
             if (device == null)
-            {
-                 return Result.Failure<DeviceAuthResponseDto>("Dispositivo asociado al token no encontrado.");
-            }
+                return Result.Failure<DeviceAuthResponseDto>("Dispositivo asociado al token no encontrado.");
 
             var tokenResult = await GenerateAndSaveNewTokensAsync(tokenRecord.DeviceId);
-            if(tokenResult.IsFailure) throw new Exception(tokenResult.ErrorMessage);
-            
+            if (tokenResult.IsFailure) throw new Exception(tokenResult.ErrorMessage);
+
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-            
+
             return Result.Success(new DeviceAuthResponseDto
             {
                 AccessToken = tokenResult.Value.NewAccessToken,
@@ -212,25 +219,20 @@ public class DeviceService : IDeviceService
                 .FirstOrDefaultAsync(t => t.AccessToken == accessToken && t.Status == TokenStatus.ACTIVE);
 
             if (tokenRecord == null)
-            {
                 return Result.Failure<AuthenticatedDeviceDetailsDto>("Token inválido o no activo.");
-            }
-            
+
             if (tokenRecord.AccessTokenExpiresAt < DateTime.UtcNow)
-            {
-                 // No se actualiza el estado aquí para no interferir con la transacción de refresco.
-                 // El cliente debe manejar el error y llamar a /refresh-token.
+                // No se actualiza el estado aquí para no interferir con la transacción de refresco.
+                // El cliente debe manejar el error y llamar a /refresh-token.
                 return Result.Failure<AuthenticatedDeviceDetailsDto>("Token expirado.");
-            }
-            
+
             var device = tokenRecord.Device;
             if (device == null)
-            {
-                 return Result.Failure<AuthenticatedDeviceDetailsDto>("Dispositivo asociado al token no encontrado.");
-            }
-            
-            bool requiresRefresh = tokenRecord.AccessTokenExpiresAt < DateTime.UtcNow.AddMinutes(_tokenSettings.AccessTokenNearExpiryThresholdMinutes);
-            
+                return Result.Failure<AuthenticatedDeviceDetailsDto>("Dispositivo asociado al token no encontrado.");
+
+            var requiresRefresh = tokenRecord.AccessTokenExpiresAt <
+                                  DateTime.UtcNow.AddMinutes(_tokenSettings.AccessTokenNearExpiryThresholdMinutes);
+
             var details = new AuthenticatedDeviceDetailsDto
             {
                 DeviceId = device.Id,
@@ -249,6 +251,49 @@ public class DeviceService : IDeviceService
         }
     }
 
+    public async Task<List<Device>> GetInactiveDevicesAsync(int inactivityMultiplier)
+    {
+        var inactiveDevices = new List<Device>();
+        var allDevices = await _context.Devices.ToListAsync();
+
+        foreach (var device in allDevices)
+        {
+            var lastReading = await _context.EnvironmentalReadings
+                .Where(r => r.DeviceId == device.Id)
+                .OrderByDescending(r => r.RecordedAtServer)
+                .FirstOrDefaultAsync();
+
+            // Si nunca ha habido una lectura, no lo consideramos inactivo todavía.
+            if (lastReading == null) continue;
+
+            var inactivityThreshold = TimeSpan.FromMinutes(device.DataCollectionIntervalMinutes * inactivityMultiplier);
+
+            if (DateTime.UtcNow - lastReading.RecordedAtServer > inactivityThreshold) inactiveDevices.Add(device);
+        }
+
+        return inactiveDevices;
+    }
+
+    public async Task<Result> UpdateDeviceStatusAsync(int deviceId, DeviceStatus newStatus)
+    {
+        var device = await _context.Devices.FindAsync(deviceId);
+
+        if (device == null)
+        {
+            _logger.LogWarning("Se intentó actualizar el estado de un dispositivo no existente. ID: {DeviceId}",
+                deviceId);
+            return Result.Failure("El dispositivo no fue encontrado.");
+        }
+
+        device.Status = newStatus;
+        device.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("El estado del dispositivo {DeviceId} se actualizó a {NewStatus}", deviceId, newStatus);
+        return Result.Success();
+    }
+
     private async Task<Result<(string NewAccessToken, string NewRefreshToken, DateTime NewAccessTokenExpiration)>>
         GenerateAndSaveNewTokensAsync(int deviceId)
     {
@@ -256,7 +301,7 @@ public class DeviceService : IDeviceService
         var existingTokens = await _context.DeviceTokens
             .Where(t => t.DeviceId == deviceId && t.Status == TokenStatus.ACTIVE)
             .ToListAsync();
-        
+
         foreach (var token in existingTokens)
         {
             token.Status = TokenStatus.REVOKED;
@@ -280,7 +325,7 @@ public class DeviceService : IDeviceService
             RefreshTokenExpiresAt = newRefreshTokenExpiration,
             Status = TokenStatus.ACTIVE
         };
-        
+
         _context.DeviceTokens.Add(newTokenRecord);
 
         return Result.Success((newAccessToken, newRefreshToken, newAccessTokenExpiration));

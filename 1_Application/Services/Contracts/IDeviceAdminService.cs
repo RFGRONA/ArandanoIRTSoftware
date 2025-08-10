@@ -1,5 +1,6 @@
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
-using ArandanoIRT.Web.Common;
+using ArandanoIRT.Web._1_Application.DTOs.Device;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -22,6 +23,6 @@ public interface IDeviceAdminService
     Task<Result> DeleteDeviceAsync(int deviceId); // Cuidado con las dependencias
 
     // Métodos para poblar dropdowns
-    IEnumerable<SelectListItem> GetDeviceStatusesForSelection(); 
-    Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync(); 
+    IEnumerable<SelectListItem> GetDeviceStatusesForSelection();
+    Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync();
 }

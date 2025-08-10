@@ -1,0 +1,24 @@
+@model ArandanoIRT.Web._1_Application.DTOs.Admin.PublicHelpRequestDto
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Nueva Solicitud de Ayuda (Pública)";
+}
+
+<h1>Nueva Solicitud de Ayuda (Pública)</h1>
+
+<p>Se ha recibido una nueva solicitud de ayuda de un visitante no autenticado con la siguiente información:</p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0; background-color: #f4f5f7; border-radius: 8px; padding: 20px;">
+    <tr>
+        <td>
+            <p style="margin-bottom: 12px;"><strong>Asunto:</strong> @Model.Subject</p>
+            <p style="margin-bottom: 12px;"><strong>Nombre:</strong> @Model.Name</p>
+            <p style="margin-bottom: 12px;"><strong>Email de Contacto:</strong> <a href="mailto:@Model.ContactEmail">@Model.ContactEmail</a></p>
+            <hr style="border: none; border-top: 1px solid #dddddd; margin: 16px 0;">
+            <p style="margin-bottom: 8px;"><strong>Mensaje:</strong></p>
+            <p style="margin: 0;">@Model.Message</p>
+        </td>
+    </tr>
+</table>
+
+<p>Por favor, responde a esta solicitud a la brevedad posible.</p>

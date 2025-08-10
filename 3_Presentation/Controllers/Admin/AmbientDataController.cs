@@ -2,13 +2,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Json;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
+using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class AmbientDataController : Controller
 {
     private readonly IDataQueryService _dataQueryService;
@@ -44,6 +47,15 @@ public class AmbientDataController : Controller
             > 200 => 200, // Max
             _ => filters.PageSize
         };
+
+        if (filters.StartDate.HasValue)
+        {
+            filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        }
+        if (filters.EndDate.HasValue)
+        {
+            filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        }
 
         var result = await _dataQueryService.GetSensorDataAsync(filters);
 
@@ -97,7 +109,7 @@ public class AmbientDataController : Controller
 
         _logger.LogWarning("Error al obtener datos ambientales: {ErrorMessage}", result.ErrorMessage);
         ViewData["ErrorMessage"] = result.ErrorMessage ?? "Error desconocido al obtener datos.";
-        
+
         // Devolver una vista con un modelo vacío pero con los filtros para que el formulario funcione
         var emptyPagedResult = new PagedResultDto<SensorDataDisplayDto>
         {
@@ -107,5 +119,29 @@ public class AmbientDataController : Controller
             TotalCount = 0
         };
         return View(emptyPagedResult);
+    }
+
+    public async Task<IActionResult> DownloadCsv([FromQuery] DataQueryFilters filters)
+    {
+        _logger.LogInformation("Iniciando descarga CSV de datos ambientales con filtros: {FiltersJson}", JsonSerializer.Serialize(filters));
+
+        // Es importante aplicar la misma lógica de fechas que en la acción Index
+        if (filters.StartDate.HasValue)
+        {
+            filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        }
+        if (filters.EndDate.HasValue)
+        {
+            filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        }
+
+        // Llamamos al método del servicio que ya creamos
+        var csvBytes = await _dataQueryService.GetAmbientDataAsCsvAsync(filters);
+
+        // Creamos un nombre de archivo dinámico con la fecha
+        var fileName = $"datos_ambientales_{DateTime.Now:yyyyMMddHHmmss}.csv";
+
+        // Devolvemos el archivo al navegador para que inicie la descarga
+        return File(csvBytes, "text/csv", fileName);
     }
 }

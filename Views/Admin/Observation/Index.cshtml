@@ -1,0 +1,111 @@
+@using ArandanoIRT.Web._1_Application.DTOs.Observations
+@model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.Observations.ObservationListDto>
+@{
+    ViewData["Title"] = "Bitácora de Observaciones";
+    Layout = "_AdminLayout";
+    var currentFilters = ViewBag.CurrentFilters as ObservationQueryFilters;
+}
+
+@section Styles {
+     <link rel="stylesheet" href="~/css/observation.css" asp-append-version="true" /> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+    <div class="header-actions">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Registrar Observación
+        </a>
+    </div>
+</div>
+<p class="lead mb-4">Historial de todas las observaciones de campo registradas en el sistema.</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Planta</th>
+                    <th>Usuario</th>
+                    <th>Descripción</th>
+                    <th>Calificación</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-4">No hay observaciones registradas.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.CreatedAt)</td>
+                            <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
+                            <td>@Html.DisplayFor(modelItem => item.UserName)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                            <td>
+                                @{
+                                    var ratingText = "N/A";
+                                    var ratingClass = "rating-default";
+                                    if (item.SubjectiveRating.HasValue)
+                                    {
+                                        switch (item.SubjectiveRating.Value)
+                                        {
+                                            case 3: // Asumiendo 3: Buena
+                                                ratingText = "Buena";
+                                                ratingClass = "rating-buena";
+                                                break;
+                                            case 2: // Asumiendo 2: Regular
+                                                ratingText = "Regular";
+                                                ratingClass = "rating-regular";
+                                                break;
+                                            case 1: // Asumiendo 1: Mala
+                                                ratingText = "Mala";
+                                                ratingClass = "rating-mala";
+                                                break;
+                                        }
+                                    }
+                                }
+                                <span class="rating-badge @ratingClass">@ratingText</span>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model != null && Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav class="pagination-container" aria-label="Paginación de observaciones">
+                <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
+                <ul class="pagination">
+                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                    </li>
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber + 1)">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

@@ -1,0 +1,212 @@
+@using System.Security.Claims
+@model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Admin.UserDto>
+
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+    Layout = "_AdminLayout";
+    var currentAdminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+}
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/management.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+}
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+    <div class="header-actions">
+        <a asp-area="Admin" asp-controller="Invitation" asp-action="Index" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Invitar Usuario
+        </a>
+    </div>
+</div>
+
+<p class="lead mb-4">Administra los usuarios del sistema, asciende roles y elimina cuentas.</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Nombre Completo</th>
+                <th>Correo Electrónico</th>
+                <th>Rol</th>
+                <th>Fecha de Registro</th>
+                <th style="width: 15%;">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>
+                            <span class="role-badge @(user.Role == "Administrador" ? "role-admin" : "role-user")">
+                                <i class="fas @(user.Role == "Administrador" ? "fa-user-shield" : "fa-user")"></i> @user.Role
+                            </span>
+                        </td>
+                        <td>@Html.DisplayFor(modelItem => user.RegisteredDate)</td>
+                        <td>
+                            @if (user.Role == "Usuario Estándar")
+                            {
+                                <div class="action-buttons">
+                                    <button type="button" class="btn-action promote" title="Ascender a Administrador"
+                                            data-bs-toggle="modal" data-bs-target="#promoteUserModal"
+                                            data-userid="@user.Id" data-username="@user.FullName">
+                                        <i class="fas fa-user-shield"></i>
+                                    </button>
+                                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn-action delete"
+                                       title="Eliminar Usuario">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                @if (user.Id == currentAdminId)
+                                {
+                                    <span class="text-muted fst-italic">(Tu Cuenta)</span>
+                                }
+                                else
+                                {
+                                    @if (user.IsDeletableByInactivity)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-warning btn-sm" title="Eliminar por Inactividad">
+                                            <i class="fas fa-trash-alt"></i> Eliminar
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-danger btn-sm" title="Iniciar Eliminación Segura"
+                                                data-bs-toggle="modal" data-bs-target="#deleteAdminModal"
+                                                data-userid="@user.Id" data-username="@user.FullName">
+                                            <i class="fas fa-user-times"></i> Eliminar
+                                        </button>
+                                    }
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center py-4">No hay usuarios registrados en el sistema.</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Ascender Usuario -->
+<div class="modal fade" id="promoteUserModal" tabindex="-1" aria-labelledby="promoteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-warning">
+                <h5 class="modal-title" id="promoteUserModalLabel">Confirmar Cambio de Rol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea ascender al usuario <strong id="userNameToPromote"></strong> a <strong>Administrador</strong>?
+                </p>
+                <div class="alert alert-warning mt-3">
+                    <strong>Atención:</strong> Esta acción le otorgará permisos elevados y no se puede revertir
+                    fácilmente.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <form id="promoteForm" asp-action="PromoteToAdmin" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Sí, Ascender</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteAdminModal" tabindex="-1" aria-labelledby="deleteAdminModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="deleteAdminForm" asp-action="DeleteAdmin" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="adminToDeleteId" name="AdminToDeleteId"/>
+
+                <div class="modal-header modal-header-danger">
+                    <h5 class="modal-title" id="deleteAdminModalLabel">Confirmar Eliminación de Administrador</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Estás a punto de eliminar la cuenta del administrador <strong id="adminNameToDelete"></strong>.
+                    </p>
+                    <div class="alert alert-danger mt-3">
+                        <strong>Atención:</strong> Esta es una acción de alto riesgo y es irreversible. Para continuar,
+                        por favor, introduce tu propia contraseña.
+                    </div>
+                    <div class="mb-3">
+                        <label for="currentAdminPassword" class="form-label">Tu Contraseña</label>
+                        <input type="password" class="form-control" id="currentAdminPassword"
+                               name="CurrentAdminPassword" required autocomplete="current-password"/>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Sí, Confirmar Eliminación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var promoteUserModal = document.getElementById('promoteUserModal');
+            promoteUserModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var userId = button.getAttribute('data-userid');
+                var userName = button.getAttribute('data-username');
+
+                var modalBody = promoteUserModal.querySelector('.modal-body #userNameToPromote');
+                modalBody.textContent = userName;
+
+                var form = promoteUserModal.querySelector('#promoteForm');
+                // Asegúrate que la URL base sea la correcta para tu enrutamiento
+                form.action = '@Url.Action("PromoteToAdmin", "UserManagement")/' + userId;
+            });
+
+            var deleteAdminModal = document.getElementById('deleteAdminModal');
+            if (deleteAdminModal) {
+                deleteAdminModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var userId = button.getAttribute('data-userid');
+                    var userName = button.getAttribute('data-username');
+
+                    // Poblar el nombre del admin a eliminar y el ID en el campo oculto
+                    deleteAdminModal.querySelector('.modal-body #adminNameToDelete').textContent = userName;
+                    deleteAdminModal.querySelector('input#adminToDeleteId').value = userId;
+
+                    // Limpiar y enfocar el campo de contraseña al abrir
+                    var passwordInput = deleteAdminModal.querySelector('#currentAdminPassword');
+                    passwordInput.value = '';
+                    setTimeout(() => passwordInput.focus(), 500);
+                });
+            }
+        });
+    </script>
+}

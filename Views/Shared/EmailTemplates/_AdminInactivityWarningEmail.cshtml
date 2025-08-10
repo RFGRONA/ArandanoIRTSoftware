@@ -1,0 +1,27 @@
+@model ArandanoIRT.Web._3_Presentation.ViewModels.Emails.AdminInactivityWarningViewModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = Model.WarningTitle;
+}
+
+<h1>@Model.WarningTitle</h1>
+
+<p>Hola, @Model.UserName,</p>
+
+<p>Detectamos que no has iniciado sesión en tu cuenta de administrador en el sistema Arandano IRT desde hace
+    <strong>@Model.DaysInactive días</strong>.</p>
+
+<p>@Model.WarningMessage</p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
+    <tr>
+        <td align="center">
+            <a href="@Model.LoginUrl" class="button">Iniciar Sesión Ahora</a>
+        </td>
+    </tr>
+</table>
+
+<p>Si no realizas ninguna acción, tu cuenta podría ser eliminada por razones de seguridad. Si tienes algún problema para
+    acceder, por favor, envía un ticket de soporte.</p>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>

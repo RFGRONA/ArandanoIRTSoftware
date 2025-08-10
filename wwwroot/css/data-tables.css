@@ -1,0 +1,153 @@
+/* =============================================
+   ESTILOS PARA PÁGINAS CON TABLAS Y FILTROS
+   ============================================= */
+
+:root {
+    --primary-color: #5D3EBF;
+    --primary-light: #f4f2ff;
+    --background-color: #F8F9FA;
+    --card-background: #FFFFFF;
+    --text-color: #495057;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem;
+}
+
+/* --- Encabezado de Página --- */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+
+/* --- Estilos para Botones --- */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background-color: #4a319a; /* Un tono de púrpura más oscuro */
+    border-color: #4a319a;
+}
+
+.btn-secondary {
+    background-color: #fff;
+    color: var(--text-muted);
+    border-color: #ced4da;
+}
+
+.btn-secondary:hover {
+    background-color: var(--secondary-color);
+    border-color: #ced4da;
+}
+
+
+/* --- Tarjeta de Filtros Desplegable --- */
+.filter-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.filter-divider {
+    margin: 1rem 0;
+    border-color: var(--border-color);
+}
+
+/* --- Tarjeta de la Tabla --- */
+.table-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: none;
+    overflow: hidden;
+}
+
+/* --- Estilos de Tabla --- */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-bottom: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table td, .table th {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.btn-action {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.btn-action:hover {
+    color: var(--primary-color);
+}
+
+
+/* --- Paginación --- */
+.card-footer {
+    background-color: #fff;
+    border-top: 1px solid var(--border-color);
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.pagination-summary {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.pagination .page-link {
+    border-radius: 50% !important;
+    margin: 0 0.2rem;
+    border: none;
+    color: var(--text-muted);
+}
+
+.pagination .page-link:hover {
+    background-color: var(--secondary-color);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+.page-item.disabled .page-link {
+    color: #c0c0c0;
+}

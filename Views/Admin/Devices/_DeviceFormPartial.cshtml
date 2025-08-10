@@ -1,5 +1,5 @@
 @using ArandanoIRT.Web._0_Domain.Enums
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.IDeviceFormData
+@model ArandanoIRT.Web._1_Application.DTOs.Device.IDeviceFormData
 @{
     // Convertimos el modelo a un tipo concreto para acceder a las listas de los dropdowns
     var concreteModel = (dynamic)Model;
@@ -40,11 +40,3 @@
     <span asp-validation-for="DataCollectionIntervalMinutes" class="text-danger"></span>
 </div>
 
-<div class="mb-3">
-    <label asp-for="Status" class="form-label"></label>
-    @* El asp-for ahora apunta a la propiedad "Status" del enum *@
-    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<DeviceStatus>()">
-        <option value="">-- Seleccione un Estado --</option>
-    </select>
-    <span asp-validation-for="Status" class="text-danger"></span>
-</div>

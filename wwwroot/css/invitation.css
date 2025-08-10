@@ -1,0 +1,157 @@
+:root {
+    --primary-color: #5D3EBF;
+    --primary-light: #f4f2ff;
+    --background-color: #F8F9FA;
+    --card-background: #FFFFFF;
+    --text-color: #495057;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem;
+    --success-color: #198754;
+}
+
+/* --- Encabezado de Página --- */
+.page-header {
+    position: relative;
+    display: flex;
+    justify-content: center; /* centra el título horizontalmente */
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.page-header .btn-back {
+    position: absolute;
+    left: 0; /* pegado al borde izquierdo */
+    top: 50%;
+    transform: translateY(-50%); /* lo centra verticalmente */
+}
+
+
+.btn-back {
+    background-color: var(--card-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-back:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* --- Tarjeta de Formulario --- */
+.form-card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.form-card .card-body {
+    padding: 2.5rem;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-header .fas {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.form-header h5 {
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+/* --- Tarjeta de Éxito --- */
+.invitation-success-card {
+    background-color: var(--primary-light);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+}
+
+.success-icon .fas {
+    font-size: 2.5rem;
+    color: var(--success-color);
+}
+
+.invitation-success-card h4 {
+    font-weight: 600;
+    margin-top: 1rem;
+    color: var(--text-color);
+}
+
+.invitation-success-card .input-group .form-control {
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-size: 1.1rem;
+    background-color: #fff;
+}
+
+.btn-copy {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: 1px solid var(--primary-color);
+}
+.btn-copy.copied {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+/* --- Controles de Formulario --- */
+.form-label { font-weight: 600; }
+.form-control, .form-select {
+    border-radius: 0.5rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border-color);
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(93, 62, 191, 0.25);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+    padding: 0.8rem;
+    font-weight: 600;
+}
+.btn-primary:hover {
+    background-color: #4a319a;
+    border-color: #4a319a;
+}
+
+@media (max-width: 576px) {
+    .page-header {
+        flex-direction: column; 
+        align-items: center;
+        position: static; 
+    }
+
+    .page-header .btn-back {
+        position: static; 
+        transform: none;
+        margin-bottom: 0.5rem;
+    }
+}

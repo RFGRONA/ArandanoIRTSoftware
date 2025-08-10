@@ -1,0 +1,103 @@
+:root {
+            --primary-color: #5D3EBF;
+            --primary-light: #f4f2ff;
+            --secondary-color: #f8f9fa;
+            --background-color: #F8F9FA;
+            --card-background: #FFFFFF;
+            --text-color: #495057;
+            --text-muted: #6c757d;
+            --border-color: #e9ecef;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --border-radius: 0.75rem;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --success-color: #198754;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #4a319a;
+            border-color: #4a319a;
+        }
+        
+        .filter-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .table-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            border: none;
+            overflow: hidden;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border-bottom: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .table td, .table th {
+            padding: 1rem;
+            vertical-align: middle;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .table thead th {
+            border-top: none;
+        }
+
+        .status-badge {
+            padding: 0.3em 0.75em;
+            font-size: 0.75em;
+            font-weight: 600;
+            border-radius: 20px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .status-optimal { background-color: var(--success-color); }
+        .status-healthy { background-color: var(--success-color); }
+        .status-mild-stress { background-color: var(--warning-color); color: #000; }
+        .status-severe-stress { background-color: var(--danger-color); }
+        .status-recovering { background-color: var(--info-color); color: #000; }
+        .status-unknown { background-color: var(--text-muted); color: white; }
+        .status-default { background-color: var(--text-muted); }

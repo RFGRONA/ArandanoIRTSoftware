@@ -1,0 +1,38 @@
+@model ArandanoIRT.Web._3_Presentation.ViewModels.Emails.AdminDeletionRequestViewModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Solicitud de Eliminación de Administrador";
+}
+
+<h1>Solicitud de Segunda Firma para Eliminación de Administrador</h1>
+
+<p>Hola, @Model.RecipientName,</p>
+
+<p>
+    Este es un correo de seguridad para informarte que el administrador <strong>@Model.InitiatingAdminName</strong> ha
+    solicitado la eliminación
+    permanente de la cuenta del administrador <strong>@Model.AdminToDeleteName</strong>.
+</p>
+
+<p>
+    Para completar esta acción de alto riesgo, se requiere una segunda aprobación por parte de otro administrador.
+    Si estás de acuerdo con esta acción, por favor, haz clic en el siguiente enlace para confirmar la eliminación.
+</p>
+
+<div class="alert alert-warning"
+     style="margin: 24px 0; padding: 16px; border-left: 4px solid #ffc107; background-color: #fff3cd;">
+    <strong>Atención:</strong> Este enlace es de un solo uso y expirará en 15 minutos.
+</div>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
+    <tr>
+        <td align="center">
+            <a href="@Model.ConfirmationLink" class="button">Confirmar Eliminación</a>
+        </td>
+    </tr>
+</table>
+
+<p>Si no has solicitado esta acción o crees que es un error, por favor, ignora este correo y contacta al personal
+    correspondiente.</p>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>

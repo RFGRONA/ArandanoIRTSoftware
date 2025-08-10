@@ -1,0 +1,32 @@
+@using ArandanoIRT.Web._0_Domain.Common
+@model (string UserName, string PlantName, int PlantId, DateTime AlertTime, string PlantDetailsLink)
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Alerta de Comportamiento Anómalo";
+}
+
+<h1>⚠️ Alerta de Comportamiento Anómalo</h1>
+
+<p>Hola, @Model.UserName,</p>
+
+<p>Se ha detectado un comportamiento térmico anómalo durante la noche en la siguiente planta:</p>
+
+<div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px; margin: 24px 0; border-radius: 8px;">
+    <p style="color: #664d03; font-size: 18px; font-weight: bold; margin: 0;">
+        @Model.PlantName (ID: @Model.PlantId)
+    </p>
+</div>
+
+<p>Esto puede ser un indicador temprano de estrés biótico (plagas, enfermedades) u otros problemas. <strong>Se recomienda una inspección visual de la planta lo antes posible.</strong></p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
+    <tr>
+        <td align="center">
+            <a href="@Model.PlantDetailsLink" class="button">Ver Detalles de la Planta</a>
+        </td>
+    </tr>
+</table>
+
+<p><em>Fecha de la alerta (UTC): @Model.AlertTime.ToColombiaTime().ToString("F")</em></p>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>

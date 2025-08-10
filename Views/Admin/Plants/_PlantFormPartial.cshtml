@@ -1,19 +1,20 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Admin.IPlantFormData
-@* Usamos la interfaz para el modelo de este parcial *@
-@* El DTO concreto (PlantCreateDto o PlantEditDto) debe tener las propiedades AvailableCrops y AvailableStatuses *@
+@using ArandanoIRT.Web._0_Domain.Enums
+@using ArandanoIRT.Web._1_Application.DTOs.Plants
+@model ArandanoIRT.Web._1_Application.DTOs.Plants.IPlantFormData
 
 @{
-    var concreteModel = Model as dynamic; // Para acceder a AvailableCrops/Statuses si no están en la interfaz
-    // O mejor, pasar ViewBag/ViewData para los SelectList
+    var concreteModel = Model as dynamic;
+    var createDto = Model as PlantCreateDto;
 }
 
 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
 <div class="mb-3">
     <label asp-for="Name" class="form-label"></label>
-    <input asp-for="Name" class="form-control" />
+    <input asp-for="Name" class="form-control"/>
     <span asp-validation-for="Name" class="text-danger"></span>
 </div>
+
 
 <div class="mb-3">
     <label asp-for="CropId" class="form-label"></label>
@@ -23,10 +24,28 @@
     <span asp-validation-for="CropId" class="text-danger"></span>
 </div>
 
+@if (createDto != null)
+{
+    <div class="mb-3">
+        <label for="Status" class="form-label">Estado Inicial</label>
+        <select id="Status" name="Status" class="form-select" asp-items="ViewBag.AvailableStatuses">
+            <option value="">-- Seleccione un Estado Inicial --</option>
+        </select>
+        @Html.ValidationMessage("Status", "", new { @class = "text-danger" })
+    </div>
+}
+else
+{
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        Para cambiar el estado de la planta, por favor, utiliza la opción <strong>"Cambiar Estado"</strong> desde la página de detalles.
+    </div>
+}
+
 <div class="mb-3">
-    <label asp-for="StatusId" class="form-label"></label>
-    <select asp-for="StatusId" class="form-select" asp-items="@concreteModel.AvailableStatuses">
-        <option value="">-- Seleccione un Estado --</option>
+    <label asp-for="ExperimentalGroup" class="form-label"></label>
+    <select asp-for="ExperimentalGroup" class="form-select" asp-items="@concreteModel.AvailableExperimentalGroups">
+        <option value="">-- Seleccione un Grupo --</option>
     </select>
-    <span asp-validation-for="StatusId" class="text-danger"></span>
+    <span asp-validation-for="ExperimentalGroup" class="text-danger"></span>
 </div>

@@ -1,10 +1,10 @@
 using System.Text.Json;
+using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.DTOs.Weather;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data; // Usando el DbContext
-using ArandanoIRT.Web.Common;
 using Microsoft.EntityFrameworkCore; // Usando EF Core
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
@@ -13,7 +13,7 @@ public class DataSubmissionService : IDataSubmissionService
 {
     private readonly ApplicationDbContext _context;
     private readonly IWeatherService _weatherService;
-    private readonly IFileStorageService _fileStorageService; // Usando la nueva abstracción
+    private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DataSubmissionService> _logger;
 
     // El nombre del bucket ahora puede venir de configuración o ser una constante.
@@ -63,13 +63,20 @@ public class DataSubmissionService : IDataSubmissionService
             }
         }
 
-        // Creamos el objeto JSON para el campo ExtraData
-        var extraData = new
+        var extraData = new Dictionary<string, object>();
+
+        if (ambientDataDto.Light.HasValue)
         {
-            light = ambientDataDto.Light,
-            is_night = weatherInfo?.IsNight
-            // Puedes añadir más campos aquí si es necesario
-        };
+            extraData["light"] = ambientDataDto.Light.Value;
+        }
+        if (ambientDataDto.Pressure.HasValue)
+        {
+            extraData["pressure"] = ambientDataDto.Pressure.Value;
+        }
+        if (weatherInfo?.IsNight.HasValue == true)
+        {
+            extraData["is_night"] = weatherInfo.IsNight.Value;
+        }
 
         var sensorDataRecord = new EnvironmentalReading
         {
@@ -80,9 +87,9 @@ public class DataSubmissionService : IDataSubmissionService
             CityTemperature = weatherInfo?.TemperatureCelsius,
             CityHumidity = weatherInfo?.HumidityPercentage,
             CityWeatherCondition = weatherInfo?.ConditionText,
-            ExtraData = JsonSerializer.Serialize(extraData), // Serializamos el objeto a JSON
+            ExtraData = extraData.Any() ? JsonSerializer.Serialize(extraData) : null,
             RecordedAtServer = DateTime.UtcNow,
-            RecordedAtDevice = ambientDataDto.RecordedAtDevice // Asumimos que el DTO trae esta fecha
+            RecordedAtDevice = ambientDataDto.RecordedAtDevice?.ToSafeUniversalTime()
         };
 
         try
@@ -129,13 +136,13 @@ public class DataSubmissionService : IDataSubmissionService
         {
             _logger.LogInformation("Es de día, procediendo a subir imagen RGB para DeviceId: {DeviceId}", deviceContext.DeviceId);
             var fileNameInBucket = $"{deviceContext.DeviceId}_{recordedAtServer:yyyyMMddHHmmssfff}{Path.GetExtension(imageFile.FileName)}";
-            
+
             // Usamos el nuevo servicio de almacenamiento
             var uploadResult = await _fileStorageService.UploadFileAsync(imageFile, RgbImageBucketName, fileNameInBucket);
 
             if (uploadResult.IsSuccess)
             {
-                uploadedImagePath = uploadResult.ToString();
+                uploadedImagePath = uploadResult.Value;
                 _logger.LogInformation("Imagen subida exitosamente. URL: {ImageUrl}", uploadedImagePath);
             }
             else
@@ -143,26 +150,26 @@ public class DataSubmissionService : IDataSubmissionService
                 _logger.LogError("Error al subir imagen a través de IFileStorageService: {Error}", uploadResult.ErrorMessage);
             }
         }
-        else if(isNight == true)
+        else if (isNight == true)
         {
-             _logger.LogInformation("Es de noche. No se subirá la imagen RGB para DeviceId: {DeviceId}.", deviceContext.DeviceId);
+            _logger.LogInformation("Es de noche. No se subirá la imagen RGB para DeviceId: {DeviceId}.", deviceContext.DeviceId);
         }
 
         var thermalDataRecord = new ThermalCapture
         {
             DeviceId = deviceContext.DeviceId,
             PlantId = deviceContext.PlantId,
-            ThermalDataStats = thermalDataJsonString, // El JSON va al campo de estadísticas
-            RgbImagePath = uploadedImagePath, // Será null si la subida falló o era de noche
+            ThermalDataStats = thermalDataJsonString,
+            RgbImagePath = uploadedImagePath,
             RecordedAtServer = recordedAtServer,
-            RecordedAtDevice = thermalDataDto.RecordedAtDevice // Asumimos que el DTO trae esta fecha
+            RecordedAtDevice = thermalDataDto.RecordedAtDevice?.ToSafeUniversalTime()
         };
 
         try
         {
             _context.ThermalCaptures.Add(thermalDataRecord);
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Datos de captura guardados exitosamente para DeviceId {DeviceId}. Nuevo ID: {NewId}.",
                 deviceContext.DeviceId, thermalDataRecord.Id);
             return Result.Success();

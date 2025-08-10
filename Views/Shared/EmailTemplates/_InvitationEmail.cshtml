@@ -1,0 +1,33 @@
+@using ArandanoIRT.Web._0_Domain.Common
+@model ArandanoIRT.Web._0_Domain.Entities.InvitationCode
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Invitación para unirte a Arandano IRT";
+}
+
+<h1>¡Has sido invitado a Arandano IRT!</h1>
+
+<p>Hola,</p>
+
+<p>Has recibido una invitación para crear una cuenta en la plataforma de monitoreo Arandano IRT. Para completar tu registro, utiliza el siguiente código de un solo uso:</p>
+
+<div class="code-box">
+    @Model.Code
+</div>
+
+<p>Este código expirará el <strong>@Model.ExpiresAt.ToColombiaTime().ToString("F")</strong>.</p>
+
+<p>Para registrarte, haz clic en el botón de abajo y proporciona este código cuando se te solicite.</p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+    <tr>
+        <td align="center">
+            @* AQUI SE CAMBIARA PARA QUE SE PUEDA REGISTRAR UN USUARIO *@
+            <a href="@ViewData["RegistrationLink"]" class="button">Crear mi Cuenta</a>
+        </td>
+    </tr>
+</table>
+
+<p>Si no esperabas esta invitación, puedes ignorar este correo de forma segura.</p>
+
+<p>Gracias,<br>El equipo de Arandano IRT</p>

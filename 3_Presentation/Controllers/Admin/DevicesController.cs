@@ -1,4 +1,5 @@
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Device;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -53,8 +54,7 @@ public class DevicesController : Controller
         var dto = new DeviceCreateDto
         {
             // Llama a los helpers del servicio que ahora tienen la lógica correcta.
-            AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync(),
-            AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value}) // Asegurarse que el DTO maneje el tipo de Status
+            AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync()
         };
         return View(dto);
     }
@@ -69,14 +69,14 @@ public class DevicesController : Controller
             await PopulateDropdownsForDto(deviceDto);
             return View(deviceDto);
         }
-        
+
         var result = await _deviceAdminService.CreateDeviceAsync(deviceDto);
         if (result.IsSuccess)
         {
             TempData["SuccessMessage"] = $"Dispositivo '{deviceDto.Name}' creado. Código de Activación: {result.Value.ActivationCode}. ID de Dispositivo: {result.Value.DeviceId}";
             return RedirectToAction(nameof(Details), new { id = result.Value.DeviceId });
         }
-        
+
         ModelState.AddModelError(string.Empty, result.ErrorMessage);
         await PopulateDropdownsForDto(deviceDto);
         return View(deviceDto);
@@ -106,10 +106,10 @@ public class DevicesController : Controller
         {
             // Si la validación falla, volvemos a poblar los dropdowns
             deviceDto.AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync();
-            deviceDto.AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value});
+            deviceDto.AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value });
             return View(deviceDto);
         }
-        
+
         var result = await _deviceAdminService.UpdateDeviceAsync(deviceDto);
         if (result.IsSuccess)
         {
@@ -119,7 +119,7 @@ public class DevicesController : Controller
 
         ModelState.AddModelError(string.Empty, result.ErrorMessage);
         deviceDto.AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync();
-        deviceDto.AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value});
+        deviceDto.AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value });
         return View(deviceDto);
     }
 
@@ -157,6 +157,5 @@ public class DevicesController : Controller
     private async Task PopulateDropdownsForDto(DeviceCreateDto dto)
     {
         dto.AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync();
-        dto.AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection().Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Text = s.Text, Value = s.Value});
     }
 }

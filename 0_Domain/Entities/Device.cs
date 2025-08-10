@@ -24,7 +24,7 @@ public partial class Device
     public DateTime RegisteredAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
-    
+
     public DeviceStatus Status { get; set; }
 
     public virtual Crop Crop { get; set; } = null!;

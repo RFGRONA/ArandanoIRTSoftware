@@ -1,5 +1,8 @@
+using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
+using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
-using ArandanoIRT.Web.Common;
+using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -13,8 +16,13 @@ public interface IPlantService
     Task<Result> UpdatePlantAsync(PlantEditDto plantDto);
     Task<Result> DeletePlantAsync(int plantId);
     Task<Result<IEnumerable<PlantSummaryDto>>> GetPlantsByCropAsync(int cropId);
+    Task<Result> UpdatePlantStatusAsync(int plantId, PlantStatus newStatus, string? observation, int userId);
+    Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync();
+
+    Task<IEnumerable<PlantStatusHistoryDto>> GetPlantStatusHistoryAsync(int? plantId, int? userId, DateTime? startDate,
+        DateTime? endDate);
 
     // Métodos para poblar dropdowns
     Task<IEnumerable<SelectListItem>> GetCropsForSelectionAsync();
-    Task<IEnumerable<SelectListItem>> GetStatusesForSelectionAsync();
+    IEnumerable<SelectListItem> GetExperimentalGroupsForSelection();
 }

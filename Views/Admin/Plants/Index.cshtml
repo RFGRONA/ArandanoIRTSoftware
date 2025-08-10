@@ -1,60 +1,77 @@
-@model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Admin.PlantSummaryDto>
+@model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Plants.PlantSummaryDto>
 @{
     ViewData["Title"] = "Gestión de Plantas";
     Layout = "_AdminLayout";
 }
 
-<h1>@ViewData["Title"]</h1>
+@section Styles {
+    <link rel="stylesheet" href="~/css/plantsIndex.css" asp-append-version="true" /> 
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    }
+
+<div class="page-header">
+    <h1>@ViewData["Title"]</h1>
+    <div class="header-actions">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Registrar Nueva Planta
+        </a>
+    </div>
+</div>
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success" role="alert">
-        @TempData["SuccessMessage"]
-    </div>
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
 }
-@if (ViewData["ErrorMessage"] != null) // O TempData si lo usas para errores también
+@if (ViewData["ErrorMessage"] != null)
 {
-    <div class="alert alert-danger" role="alert">
-        @ViewData["ErrorMessage"]
-    </div>
+    <div class="alert alert-danger">@ViewData["ErrorMessage"]</div>
 }
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Registrar Nueva Planta</a>
-</p>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info" role="alert">
-        No hay plantas registradas todavía.
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cultivo</th>
+                    <th>Fecha de Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                        <td>@Html.DisplayFor(modelItem => item.CropName)</td>
+                        <td>@Html.DisplayFor(modelItem => item.RegisteredAt)</td>
+                        <td>
+                            <div class="action-buttons">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action edit" title="Editar">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn-action details" title="Detalles">
+                                    <i class="fas fa-info-circle"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action delete" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center py-4">No hay plantas registradas.</td>
+                </tr>
+            }
+            </tbody>
+        </table>
     </div>
-}
-else
-{
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
-        <tr>
-            <th>@Html.DisplayNameFor(model => model.First().Name)</th>
-            <th>@Html.DisplayNameFor(model => model.First().CropName)</th>
-            <th>@Html.DisplayNameFor(model => model.First().StatusName)</th>
-            <th>@Html.DisplayNameFor(model => model.First().RegisteredAt)</th>
-            <th>Acciones</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var item in Model) {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                <td>@Html.DisplayFor(modelItem => item.CropName)</td>
-                <td>@Html.DisplayFor(modelItem => item.StatusName)</td>
-                <td>@item.RegisteredAt.ToString("g")</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Detalles</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Eliminar</a>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+</div>

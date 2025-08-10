@@ -1,0 +1,16 @@
+@using ArandanoIRT.Web._0_Domain.Common
+@model ArandanoIRT.Web._3_Presentation.ViewModels.Reports.ReportByEmailViewModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["Title"] = "Reporte de Estado Hídrico";
+}
+
+<h1>Reporte de Estado Hídrico</h1>
+
+<p>Cordial saludo.</p>
+
+<p>Adjunto a este correo encontrarás el Reporte de Estado Hídrico para la planta <strong>@Model.PlantName</strong>, generado el ((DateTime)@Model.GenerationDate.ToColombiaTime()).ToString("dd 'de' MMMM 'de' yyyy 'a las' hh:mm tt").</p>
+
+<p>Este documento contiene un análisis detallado del comportamiento de la planta durante el periodo seleccionado.</p>
+
+<p>Arandano IRT</p>

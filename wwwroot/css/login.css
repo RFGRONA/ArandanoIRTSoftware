@@ -1,0 +1,150 @@
+:root {
+  --color-primario: #6a4f9a;
+  --color-primario-hover: #5b4383;
+  --color-secundario: #f0f2f5;
+  --color-secundario-hover: #5f9cda;
+  --fondo-pagina: #f0f2f5;
+  --fondo-tarjeta: #ffffff;
+  --color-texto: #333;
+  --radio-borde: 16px; /* Bordes un poco más redondeados */
+  --sombra-tarjeta: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  background-color: var(--fondo-pagina);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--color-texto);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.login-card {
+  position: relative; /* Necesario para posicionar el botón de ayuda */
+  background-color: var(--fondo-tarjeta);
+  padding: 2.5rem;
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-tarjeta);
+  width: 100%;
+  max-width: 450px; /* Un poco más ancha */
+}
+
+/* --- NUEVO: Botón de ayuda --- */
+.btn-help {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--fondo-pagina);
+    color: var(--color-texto);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-help:hover {
+    transform: scale(1.1);
+    background-color: #e2e6ea;
+}
+
+
+/* Título y emoji más grandes */
+.login-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.login-header .emoji {
+  font-size: 2.8rem; /* Más grande */
+}
+
+.login-header h1 {
+  font-size: 1.8rem; /* Más grande */
+  font-weight: 700;
+  margin: 0;
+}
+
+.form-control {
+  border-radius: 8px;
+  padding: 0.9rem 1rem; /* Un poco más altos */
+  border: 1px solid #ced4da;
+}
+
+/* --- NUEVO: Contenedor para Turnstile --- */
+.turnstile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 65px; /* Altura estándar del widget */
+}
+
+
+/* --- NUEVO: Contenedor para botones de acción --- */
+.action-buttons {
+    display: flex;
+    gap: 1rem; /* Espacio entre botones */
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 0.9rem;
+    font-weight: bold;
+    border: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primario);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primario-hover);
+}
+
+/* --- NUEVO: Estilo para el botón secundario (Registrarse) --- */
+.btn-secondary {
+    background-color: var(--color-secundario);
+    color: var(--color-texto);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-secundario-hover);
+}
+
+
+/* --- SECCIÓN RESPONSIVE --- */
+@media (max-width: 576px) {
+  .login-card {
+    padding: 1.5rem;
+  }
+
+  .login-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .login-header .emoji {
+    font-size: 2.2rem;
+  }
+}
+
+.link-sutil {
+    color: #6c757d; 
+    font-weight: 500; 
+    text-decoration: none; 
+    transition: all 0.2s ease-in-out; 
+}
+
+.link-sutil:hover {
+    color: #0d6efd; 
+    text-decoration: underline; 
+}
