@@ -9,6 +9,8 @@ using ArandanoIRT.Web._2_Infrastructure.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Polly;
+using Polly.Extensions.Http;
 using Serilog;
 
 namespace ArandanoIRT.Web._2_Infrastructure;
@@ -64,7 +66,16 @@ public static class DependencyInjection
             else
                 Log.Warning("BaseUrl for WeatherAPI is not configured.");
         });
-        services.AddHttpClient<ITurnstileService, TurnstileService>();
+        
+        services.AddHttpClient<ITurnstileService, TurnstileService>()
+            .AddPolicyHandler(
+                HttpPolicyExtensions
+                    .HandleTransientHttpError()
+                    .CircuitBreakerAsync(
+                        handledEventsAllowedBeforeBreaking: 3, 
+                        durationOfBreak: TimeSpan.FromMinutes(1)
+                    )
+            );
 
         // Application Services
         services.AddScoped<IWeatherService, WeatherService>();

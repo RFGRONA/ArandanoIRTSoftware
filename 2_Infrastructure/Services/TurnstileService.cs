@@ -2,6 +2,7 @@ using System.Text.Json;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 using Microsoft.Extensions.Options;
+using Polly.CircuitBreaker;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
@@ -27,7 +28,6 @@ public class TurnstileService : ITurnstileService
 
     public async Task<bool> IsTokenValid(string token)
     {
-        // Log para saber que el método fue llamado
         _logger.LogInformation("Iniciando validación de token de Turnstile.");
 
         if (string.IsNullOrEmpty(token))
@@ -55,7 +55,7 @@ public class TurnstileService : ITurnstileService
             response.EnsureSuccessStatusCode();
 
             var responseString = await response.Content.ReadAsStringAsync();
-            _logger.LogInformation("Respuesta de Cloudflare: {Response}", responseString); // ¡Este log es clave!
+            _logger.LogInformation("Respuesta de Cloudflare: {Response}", responseString);
 
             var turnstileResponse = JsonSerializer.Deserialize<TurnstileResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -63,6 +63,11 @@ public class TurnstileService : ITurnstileService
             _logger.LogInformation("El token de Turnstile es {IsValid}", isValid ? "VÁLIDO" : "INVÁLIDO");
 
             return isValid;
+        }
+        catch (BrokenCircuitException)
+        {
+            _logger.LogWarning("Circuit Breaker activado. El servicio de Turnstile no responde. Se está permitiendo el acceso temporalmente sin validación de captcha.");
+            return true; 
         }
         catch (Exception ex)
         {
