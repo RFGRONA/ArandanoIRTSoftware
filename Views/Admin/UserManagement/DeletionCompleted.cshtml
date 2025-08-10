@@ -3,11 +3,16 @@
     Layout = "_AdminLayout";
 }
 
-<div class="card text-center">
-    <div class="card-body py-5">
-        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-        <h1 class="card-title">Operación Completada Exitosamente</h1>
-        <p class="lead">La cuenta de administrador ha sido eliminada del sistema.</p>
+@section Styles {
+ <link rel="stylesheet" href="~/css/deletionCompleted.css" asp-append-version="true" /> 
+}
+
+
+<div class="confirmation-container">
+    <div class="confirmation-card">
+        <i class="fas fa-check-circle confirmation-icon"></i>
+        <h1 class="confirmation-title">Operación Completada Exitosamente</h1>
+        <p class="confirmation-message">La cuenta de administrador ha sido eliminada del sistema.</p>
         <a asp-action="Index" class="btn btn-primary mt-3">Volver a la Gestión de Usuarios</a>
     </div>
 </div>

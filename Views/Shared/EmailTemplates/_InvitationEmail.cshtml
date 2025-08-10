@@ -22,8 +22,21 @@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
     <tr>
         <td align="center">
-            @* AQUI SE CAMBIARA PARA QUE SE PUEDA REGISTRAR UN USUARIO *@
-            <a href="@ViewData["RegistrationLink"]" class="button">Crear mi Cuenta</a>
+            @*
+                Este botón ahora genera el enlace de registro directamente en la vista.
+                1.  Usa Url.Action() para crear un enlace al método "Register" en "AccountController".
+                2.  Pasa el código de invitación del modelo (@Model.Code) como un parámetro en la URL.
+                    (Ejemplo: /Admin/Account/Register?code=ABCDE12345)
+                3.  'protocol: Context.Request.Scheme' asegura que se genere una URL completa (https://...)
+                    para que funcione correctamente desde el cliente de correo del usuario.
+            *@
+            <a href="@Url.Action("Register", "Account", new { code = Model.Code }, protocol: Context.Request.Scheme)" class="button">Crear mi Cuenta</a>
+
+            <style>
+                button{
+                    color: white;
+                }
+            </style>
         </td>
     </tr>
 </table>

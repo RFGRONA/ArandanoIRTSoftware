@@ -1,0 +1,91 @@
+.page-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+        min-height: 70vh;
+    }
+
+    .delete-card {
+        max-width: 700px;
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #dc3545; /* Borde rojo para indicar peligro */
+        border-radius: 8px;
+        overflow: hidden; /* Para que el header se ajuste a los bordes redondeados */
+    }
+
+    .delete-header {
+        background-color: #dc3545; /* Fondo rojo */
+        color: #ffffff; /* Texto blanco */
+        padding: 20px;
+    }
+
+    .delete-header h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 30px;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+    
+    .alert-danger h4 {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    dl.row dt {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    dl.row dd {
+        font-family: monospace; /* Para que el email se lea mejor */
+        background-color: #f8f9fa;
+        padding: 5px 10px;
+        border-radius: 4px;
+    }
+
+    .delete-actions {
+        background-color: #f8f9fa;
+        padding: 20px;
+        display: flex;
+        justify-content: flex-end; /* Alinea los botones a la derecha */
+        gap: 15px; /* Espacio entre los botones */
+    }
+
+    .btn-secondary-custom, .btn-danger-custom {
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: 500;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-secondary-custom {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn-secondary-custom:hover {
+        background-color: #5a6268;
+    }
+
+    .btn-danger-custom {
+        background-color: #c82333;
+        color: white;
+    }
+    .btn-danger-custom:hover {
+        background-color: #bd2130;
+    }
