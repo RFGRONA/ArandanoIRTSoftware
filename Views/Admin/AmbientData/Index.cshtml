@@ -24,7 +24,9 @@
 <div class="page-header">
     <h1>@ViewData["Title"]</h1>
     <div class="header-actions">
-        <a href="#" class="btn btn-outline-secondary">
+        <a id="download-csv-btn" href="#" 
+           data-download-url="@Url.Action("DownloadCsv", "AmbientData", new { area = "Admin" })" 
+           class="btn btn-outline-secondary">
             <i class="fas fa-download"></i> Descargar
         </a>
         <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
@@ -178,4 +180,30 @@ else
         </nav>
     </div>
     </div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadBtn = document.getElementById('download-csv-btn');
+            const filterForm = document.querySelector('.filter-card form');
+
+            function updateDownloadUrl() {
+                if (!filterForm || !downloadBtn) return;
+                const formData = new FormData(filterForm);
+                const params = new URLSearchParams(formData).toString();
+
+                const downloadBaseUrl = downloadBtn.dataset.downloadUrl;
+                const downloadUrl = `${downloadBaseUrl}${params ? '?' + params : ''}`;
+                downloadBtn.setAttribute('href', downloadUrl);
+            }
+
+            // Actualiza la URL cada vez que un filtro cambie
+            filterForm.addEventListener('change', updateDownloadUrl);
+            
+            // Actualiza la URL al cargar la página
+            updateDownloadUrl();
+        });
+    </script>
 }

@@ -120,4 +120,28 @@ public class AmbientDataController : Controller
         };
         return View(emptyPagedResult);
     }
+    
+    public async Task<IActionResult> DownloadCsv([FromQuery] DataQueryFilters filters)
+    {
+        _logger.LogInformation("Iniciando descarga CSV de datos ambientales con filtros: {FiltersJson}", JsonSerializer.Serialize(filters));
+    
+        // Es importante aplicar la misma lógica de fechas que en la acción Index
+        if (filters.StartDate.HasValue)
+        {
+            filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        }
+        if (filters.EndDate.HasValue)
+        {
+            filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        }
+
+        // Llamamos al método del servicio que ya creamos
+        var csvBytes = await _dataQueryService.GetAmbientDataAsCsvAsync(filters);
+
+        // Creamos un nombre de archivo dinámico con la fecha
+        var fileName = $"datos_ambientales_{DateTime.Now:yyyyMMddHHmmss}.csv";
+
+        // Devolvemos el archivo al navegador para que inicie la descarga
+        return File(csvBytes, "text/csv", fileName);
+    }
 }

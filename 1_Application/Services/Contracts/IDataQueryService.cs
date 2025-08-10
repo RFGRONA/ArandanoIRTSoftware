@@ -37,4 +37,6 @@ public interface IDataQueryService
         DateTime endTime);
 
     Task<Result<(ThermalDataDto? Stats, string? ImagePath)>> GetLatestCaptureForMaskAsync(int plantId);
+    Task<byte[]> GetAmbientDataAsCsvAsync(DataQueryFilters filters);
+    Task<byte[]> GetThermalCapturesAsCsvAsync(DataQueryFilters filters);
 }

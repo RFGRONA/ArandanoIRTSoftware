@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Enums;
@@ -8,6 +9,7 @@ using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._3_Presentation.ViewModels.SensorData;
+using CsvHelper;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
@@ -552,6 +554,105 @@ public class DataQueryService : IDataQueryService
                 "Error interno al obtener datos de la captura.");
         }
     }
+    
+    public async Task<byte[]> GetAmbientDataAsCsvAsync(DataQueryFilters filters)
+    {
+        _logger.LogInformation("Generando CSV de datos de sensores con filtros: {@Filters}", filters);
+
+        // 1. Construimos la consulta con los mismos filtros que la vista principal
+        var query = _context.EnvironmentalReadings.AsNoTracking();
+
+        if (filters.DeviceId.HasValue) query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
+        if (filters.PlantId.HasValue) query = query.Where(er => er.PlantId == filters.PlantId.Value);
+        if (filters.CropId.HasValue) query = query.Where(er => er.Device.CropId == filters.CropId.Value);
+        query = query.ApplyDateFilters(filters, er => er.RecordedAtServer);
+
+        // 2. Ejecutamos la consulta SIN PAGINACIÓN y proyectamos a un modelo simple para el CSV
+        var dataToExport = await query
+            .OrderByDescending(er => er.RecordedAtServer)
+            .Select(er => new 
+            {
+                FechaRegistro = er.RecordedAtDevice ?? er.RecordedAtServer,
+                Dispositivo = er.Device.Name,
+                Planta = er.Plant != null ? er.Plant.Name : "N/A",
+                TemperaturaSensor = er.Temperature,
+                HumedadSensor = er.Humidity,
+                TemperaturaCiudad = er.CityTemperature,
+                HumedadCiudad = er.CityHumidity,
+                ClimaCiudad = er.CityWeatherCondition,
+                DatosExtra = er.ExtraData
+            })
+            .ToListAsync();
+
+        // 3. Usamos CsvHelper para escribir los datos en un stream en memoria
+        using var memoryStream = new MemoryStream();
+        using (var writer = new StreamWriter(memoryStream, leaveOpen: true))
+        using (var csv = new CsvWriter(writer, CultureInfo.GetCultureInfo("es-CO"))) // Usamos cultura local para formatos
+        {
+            // Escribe las cabeceras y los registros
+            csv.WriteRecords(dataToExport);
+        }
+
+        // 4. Devolvemos los bytes del archivo generado
+        return memoryStream.ToArray();
+    }
+    
+    public async Task<byte[]> GetThermalCapturesAsCsvAsync(DataQueryFilters filters)
+{
+    _logger.LogInformation("Generando CSV de capturas térmicas con filtros: {@Filters}", filters);
+
+    // 1. Construimos la consulta con los mismos filtros
+    var query = _context.ThermalCaptures.AsNoTracking();
+
+    if (filters.DeviceId.HasValue) query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
+    if (filters.PlantId.HasValue) query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
+    if (filters.CropId.HasValue) query = query.Where(tc => tc.Device.CropId == filters.CropId.Value);
+    query = query.ApplyDateFilters(filters, tc => tc.RecordedAtServer);
+
+    // 2. Ejecutamos la consulta SIN PAGINACIÓN y proyectamos a un modelo simple
+    var rawData = await query
+        .OrderByDescending(tc => tc.RecordedAtServer)
+        .Select(tc => new
+        {
+            tc.Id,
+            tc.RecordedAtServer,
+            DeviceName = tc.Device.Name,
+            PlantName = tc.Plant != null ? tc.Plant.Name : "N/A",
+            tc.ThermalDataStats,
+            tc.RgbImagePath
+        })
+        .ToListAsync();
+
+    // Procesar en memoria
+    var dataToExport = rawData.Select(m =>
+    {
+        var stats = DeserializeThermalStats(m.ThermalDataStats, m.Id);
+        return new
+        {
+            IdCaptura = m.Id,
+            FechaRegistro = m.RecordedAtServer,
+            Dispositivo = m.DeviceName,
+            Planta = m.PlantName,
+            TempMax = stats?.Max_Temp,
+            TempMin = stats?.Min_Temp,
+            TempPromedio = stats?.Avg_Temp,
+            Temperaturas = stats?.Temperatures != null 
+                ? string.Join(",", stats.Temperatures) 
+                : string.Empty,
+            ImagenRGB = m.RgbImagePath
+        };
+    }).ToList();
+    // 3. Usamos CsvHelper para escribir los datos en memoria
+    using var memoryStream = new MemoryStream();
+    using (var writer = new StreamWriter(memoryStream, leaveOpen: true))
+    using (var csv = new CsvWriter(writer, CultureInfo.GetCultureInfo("es-CO")))
+    {
+        csv.WriteRecords(dataToExport);
+    }
+
+    // 4. Devolvemos los bytes del archivo generado
+    return memoryStream.ToArray();
+}
 
     #region Métodos Auxiliares Internos
 

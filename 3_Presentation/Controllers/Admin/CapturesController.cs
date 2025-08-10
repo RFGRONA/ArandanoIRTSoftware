@@ -143,4 +143,23 @@ public class CapturesController : Controller
             $"No se pudieron cargar los detalles de la captura ID {id.Value}: {result.ErrorMessage}";
         return RedirectToAction(nameof(Index));
     }
+    
+    public async Task<IActionResult> DownloadCsv([FromQuery] DataQueryFilters filters)
+    {
+        _logger.LogInformation("Iniciando descarga CSV de capturas térmicas con filtros: {FiltersJson}", JsonSerializer.Serialize(filters));
+        
+        if (filters.StartDate.HasValue)
+        {
+            filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        }
+        if (filters.EndDate.HasValue)
+        {
+            filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        }
+    
+        var csvBytes = await _dataQueryService.GetThermalCapturesAsCsvAsync(filters);
+        var fileName = $"capturas_termicas_{DateTime.Now:yyyyMMddHHmmss}.csv";
+    
+        return File(csvBytes, "text/csv", fileName);
+    }
 }
