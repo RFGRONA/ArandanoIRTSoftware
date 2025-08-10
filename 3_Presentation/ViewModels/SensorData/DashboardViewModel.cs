@@ -72,6 +72,7 @@ public class DashboardViewModel
 
 public class ChartYAxisOptions
 {
+    public string Label { get; set; }
     public bool BeginAtZero { get; set; } = true;
     public int? Min { get; set; } = 0;
     public int? Max { get; set; } = null;

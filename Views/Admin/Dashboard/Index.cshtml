@@ -4,10 +4,6 @@
 @{
     ViewData["Title"] = "Dashboard Principal";
     Layout = "_AdminLayout";
-
-    var tempDataJson = Model.TemperatureChartData != null ? JsonSerializer.Serialize(Model.TemperatureChartData) : "null";
-    var humDataJson = Model.HumidityChartData != null ? JsonSerializer.Serialize(Model.HumidityChartData) : "null";
-    var lightDataJson = Model.LightChartData != null ? JsonSerializer.Serialize(Model.LightChartData) : "null";
 }
 
 @section Styles {
@@ -155,7 +151,7 @@
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Hora Captura</span>
-                    <span class="detail-value">@(Model.ThermalStatistics.LatestThermalReadingTimestamp.Value.ToColombiaTime().ToString("HH:mm"))</span>
+                    <span class="detail-value">@(Model.ThermalStatistics?.LatestThermalReadingTimestamp?.ToColombiaTime().ToString("HH:mm") ?? "-")</span>
                 </div>
             </div>
         </div>
@@ -173,7 +169,7 @@
             <div class="summary-details">
                 <div class="detail-row">
                     <span class="detail-label" data-bs-toggle="tooltip" title="Última Lectura Ambiental">Última Lect. Amb.</span>
-                    <span class="detail-value">@(Model.LatestAmbientData.RecordedAt.ToColombiaTime().ToString("HH:mm"))</span>
+                    <span class="detail-value">@(Model.LatestAmbientData?.RecordedAt.ToColombiaTime().ToString("HH:mm") ?? "-")</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label" data-bs-toggle="tooltip" title="Temperatura en la Ciudad">Temp. Ciudad</span>
@@ -280,10 +276,14 @@
 
             const chartData = JSON.parse(chartDataJson);
 
-            if (!chartData || chartData.Values.length === 0) {
+            const noData = !chartData || !chartData.Values || chartData.Values.every(v => v === null);
+
+            if (noData) {
                 const context = ctx.getContext('2d');
                 context.clearRect(0, 0, ctx.width, ctx.height);
                 context.textAlign = 'center';
+                context.font = '20px'; 
+                context.fillStyle = '#6c757d'; 
                 context.fillText('No hay datos disponibles.', ctx.width / 2, ctx.height / 2);
                 return;
             }
@@ -316,9 +316,9 @@
         
 
         document.addEventListener('DOMContentLoaded', function () {
-            createTimeSeriesChart('temperatureChart', '@Html.Raw(tempDataJson)', '°C');
-            createTimeSeriesChart('humidityChart', '@Html.Raw(humDataJson)', '%');
-            createTimeSeriesChart('lightChart', '@Html.Raw(lightDataJson)', 'lx');
+            createTimeSeriesChart('temperatureChart', '@Html.Raw(ViewBag.TempDataJson)');
+            createTimeSeriesChart('humidityChart', '@Html.Raw(ViewBag.HumDataJson)');
+            createTimeSeriesChart('lightChart', '@Html.Raw(ViewBag.LightDataJson)');
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
