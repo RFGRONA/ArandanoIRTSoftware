@@ -75,7 +75,7 @@ public class CapturesController : Controller
             availablePlants = plantsResult.Value.Select(p => new SelectListItem
             {
                 Value = p.Id.ToString(),
-                Text = $"{p.Name} ({p.CropName})", 
+                Text = $"{p.Name} ({p.CropName})",
                 Selected = p.Id == filters.PlantId
             }).OrderBy(t => t.Text).ToList();
         availablePlants.Insert(0,

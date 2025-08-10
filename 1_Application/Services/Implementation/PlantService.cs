@@ -300,7 +300,7 @@ public class PlantService : IPlantService
 
         if (plantId.HasValue) query = query.Where(h => h.PlantId == plantId.Value);
         if (userId.HasValue) query = query.Where(h => h.UserId == userId.Value);
-        
+
         if (startDate.HasValue)
         {
             query = query.Where(h => h.ChangedAt >= startDate.Value);

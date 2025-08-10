@@ -47,7 +47,7 @@ public class AmbientDataController : Controller
             > 200 => 200, // Max
             _ => filters.PageSize
         };
-        
+
         if (filters.StartDate.HasValue)
         {
             filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();

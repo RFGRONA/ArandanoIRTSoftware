@@ -14,8 +14,8 @@ public class ThermalDataDto
 
     [Required(ErrorMessage = "La temperatura promedio es requerida.")]
     public float Avg_Temp { get; set; }
-    
-    public List<float?>? Temperatures { get; set; } 
+
+    public List<float?>? Temperatures { get; set; }
 
     [JsonPropertyName("timestamp")]
     public DateTime? RecordedAtDevice { get; set; }

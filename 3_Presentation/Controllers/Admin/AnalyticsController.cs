@@ -43,7 +43,7 @@ public class AnalyticsController : BaseAdminController
     {
         var utcStartDate = startDate?.ToSafeUniversalTime();
         var utcEndDate = endDate?.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
-        
+
         var result = await _analyticsService.GetAnalysisDetailsAsync(id, utcStartDate, utcEndDate);
 
         if (result.IsFailure)
@@ -60,7 +60,7 @@ public class AnalyticsController : BaseAdminController
     {
         var utcStartDate = startDate.ToSafeUniversalTime();
         var utcEndDate = endDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
-        
+
         // 1. Llamar al servicio que hemos creado para generar el array de bytes del PDF
         var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, utcStartDate, utcEndDate);
 
@@ -129,13 +129,13 @@ public class AnalyticsController : BaseAdminController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendReportByEmail(int plantId, DateTime startDate, DateTime endDate, string recipientEmail)
     {
-        var plant = await _plantService.GetPlantByIdAsync(plantId); 
+        var plant = await _plantService.GetPlantByIdAsync(plantId);
         if (plant.IsFailure || plant.Value == null)
         {
             TempData["ErrorMessage"] = "No se pudo encontrar la planta para enviar el reporte.";
             return RedirectToAction("Index");
         }
-        
+
         var utcStartDate = startDate.ToSafeUniversalTime();
         var utcEndDate = endDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 

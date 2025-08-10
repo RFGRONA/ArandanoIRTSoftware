@@ -36,10 +36,10 @@ public class SensorDataDisplayDto
 
     [Display(Name = "Registrado")]
     public DateTime RecordedAt { get; set; }
-    
+
     [Display(Name = "Otros Datos")]
     public Dictionary<string, JsonElement>? OtherData { get; set; }
-    
+
     [Display(Name = "¿Noche?")]
     public bool? IsNight { get; set; }
 }

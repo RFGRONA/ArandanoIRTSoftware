@@ -79,9 +79,9 @@ public class DeviceApiController : ControllerBase
             Timestamp = DateTime.UtcNow
         });
     }
-    
+
     [HttpPost("auth")]
-    [Authorize(Policy = "DeviceAuthenticated")] 
+    [Authorize(Policy = "DeviceAuthenticated")]
     public IActionResult AuthenticateDevice()
     {
         var deviceContext = GetDeviceIdentityFromClaims();
@@ -91,7 +91,7 @@ public class DeviceApiController : ControllerBase
         }
 
         _logger.LogInformation("Auth check exitoso para DeviceId: {DeviceId}", deviceContext.DeviceId);
-        
+
         return Ok(new { status = "authenticated" });
     }
 

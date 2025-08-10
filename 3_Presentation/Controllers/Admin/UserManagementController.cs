@@ -85,11 +85,11 @@ public class UserManagementController : BaseAdminController
         }
 
         var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        
+
         // Llamamos al nuevo método para iniciar la eliminación
         var result = await _userService.InitiateAdminDeletionAsync(
-            model.AdminToDeleteId, 
-            currentUserId, 
+            model.AdminToDeleteId,
+            currentUserId,
             model.CurrentAdminPassword,
             Url, // Pasamos el IUrlHelper
             Request.Scheme); // Pasamos el esquema (http/https)
@@ -105,7 +105,7 @@ public class UserManagementController : BaseAdminController
 
         return RedirectToAction(nameof(Index));
     }
-    
+
 
     // GET: /UserManagement/ConfirmDeletion?id=X&token=Y
     [HttpGet]
@@ -135,7 +135,7 @@ public class UserManagementController : BaseAdminController
     [HttpPost]
     [ValidateAntiForgeryToken]
     [AllowAnonymous]
-    [ActionName("ConfirmDeletion")] 
+    [ActionName("ConfirmDeletion")]
     public async Task<IActionResult> ConfirmDeletionPost(int id, string token)
     {
         // Verificamos que el usuario que confirma esté logueado como Admin, como una capa extra de seguridad.

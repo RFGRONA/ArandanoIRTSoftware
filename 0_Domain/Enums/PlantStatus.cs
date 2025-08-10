@@ -1,5 +1,5 @@
 using NpgsqlTypes;
-using System.ComponentModel.DataAnnotations; 
+using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._0_Domain.Enums;
 

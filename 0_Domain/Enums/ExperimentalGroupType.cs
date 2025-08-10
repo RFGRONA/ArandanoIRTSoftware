@@ -8,15 +8,15 @@ namespace ArandanoIRT.Web._0_Domain.Enums;
 /// </summary>
 public enum ExperimentalGroupType
 {
-    [PgName("MONITORED")] 
+    [PgName("MONITORED")]
     [Display(Name = "Monitoreado")]
     MONITORED,
-    
-    [PgName("CONTROL")] 
+
+    [PgName("CONTROL")]
     [Display(Name = "Controlado")]
     CONTROL,
-    
-    [PgName("STRESS")] 
+
+    [PgName("STRESS")]
     [Display(Name = "Estresado")]
     STRESS
 }

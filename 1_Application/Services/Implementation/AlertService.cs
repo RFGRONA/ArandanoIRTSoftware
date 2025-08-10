@@ -289,7 +289,7 @@ public class AlertService : IAlertService
                 body);
         }
     }
-    
+
     public async Task SendAccountDeletedEmailAsync(string userEmail, string userName)
     {
         try
@@ -298,7 +298,7 @@ public class AlertService : IAlertService
             var body = await _razorRenderer.RenderViewToStringAsync(
                 "~/Views/Shared/EmailTemplates/_AccountDeletedEmail.cshtml",
                 viewModel);
-            
+
             await _emailService.SendEmailAsync(userEmail, userName, "Tu cuenta ha sido eliminada", body);
             _logger.LogInformation("Notificación de eliminación de cuenta enviada a {Email}", userEmail);
         }

@@ -81,7 +81,7 @@ public class PlantStatusController : Controller
     {
         var utcStartDate = startDate?.ToSafeUniversalTime();
         var utcEndDate = endDate?.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
-        
+
         var history = await _plantService.GetPlantStatusHistoryAsync(plantId, userId, utcStartDate, utcEndDate);
 
         ViewBag.Plants = await _plantService.GetPlantsForSelectionAsync();

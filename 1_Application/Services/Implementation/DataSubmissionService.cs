@@ -13,7 +13,7 @@ public class DataSubmissionService : IDataSubmissionService
 {
     private readonly ApplicationDbContext _context;
     private readonly IWeatherService _weatherService;
-    private readonly IFileStorageService _fileStorageService; 
+    private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DataSubmissionService> _logger;
 
     // El nombre del bucket ahora puede venir de configuración o ser una constante.
@@ -159,8 +159,8 @@ public class DataSubmissionService : IDataSubmissionService
         {
             DeviceId = deviceContext.DeviceId,
             PlantId = deviceContext.PlantId,
-            ThermalDataStats = thermalDataJsonString, 
-            RgbImagePath = uploadedImagePath, 
+            ThermalDataStats = thermalDataJsonString,
+            RgbImagePath = uploadedImagePath,
             RecordedAtServer = recordedAtServer,
             RecordedAtDevice = thermalDataDto.RecordedAtDevice?.ToSafeUniversalTime()
         };

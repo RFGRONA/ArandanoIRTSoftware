@@ -9,13 +9,13 @@ public class ValidateTurnstileAttribute : ActionFilterAttribute
     public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var environment = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-        
+
         if (environment.IsDevelopment())
         {
             await base.OnActionExecutionAsync(context, next);
             return;
         }
-        
+
         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<ValidateTurnstileAttribute>>();
         var token = context.HttpContext.Request.Form["cf-turnstile-response"].ToString();
 

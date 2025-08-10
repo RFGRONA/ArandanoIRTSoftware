@@ -17,7 +17,7 @@ namespace ArandanoIRT.Web._0_Domain.Common
                 .GetName() ?? enumValue.ToString();
         }
     }
-    
+
     public static class EnumSelectListExtensions
     {
         public static IEnumerable<SelectListItem> ToSelectList<TEnum>() where TEnum : Enum

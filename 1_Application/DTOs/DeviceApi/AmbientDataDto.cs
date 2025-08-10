@@ -7,7 +7,7 @@ public class AmbientDataDto
 {
     [JsonPropertyName("timestamp")]
     public DateTime? RecordedAtDevice { get; set; }
-    
+
     [Required(ErrorMessage = "La temperatura es requerida.")]
     [JsonPropertyName("temperature")]
     public float Temperature { get; set; }
@@ -16,9 +16,9 @@ public class AmbientDataDto
     [Range(0, 100, ErrorMessage = "La humedad debe estar entre 0 y 100.")]
     [JsonPropertyName("humidity")]
     public float Humidity { get; set; }
-    
+
     [JsonPropertyName("light")]
-    public float? Light { get; set; } 
+    public float? Light { get; set; }
 
     [JsonPropertyName("pressure")]
     public float? Pressure { get; set; }

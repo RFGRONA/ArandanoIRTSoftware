@@ -254,8 +254,8 @@ public class DataQueryService : IDataQueryService
                 RecordedAt = result.Capture.RecordedAtServer,
                 Temperatures = thermalStats?.Temperatures,
                 ThermalDataJson = result.Capture.ThermalDataStats,
-                ThermalImageWidth = 32, 
-                ThermalImageHeight = 24 
+                ThermalImageWidth = 32,
+                ThermalImageHeight = 24
             };
 
             return Result.Success<ThermalCaptureDetailsDto?>(detailsDto);
@@ -267,7 +267,7 @@ public class DataQueryService : IDataQueryService
                 $"Error interno al obtener detalles de captura: {ex.Message}");
         }
     }
-    
+
     public async Task<Result<IEnumerable<SensorDataDisplayDto>>> GetAmbientDataForDashboardAsync(TimeSpan duration,
         int? cropId, int? plantId)
     {
@@ -276,7 +276,7 @@ public class DataQueryService : IDataQueryService
         {
             var since = DateTime.UtcNow.Subtract(duration);
             var query = _context.EnvironmentalReadings.AsNoTracking().Where(er => er.RecordedAtServer >= since);
-            
+
             if (plantId.HasValue) query = query.Where(er => er.PlantId == plantId.Value);
             else if (cropId.HasValue) query = query.Where(er => er.Device.CropId == cropId.Value);
 
@@ -345,14 +345,14 @@ public class DataQueryService : IDataQueryService
             if (!rawCaptures.Any())
             {
                 _logger.LogInformation("No hay datos térmicos recientes para los filtros del dashboard.");
-                return Result.Success(new ThermalStatsDto()); 
+                return Result.Success(new ThermalStatsDto());
             }
 
             // 2. Deserializar toda la lista en memoria.
             var thermalStatsList = new List<ThermalDataDto>();
             foreach (var model in rawCaptures)
             {
-                var stats = DeserializeThermalStats(model.ThermalDataStats, model.Id); 
+                var stats = DeserializeThermalStats(model.ThermalDataStats, model.Id);
                 if (stats != null) thermalStatsList.Add(stats);
             }
 

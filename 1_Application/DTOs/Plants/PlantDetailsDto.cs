@@ -13,9 +13,9 @@ public class PlantDetailsDto
 
     [Display(Name = "Ciudad del Cultivo")] public string CropCityName { get; set; } = string.Empty;
 
-    [Display(Name = "Estado")] public PlantStatus Status { get; set; } 
+    [Display(Name = "Estado")] public PlantStatus Status { get; set; }
 
-    [Display(Name = "Grupo Experimental")] public ExperimentalGroupType ExperimentalGroup { get; set; } 
+    [Display(Name = "Grupo Experimental")] public ExperimentalGroupType ExperimentalGroup { get; set; }
 
     [Display(Name = "Fecha de Registro")] public DateTime RegisteredAt { get; set; }
 

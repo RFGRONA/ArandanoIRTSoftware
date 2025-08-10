@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using ArandanoIRT.Web._0_Domain.Entities; 
+using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._3_Presentation.ViewComponents
 {

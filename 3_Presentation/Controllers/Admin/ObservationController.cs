@@ -35,9 +35,9 @@ public class ObservationController : Controller
         {
             filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
         }
-        
+
         var result = await _observationService.GetPagedObservationsAsync(filters);
-        
+
         ViewBag.AvailablePlants = await _plantService.GetPlantsForSelectionAsync();
         ViewBag.AvailableUsers = await _userService.GetUsersForSelectionAsync();
         ViewBag.CurrentFilters = filters;

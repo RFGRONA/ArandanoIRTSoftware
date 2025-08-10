@@ -330,7 +330,7 @@ public class UserService : IUserService
         // Regla de Seguridad 2: No se puede eliminar a otro administrador.
         var isUserAdmin = await _userManager.IsInRoleAsync(userToDelete, "Admin");
         if (isUserAdmin) return Result.Failure("No está permitido eliminar a un usuario administrador.");
-        
+
         var emailOfDeletedUser = userToDelete.Email;
         var nameOfDeletedUser = userToDelete.FirstName;
 
@@ -420,7 +420,7 @@ public class UserService : IUserService
             _logger.LogWarning(
                 "El administrador {AdminToDeleteId} ha sido eliminado tras confirmación por segunda firma.",
                 adminToDeleteId);
-            
+
             if (!string.IsNullOrEmpty(emailOfDeletedAdmin))
             {
                 await _alertService.SendAccountDeletedEmailAsync(emailOfDeletedAdmin, nameOfDeletedAdmin);

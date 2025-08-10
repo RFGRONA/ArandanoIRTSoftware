@@ -9,7 +9,7 @@ public class PlantStatusHistoryDto
 
     [Display(Name = "Planta")] public string PlantName { get; set; } = string.Empty;
 
-    [Display(Name = "Estado Asignado")] public PlantStatus Status { get; set; } 
+    [Display(Name = "Estado Asignado")] public PlantStatus Status { get; set; }
 
     [Display(Name = "Observación")] public string? Observation { get; set; }
 
