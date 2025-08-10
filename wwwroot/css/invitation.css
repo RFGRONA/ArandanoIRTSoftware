@@ -13,17 +13,27 @@
 
 /* --- Encabezado de Página --- */
 .page-header {
+    position: relative;
     display: flex;
+    justify-content: center; /* centra el título horizontalmente */
     align-items: center;
-    gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
 .page-header h1 {
+    margin: 0;
     font-size: 1.75rem;
     font-weight: 600;
-    margin: 0;
+    text-align: center;
 }
+
+.page-header .btn-back {
+    position: absolute;
+    left: 0; /* pegado al borde izquierdo */
+    top: 50%;
+    transform: translateY(-50%); /* lo centra verticalmente */
+}
+
 
 .btn-back {
     background-color: var(--card-background);
@@ -130,4 +140,18 @@
 .btn-primary:hover {
     background-color: #4a319a;
     border-color: #4a319a;
+}
+
+@media (max-width: 576px) {
+    .page-header {
+        flex-direction: column; 
+        align-items: center;
+        position: static; 
+    }
+
+    .page-header .btn-back {
+        position: static; 
+        transform: none;
+        margin-bottom: 0.5rem;
+    }
 }
