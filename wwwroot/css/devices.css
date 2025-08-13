@@ -107,18 +107,34 @@
             letter-spacing: 0.5px;
         }
 
-        .status-active { background-color: var(--success-color); }
-        .status-inactive { background-color: var(--text-muted); }
-        .status-error { background-color: var(--danger-color); }
-        .status-unassigned { background-color: var(--warning-color); color: #000;}
-
 .status-badge {
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-block;
-        }
+    padding: 0.3em 0.75em;
+    font-size: 0.75em;
+    font-weight: 600;
+    border-radius: 20px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+        .status-active, .status-completed {
+    background-color: var(--success-color); /* Verde para Activo y Completado */
+}
+
+.status-inactive {
+    background-color: var(--text-muted); /* Gris para Inactivo */
+}
+
+.status-pending {
+    background-color: var(--warning-color); /* Amarillo para Pendiente */
+    color: #000;
+}
+
+.status-maintenance {
+    background-color: var(--info-color); /* Azul claro para Mantenimiento */
+}
+
+.status-expired {
+    background-color: var(--danger-color); /* Rojo para Expirado */
+}
