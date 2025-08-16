@@ -385,3 +385,111 @@ ESTILOS PARA PÁGINAS DE ELIMINACIÓN (DELETE)
         .status-error { background-color: #dc3545; }
         .status-unassigned { background-color: #ffc107; color: #000; }
 
+/* =============================================
+   ESTILOS MEJORADOS PARA TOOLTIPS DE AYUDA
+   ============================================= */
+
+.form-section-title {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.tooltip-icon {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background-color: var(--text-muted);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 14px;
+    line-height: 22px;
+    cursor: help;
+    font-weight: bold;
+    font-style: normal;
+    margin-left: 8px;
+    position: relative; /* Clave para el posicionamiento del tooltip */
+    top: -2px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.tooltip-icon:hover {
+    background-color: var(--primary-color); /* Efecto hover */
+}
+
+/* El contenido del tooltip (el texto) */
+.tooltip-icon::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 12px); /* Espacio sobre el ícono */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    background-color: #333;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    
+    width: 280px; /* Ancho fijo para consistencia */
+    white-space: normal;
+    text-align: center;
+    
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* La flecha del tooltip */
+.tooltip-icon::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%);
+    
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Muestra el tooltip y la flecha al pasar el cursor */
+.tooltip-icon:hover::after,
+.tooltip-icon:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* --- CORRECCIÓN PARA PANTALLAS PEQUEÑAS --- */
+@media (max-width: 767px) {
+    .tooltip-icon::after {
+        /* Se posiciona de forma segura dentro de la ventana */
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 90vw; /* Limita el ancho al 90% de la pantalla */
+        width: auto;
+    }
+}
+
+/* Contenedor para agrupar fieldsets y mejorar el responsive */
+.form-group-container {
+    display: grid;
+    gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .form-group-container {
+        grid-template-columns: repeat(1, 1fr); /* 1 columna en pantallas grandes */
+    }
+}
