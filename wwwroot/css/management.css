@@ -11,8 +11,8 @@
     --border-radius: 0.75rem;
     --danger-color: #dc3545;
     --warning-color: #ffc107;
-    --info-color: #0dcaf0;
-    --success-color: #198754; 
+    --info-color: #495057;
+    --success-color: #502350; 
 }
 
 .page-header {
@@ -119,8 +119,8 @@
 
 .role-admin { background-color: var(--success-color); }
 .role-user { 
-    background-color: var(--info-color); 
-    color: #212529; 
+    background-color: #155799; 
+    color: #F8F9FA; 
 }
 /* --- ESTILOS PARA LA PÁGINA DE ELIMINACIÓN --- */
 
