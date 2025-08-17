@@ -9,43 +9,86 @@
 
 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
-<div class="mb-3">
-    <label asp-for="Name" class="form-label"></label>
-    <input asp-for="Name" class="form-control"/>
-    <span asp-validation-for="Name" class="text-danger"></span>
-</div>
+<h5 class="form-section-title">Información general de la planta</h5>
 
 
-<div class="mb-3">
-    <label asp-for="CropId" class="form-label"></label>
-    <select asp-for="CropId" class="form-select" asp-items="@concreteModel.AvailableCrops">
-        <option value="">-- Seleccione un Cultivo --</option>
-    </select>
-    <span asp-validation-for="CropId" class="text-danger"></span>
-</div>
+<style>
+    .tooltip-icon:focus::after,
+    .tooltip-icon:focus::before,
+    .tooltip-icon:active::after,
+    .tooltip-icon:active::before {
+        opacity: 1;
+        visibility: visible;
+    }
+</style>
 
-@if (createDto != null)
-{
+<div class="form-group-container">
     <div class="mb-3">
-        <label for="Status" class="form-label">Estado Inicial</label>
-        <select id="Status" name="Status" class="form-select" asp-items="ViewBag.AvailableStatuses">
-            <option value="">-- Seleccione un Estado Inicial --</option>
-        </select>
-        @Html.ValidationMessage("Status", "", new { @class = "text-danger" })
+        <label asp-for="Name" class="form-label">
+            Nombre de la Planta
+            <span
+                class="tooltip-icon"
+                data-tooltip="Nombre identificador para esta planta (ej.: 'Planta-001', 'Fila 3 - Planta A'). Útil para seguimiento y reportes."
+                tabindex="0"
+            >?</span>
+        </label>
+        <input asp-for="Name" class="form-control" placeholder="Ej.: Planta-001" />
+        <span asp-validation-for="Name" class="text-danger"></span>
     </div>
-}
-else
-{
-    <div class="alert alert-info" role="alert">
-        <i class="fas fa-info-circle me-2"></i>
-        Para cambiar el estado de la planta, por favor, utiliza la opción <strong>"Cambiar Estado"</strong> desde la página de detalles.
-    </div>
-}
 
-<div class="mb-3">
-    <label asp-for="ExperimentalGroup" class="form-label"></label>
-    <select asp-for="ExperimentalGroup" class="form-select" asp-items="@concreteModel.AvailableExperimentalGroups">
-        <option value="">-- Seleccione un Grupo --</option>
-    </select>
-    <span asp-validation-for="ExperimentalGroup" class="text-danger"></span>
+    <div class="mb-3">
+        <label asp-for="CropId" class="form-label">
+            Cultivo
+            <span
+                class="tooltip-icon"
+                data-tooltip="Selecciona el cultivo al que pertenece esta planta. Si no aparece, crea el cultivo en la sección 'Cultivos' primero."
+                tabindex="0"
+            >?</span>
+        </label>
+        <select asp-for="CropId" class="form-select" asp-items="@concreteModel.AvailableCrops">
+            <option value="">-- Seleccione un Cultivo --</option>
+        </select>
+        <span asp-validation-for="CropId" class="text-danger"></span>
+    </div>
+
+    @if (createDto != null)
+    {
+        <div class="mb-3">
+            <label for="Status" class="form-label">
+                Estado Inicial
+                <span
+                    class="tooltip-icon"
+                    data-tooltip="Estado con el que se registrará la planta (ej.: 'Sano', 'En observación', 'Enfermo'). Se puede cambiar luego desde la página de detalles."
+                    
+                    tabindex="0"
+                >?</span>
+            </label>
+            <select id="Status" name="Status" class="form-select" asp-items="ViewBag.AvailableStatuses">
+                <option value="">-- Seleccione un Estado Inicial --</option>
+            </select>
+            @Html.ValidationMessage("Status", "", new { @class = "text-danger" })
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            Para cambiar el estado de la planta, por favor, utiliza la opción <strong>"Cambiar Estado"</strong> desde la página de detalles.
+        </div>
+    }
+
+    <div class="mb-3">
+        <label asp-for="ExperimentalGroup" class="form-label">
+            Grupo Experimental
+            <span
+                class="tooltip-icon"
+                data-tooltip="Grupo experimental al que pertenece la planta (opcional). Útil para comparar tratamientos o condiciones."
+                tabindex="0"
+            >?</span>
+        </label>
+        <select asp-for="ExperimentalGroup" class="form-select" asp-items="@concreteModel.AvailableExperimentalGroups">
+            <option value="">-- Seleccione un Grupo --</option>
+        </select>
+        <span asp-validation-for="ExperimentalGroup" class="text-danger"></span>
+    </div>
 </div>
