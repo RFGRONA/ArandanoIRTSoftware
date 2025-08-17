@@ -17,6 +17,6 @@ public class CropCreateDto : ICropFormData
     [Required(ErrorMessage = "El nombre de la ciudad es obligatorio.")]
     [StringLength(100, ErrorMessage = "El nombre de la ciudad no puede tener más de 100 caracteres.")]
     public string CityName { get; set; } = string.Empty;
-    
+
     public CropSettings CropSettings { get; set; } = new();
 }

@@ -13,7 +13,7 @@ public class RegisterDto
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El campo \"{0}\" es obligatorio.")]
-    [Display(Name = "Nombre")] 
+    [Display(Name = "Nombre")]
     public string FirstName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El campo \"{0}\" es obligatorio.")]
