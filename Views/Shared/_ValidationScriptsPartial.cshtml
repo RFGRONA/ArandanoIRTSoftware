@@ -1,2 +1,324 @@
 ﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
 <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-localization/1.19.5/messages_es.min.js"></script>
+
+<script>
+(function ($) {
+  $(function () {
+    // 0) Desactivar validación nativa HTML5
+    $('form').attr('novalidate', 'novalidate');
+
+    // Helper: obtener texto limpio del label (sin spans hijos como el icono "?")
+    function getLabelTextForElement(el) {
+      const $el = $(el);
+      const id = el.id || $el.attr('name') || '';
+      const $label = $('label[for="' + id + '"]');
+      let text = $label.clone().children().remove().end().text().trim();
+      if (!text) {
+        text = $el.attr('aria-label') || $el.attr('placeholder') || $el.attr('name') || 'este campo';
+      }
+      return text;
+    }
+
+    // Helper: buscar label más cercano desde un nodo (para mensajes del ModelBinder sin campo)
+    function findNearestLabelTextFromNode(node) {
+      try {
+        var el = (node.nodeType === Node.TEXT_NODE) ? node.parentNode : node;
+        var $el = $(el);
+        // Buscar contenedor lógico (.mb-4, .form-group, .form-group-container, .card-body)
+        var $group = $el.closest('.mb-4, .form-group, .form-group-container, .card-body, .row, .form-card');
+        var labelText = '';
+        if ($group && $group.length) {
+          var $lab = $group.find('label').first();
+          if ($lab && $lab.length) {
+            labelText = $lab.clone().children().remove().end().text().trim();
+          }
+        }
+        if (!labelText) {
+          // probar etiquetas previas en el DOM
+          var $prev = $el.prevAll('label').first();
+          if ($prev && $prev.length) labelText = $prev.clone().children().remove().end().text().trim();
+        }
+        if (!labelText) {
+          // probar el label asociado por for si existe (por ejemplo select con asp-for)
+          var id = ($el.attr && $el.attr('id')) || ($el.attr && $el.attr('name')) || null;
+          if (id) {
+            var $assoc = $('label[for="' + id + '"]').first();
+            if ($assoc && $assoc.length) labelText = $assoc.clone().children().remove().end().text().trim();
+          }
+        }
+        return labelText || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Mensajes globales en español (por si falta algo)
+    var spanishMsgs = {
+      required: "Este campo es obligatorio.",
+      remote: "Por favor, rellena este campo.",
+      email: "Por favor, escribe una dirección de correo válida.",
+      url: "Por favor, escribe una URL válida.",
+      date: "Por favor, escribe una fecha válida.",
+      dateISO: "Por favor, escribe una fecha (ISO) válida.",
+      number: "Por favor, escribe un número válido.",
+      digits: "Por favor, escribe sólo dígitos.",
+      creditcard: "Por favor, escribe un número de tarjeta válido.",
+      equalTo: "Por favor, escribe el mismo valor de nuevo.",
+      accept: "Por favor, escribe un valor con una extensión aceptada.",
+      maxlength: $.validator.format("Por favor, no escribas más de {0} caracteres."),
+      minlength: $.validator.format("Por favor, no escribas menos de {0} caracteres."),
+      rangelength: $.validator.format("Por favor, escribe un valor entre {0} y {1} caracteres."),
+      range: $.validator.format("Por favor, escribe un valor entre {0} y {1}."),
+      max: $.validator.format("Por favor, escribe un valor menor o igual que {0}."),
+      min: $.validator.format("Por favor, escribe un valor mayor o igual que {0}.")
+    };
+
+    if ($.validator && $.validator.messages) {
+      $.extend($.validator.messages, spanishMsgs);
+    }
+
+    // Recorre todos los inputs/selects/textareas y ajusta mensajes por atributo
+    $('input, select, textarea').each(function () {
+      const $field = $(this);
+      const fieldName = getLabelTextForElement(this);
+
+      // --- ASP.NET data-val-* (asegurar mensajes en español y data-msg-* compatibles con jQuery)
+      if ($field.attr('data-val-required') !== undefined) {
+        $field.attr('data-val-required', `El campo ${fieldName} es obligatorio.`);
+        $field.attr('data-msg-required', `El campo ${fieldName} es obligatorio.`);
+      }
+      if ($field.attr('data-val-number') !== undefined) {
+        $field.attr('data-val-number', `El campo ${fieldName} debe ser un número.`);
+        $field.attr('data-msg-number', `El campo ${fieldName} debe ser un número.`);
+      }
+      if ($field.attr('data-val-email') !== undefined) {
+        $field.attr('data-val-email', `Por favor, escribe una dirección de correo válida.`);
+        $field.attr('data-msg-email', `Por favor, escribe una dirección de correo válida.`);
+      }
+      if ($field.attr('data-val-url') !== undefined) {
+        $field.attr('data-val-url', `Por favor, escribe una URL válida.`);
+        $field.attr('data-msg-url', `Por favor, escribe una URL válida.`);
+      }
+      if ($field.attr('data-val-date') !== undefined) {
+        $field.attr('data-val-date', `Por favor, escribe una fecha válida.`);
+        $field.attr('data-msg-date', `Por favor, escribe una fecha válida.`);
+      }
+      if ($field.attr('data-val-regex') !== undefined) {
+        $field.attr('data-msg-regex', $field.attr('data-val-regex') || `El formato del campo ${fieldName} no es válido.`);
+      }
+      if ($field.attr('data-val-equalto') !== undefined || $field.attr('data-val-equalTo') !== undefined) {
+        $field.attr('data-val-equalto', `Por favor, escribe el mismo valor de nuevo.`);
+        $field.attr('data-msg-equalTo', `Por favor, escribe el mismo valor de nuevo.`);
+      }
+      if ($field.attr('data-val-creditcard') !== undefined) {
+        $field.attr('data-val-creditcard', `Por favor, escribe un número de tarjeta válido.`);
+        $field.attr('data-msg-creditcard', `Por favor, escribe un número de tarjeta válido.`);
+      }
+      if ($field.attr('data-val-digits') !== undefined) {
+        $field.attr('data-val-digits', `Por favor, escribe sólo dígitos.`);
+        $field.attr('data-msg-digits', `Por favor, escribe sólo dígitos.`);
+      }
+      if ($field.attr('data-val-remote') !== undefined) {
+        $field.attr('data-val-remote', `Por favor, rellena este campo.`);
+        $field.attr('data-msg-remote', `Por favor, rellena este campo.`);
+      }
+
+      // --- HTML5 attributes (min, max, step, pattern, minlength, maxlength)
+      const min = $field.attr('min');
+      const max = $field.attr('max');
+      if (min !== undefined && min !== null) {
+        $field.attr('data-msg-min', `Por favor, escribe un valor mayor o igual que ${min}.`);
+        if ($field.attr('data-val-min') !== undefined) {
+          $field.attr('data-val-min', `Por favor, escribe un valor mayor o igual que ${min}.`);
+        }
+      }
+      if (max !== undefined && max !== null) {
+        $field.attr('data-msg-max', `Por favor, escribe un valor menor o igual que ${max}.`);
+        if ($field.attr('data-val-max') !== undefined) {
+          $field.attr('data-val-max', `Por favor, escribe un valor menor o igual que ${max}.`);
+        }
+      }
+      if (min !== undefined && max !== undefined && min !== null && max !== null) {
+        $field.attr('data-msg-range', `Por favor, escribe un valor entre ${min} y ${max}.`);
+        if ($field.attr('data-val-range') !== undefined) {
+          $field.attr('data-val-range', `Por favor, escribe un valor entre ${min} y ${max}.`);
+        }
+      }
+
+      const maxlength = $field.attr('maxlength');
+      const minlength = $field.attr('minlength');
+      if (maxlength) {
+        $field.attr('data-msg-maxlength', `Por favor, no escribas más de ${maxlength} caracteres.`);
+      }
+      if (minlength) {
+        $field.attr('data-msg-minlength', `Por favor, no escribas menos de ${minlength} caracteres.`);
+      }
+      if (minlength && maxlength) {
+        $field.attr('data-msg-rangelength', `Por favor, escribe un valor entre ${minlength} y ${maxlength} caracteres.`);
+      }
+
+      const pattern = $field.attr('pattern');
+      if (pattern) {
+        $field.attr('data-msg-pattern', `El formato del campo ${fieldName} no es válido.`);
+      }
+    });
+
+    // Reparsear unobtrusive para que recoja los nuevos data-msg / data-val
+    $('form').each(function () {
+      $(this).removeData('validator').removeData('unobtrusiveValidation');
+      $.validator.unobtrusive.parse(this);
+    });
+
+    // Sobrescribir método number para aceptar coma o punto y mantener validación
+    if ($.validator && $.validator.methods && $.validator.methods.number) {
+      const originalNumber = $.validator.methods.number;
+      $.validator.methods.number = function (value, element) {
+        if (this.optional(element)) return true;
+        // Normalizar: quitar espacios y reemplazar coma decimal por punto
+        const normalized = String(value).replace(/\s+/g, '').replace(',', '.');
+        return originalNumber.call(this, normalized, element);
+      };
+      // Asegurar mensaje global para number
+      $.validator.messages.number = spanishMsgs.number;
+    }
+
+    // Forzar mensajes específicos globales (por si alguna regla no toma data-msg-*)
+    if ($.validator && $.validator.messages) {
+      $.extend($.validator.messages, {
+        max: $.validator.format("Por favor, escribe un valor menor o igual que {0}."),
+        min: $.validator.format("Por favor, escribe un valor mayor o igual que {0}."),
+        range: $.validator.format("Por favor, escribe un valor entre {0} y {1}.")
+      });
+    }
+
+    // ------------------------------------------------------------------
+    //  Traducción de mensajes del ModelBinder del servidor, incluyendo:
+    //  - "The value '...' is not valid for FIELD."
+    //  - "A value is required for 'FIELD'."
+    //  - "The value '...' is not valid."
+    //  - Y EL CASO: "The value '...' is invalid." (sin campo)
+    //  Para el caso "invalid" intentamos localizar el label cercano y usarlo.
+    // ------------------------------------------------------------------
+
+    // patrones a buscar (más genéricos)
+    const serverPatterns = [
+      { re: /The value '([^']+)' is not valid for ([^.]+)\./g, repl: function (_, value, field) { return `El valor '${value}' no es válido para ${field}.`; } },
+      { re: /A value is required for '([^']+)'\./g, repl: function (_, field) { return `Se requiere un valor para ${field}.`; } },
+      { re: /A value is required\./g, repl: function () { return `Se requiere un valor.`; } },
+      { re: /The value '([^']*)' is not valid\./g, repl: function (_, value) { return `El valor '${value}' no es válido.`; } }
+      // nota: el caso "invalid" se maneja aparte para intentar añadir label contextual
+    ];
+
+    // patrón específico para "... is invalid."
+    const invalidPattern = /The value '([^']*)' is invalid\./g;
+
+    function translateTextNodesIn(root) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      while ((node = walker.nextNode())) {
+        let txt = node.nodeValue;
+        if (!txt) continue;
+
+        // Procesar patrón "... is invalid." con contexto (label cercano)
+        if (txt.indexOf('is invalid') !== -1 || txt.indexOf("The value '' is invalid") !== -1) {
+          // si coincide con el pattern invalidPattern, reemplazamos contextualizado
+          if (invalidPattern.test(txt)) {
+            // Reset lastIndex por seguridad
+            invalidPattern.lastIndex = 0;
+            txt = txt.replace(invalidPattern, function (_, value) {
+              const label = findNearestLabelTextFromNode(node) || 'este campo';
+              if (value === '') return `El valor no es válido para ${label}.`;
+              return `El valor '${value}' no es válido para ${label}.`;
+            });
+            if (txt !== node.nodeValue) { node.nodeValue = txt; continue; }
+          }
+        }
+
+        // Si no fue el caso "invalid", aplicar el resto de patrones generales
+        if (txt.indexOf('The value') === -1 && txt.indexOf('A value is required') === -1) continue;
+
+        serverPatterns.forEach(function (p) {
+          try {
+            txt = txt.replace(p.re, p.repl);
+          } catch (e) { /* ignore regex errors */ }
+        });
+
+        if (txt !== node.nodeValue) node.nodeValue = txt;
+      }
+    }
+
+    // Ejecutar una traducción inicial (mensajes ya renderizados)
+    try {
+      translateTextNodesIn(document.body);
+    } catch (e) {
+      console.warn('Error traduciendo mensajes del servidor:', e);
+    }
+
+    // Observador para detectar mensajes añadidos dinámicamente (postbacks, partial updates)
+    let translateTimer = null;
+    const observer = new MutationObserver(function (mutations) {
+      if (translateTimer) clearTimeout(translateTimer);
+      translateTimer = setTimeout(function () {
+        mutations.forEach(function (m) {
+          if (m.type === 'childList') {
+            m.addedNodes.forEach(function (node) {
+              if (!node) return;
+              try {
+                if (node.nodeType === Node.TEXT_NODE) {
+                  let txt = node.nodeValue;
+                  if (txt && (txt.indexOf('The value') !== -1 || txt.indexOf('A value is required') !== -1 || txt.indexOf('is invalid') !== -1)) {
+                    // maneja 'invalid' contextual
+                    if (invalidPattern.test(txt)) {
+                      invalidPattern.lastIndex = 0;
+                      txt = txt.replace(invalidPattern, function (_, value) {
+                        const label = findNearestLabelTextFromNode(node) || 'este campo';
+                        if (value === '') return `El valor no es válido para ${label}.`;
+                        return `El valor '${value}' no es válido para ${label}.`;
+                      });
+                    }
+                    serverPatterns.forEach(function (p) {
+                      try { txt = txt.replace(p.re, p.repl); } catch (e) {}
+                    });
+                    if (txt !== node.nodeValue) node.nodeValue = txt;
+                  }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                  translateTextNodesIn(node);
+                }
+              } catch (e) { /* ignore */ }
+            });
+          } else if (m.type === 'characterData') {
+            const n = m.target;
+            try {
+              let txt = n.nodeValue;
+              if (txt && (txt.indexOf('The value') !== -1 || txt.indexOf('A value is required') !== -1 || txt.indexOf('is invalid') !== -1)) {
+                if (invalidPattern.test(txt)) {
+                  invalidPattern.lastIndex = 0;
+                  txt = txt.replace(invalidPattern, function (_, value) {
+                    const label = findNearestLabelTextFromNode(n) || 'este campo';
+                    if (value === '') return `El valor no es válido para ${label}.`;
+                    return `El valor '${value}' no es válido para ${label}.`;
+                  });
+                }
+                serverPatterns.forEach(function (p) {
+                  try { txt = txt.replace(p.re, p.repl); } catch (e) {}
+                });
+                if (txt !== n.nodeValue) n.nodeValue = txt;
+              }
+            } catch (e) { /* ignore */ }
+          }
+        });
+        translateTimer = null;
+      }, 60); 
+    });
+
+    try {
+      observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    } catch (e) {
+      console.warn('No se pudo iniciar MutationObserver para traducción de mensajes server:', e);
+    }
+
+    // FIN
+  });
+})(jQuery);
+</script>

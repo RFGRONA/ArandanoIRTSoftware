@@ -1,7 +1,7 @@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._0_Domain.Entities.InvitationCode
 @{
-    // Establece la plantilla base para el correo electrónico.
+
     Layout = "_EmailLayout.cshtml";
     ViewData["Title"] = "Invitación para unirte a Arandano IRT";
 }
@@ -15,7 +15,6 @@
         margin: 0;
         padding: 20px;
     }
-    /* Contenedor principal para centrar el contenido y darle un aspecto de tarjeta */
     .container {
         max-width: 600px;
         margin: 20px auto;
@@ -25,18 +24,15 @@
         box-shadow: 0 6px 18px rgba(0,0,0,0.07);
         border: 1px solid #e9e9e9;
     }
-    /* Estilo para el encabezado principal */
     h1 {
         color: #2c3e50;
         text-align: center;
         margin-bottom: 24px;
     }
-    /* Estilo para los párrafos */
     p {
         margin-bottom: 16px;
         color: #555;
     }
-    /* Caja destacada para mostrar el código de invitación */
     .code-box {
         background-color: #ecf0f1;
         border: 1px dashed #bdc3c7;
@@ -49,12 +45,10 @@
         border-radius: 8px;
         letter-spacing: 3px;
     }
-    /* Contenedor para centrar el botón de acción */
     .button-container {
         text-align: center;
         margin: 32px 0;
     }
-    /* Estilo del botón principal. Se aplica a la clase .button */
     .button {
         background-color: #3498db;
         color: #ffffff !important; 
@@ -65,11 +59,9 @@
         display: inline-block;
         transition: background-color 0.3s ease;
     }
-    /* Efecto hover para el botón */
     .button:hover {
         background-color: #2980b9;
     }
-    /* Estilos para el pie de página del correo */
     .footer {
         margin-top: 24px;
         padding-top: 16px;
@@ -87,7 +79,6 @@
 
     <p>Has recibido una invitación para crear una cuenta en la plataforma de monitoreo Arandano IRT. Para completar tu registro, utiliza el siguiente código de un solo uso:</p>
 
-    <!-- Caja con el código de invitación -->
     <div class="code-box">
         @Model.Code
     </div>
@@ -96,7 +87,6 @@
 
     <p>Para registrarte, haz clic en el botón de abajo y proporciona este código cuando se te solicite.</p>
     
-    <!-- Contenedor del Botón -->
     <div class="button-container">
         @*
           Este botón genera el enlace de registro directamente en la vista.

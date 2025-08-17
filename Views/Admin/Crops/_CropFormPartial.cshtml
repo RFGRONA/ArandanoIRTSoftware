@@ -92,7 +92,7 @@
                         Umbral de Luz (lux)
                         <span class="tooltip-icon" data-tooltip="Valor mínimo de intensidad de luz (en lux) para que los datos térmicos sean considerados válidos.">?</span>
                     </label>
-                    <input type="number" min="0" asp-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="form-control" />
+                    <input type="number" min="0" max="60000" asp-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="form-control" />
                     <span asp-validation-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="text-danger"></span>
                 </div>
             </div>
@@ -106,7 +106,7 @@
                         Umbral Delta T (°C)
                         <span class="tooltip-icon" data-tooltip="Diferencia de temperatura mínima entre la planta y el ambiente para ser considerada una anomalía.">?</span>
                     </label>
-                    <input type="number" step="0.1" asp-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="form-control" />
+                    <input type="number" step="0.1" max="7" min="0.1" asp-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="form-control" />
                     <span asp-validation-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="text-danger"></span>
                 </div>
                 <div class="col-12 mb-3">
@@ -114,7 +114,7 @@
                         Duración Mínima (min)
                         <span class="tooltip-icon" data-tooltip="Tiempo mínimo en minutos que una anomalía debe persistir para ser considerada una alerta. No puede ser negativo.">?</span>
                     </label>
-                    <input type="number" min="1" asp-for="CropSettings.AnomalyParameters.DurationMinutes" class="form-control" />
+                    <input type="number" min="1" max="480" asp-for="CropSettings.AnomalyParameters.DurationMinutes" class="form-control" />
                     <span asp-validation-for="CropSettings.AnomalyParameters.DurationMinutes" class="text-danger"></span>
                 </div>
             </div>
@@ -128,7 +128,7 @@
                         Intervalo de Recordatorio (meses)
                         <span class="tooltip-icon" data-tooltip="Cada cuántos meses se enviará un recordatorio para calibrar los dispositivos asociados a este cultivo.">?</span>
                     </label>
-                    <input type="number" min="1" asp-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="form-control" />
+                    <input type="number" min="1" max="12" asp-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="form-control" />
                     <span asp-validation-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="text-danger"></span>
                 </div>
             </div>
