@@ -1,5 +1,5 @@
 @using ArandanoIRT.Web._0_Domain.Common
-@model (string Title, string Message, DateTime AlertTime, string Severity)
+@model ArandanoIRT.Web._3_Presentation.ViewModels.Alerts.GenericAlertViewModel
 @{
     Layout = "_EmailLayout.cshtml";
     ViewData["Title"] = Model.Title;
@@ -27,7 +27,11 @@
     </p>
 </div>
 
-<p><strong>Fecha y Hora (UTC):</strong> @Model.AlertTime.ToColombiaTime().ToString("F")</p>
+<p><strong>Fecha y Hora
+        (UTC):</strong> @(Model.AlertTime.HasValue ? Model.AlertTime.Value.ToColombiaTime().ToString("F") : "No especificada")
+</p>
+
+<p><strong>Severidad:</strong> @(string.IsNullOrEmpty(Model.Severity) ? "No especificada" : Model.Severity)</p>
 
 <p>Si tienes alguna duda, por favor, contacta a soporte.</p>
 
