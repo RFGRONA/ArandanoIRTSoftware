@@ -44,7 +44,8 @@ try
     // 2. Configure HTTP request pipeline
     if (!app.Environment.IsDevelopment())
     {
-        app.UseExceptionHandler("/Home/Error");
+        app.UseExceptionHandler("/Error");
+        app.UseStatusCodePagesWithReExecute("/Error", "?statusCode={0}");
         app.UseHsts();
     }
     else
