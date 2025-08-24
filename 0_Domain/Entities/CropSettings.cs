@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using ArandanoIRT.Web._1_Application.Helper;
 
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
@@ -15,6 +16,7 @@ public class CropSettings
     public CalibrationReminder CalibrationReminder { get; set; } = new();
 }
 
+[ValidateAnalysisParameters]
 public class AnalysisParameters
 {
     [Required(ErrorMessage = "El umbral de estrés incipiente es obligatorio.")]

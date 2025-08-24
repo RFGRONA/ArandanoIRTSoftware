@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
+using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.DTOs.Weather;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -11,11 +12,11 @@ namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
 public class DataSubmissionService : IDataSubmissionService
 {
+    private const string RgbImageBucketName = "rgb-captures";
     private readonly ApplicationDbContext _context;
-    private readonly IWeatherService _weatherService;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DataSubmissionService> _logger;
-    private const string RgbImageBucketName = "rgb-captures";
+    private readonly IWeatherService _weatherService;
 
     public DataSubmissionService(
         ApplicationDbContext context,
@@ -31,6 +32,8 @@ public class DataSubmissionService : IDataSubmissionService
 
     public async Task<Result> SaveAmbientDataAsync(DeviceIdentityContext deviceContext, AmbientDataDto ambientDataDto)
     {
+        await ReactivateDeviceIfInactiveAsync(deviceContext);
+
         _logger.LogInformation("Guardando datos ambientales.");
 
         WeatherInfo? weatherInfo = null;
@@ -42,12 +45,14 @@ public class DataSubmissionService : IDataSubmissionService
             if (weatherResult.IsSuccess)
             {
                 weatherInfo = weatherResult.Value;
-                _logger.LogInformation("Clima obtenido para la ciudad {City}: Temp={TempC}, Hum={Humidity}%, EsNoche={IsNight}",
+                _logger.LogInformation(
+                    "Clima obtenido para la ciudad {City}: Temp={TempC}, Hum={Humidity}%, EsNoche={IsNight}",
                     crop.CityName, weatherInfo.TemperatureCelsius, weatherInfo.HumidityPercentage, weatherInfo.IsNight);
             }
             else
             {
-                _logger.LogWarning("No se pudo obtener el clima para la ciudad {City}: {ErrorMessage}", crop.CityName, weatherResult.ErrorMessage);
+                _logger.LogWarning("No se pudo obtener el clima para la ciudad {City}: {ErrorMessage}", crop.CityName,
+                    weatherResult.ErrorMessage);
             }
         }
         else
@@ -78,7 +83,8 @@ public class DataSubmissionService : IDataSubmissionService
         {
             _context.EnvironmentalReadings.Add(sensorDataRecord);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Datos ambientales guardados exitosamente. Nuevo ReadingId: {ReadingId}", sensorDataRecord.Id);
+            _logger.LogInformation("Datos ambientales guardados exitosamente. Nuevo ReadingId: {ReadingId}",
+                sensorDataRecord.Id);
             return Result.Success();
         }
         catch (Exception ex)
@@ -95,6 +101,8 @@ public class DataSubmissionService : IDataSubmissionService
         IFormFile? imageFile,
         DateTime recordedAtServer)
     {
+        await ReactivateDeviceIfInactiveAsync(deviceContext);
+
         _logger.LogInformation("Guardando datos de captura.");
 
         bool? isNight = null;
@@ -104,34 +112,38 @@ public class DataSubmissionService : IDataSubmissionService
             if (crop != null && !string.IsNullOrWhiteSpace(crop.CityName))
             {
                 var weatherResult = await _weatherService.GetCurrentWeatherAsync(crop.CityName);
-                if (weatherResult.IsSuccess)
-                {
-                    isNight = weatherResult.Value.IsNight;
-                }
+                if (weatherResult.IsSuccess) isNight = weatherResult.Value.IsNight;
             }
         }
 
         string? uploadedImagePath = null;
         if (imageFile != null && imageFile.Length > 0 && isNight == false)
         {
-            var fileNameInBucket = $"{deviceContext.DeviceId}_{recordedAtServer:yyyyMMddHHmmssfff}{Path.GetExtension(imageFile.FileName)}";
-            _logger.LogInformation("Es de día, procediendo a subir imagen RGB {FileName} ({FileSize} bytes).", fileNameInBucket, imageFile.Length);
+            var fileNameInBucket =
+                $"{deviceContext.DeviceId}_{recordedAtServer:yyyyMMddHHmmssfff}{Path.GetExtension(imageFile.FileName)}";
+            _logger.LogInformation("Es de día, procediendo a subir imagen RGB {FileName} ({FileSize} bytes).",
+                fileNameInBucket, imageFile.Length);
 
-            var uploadResult = await _fileStorageService.UploadFileAsync(imageFile, RgbImageBucketName, fileNameInBucket);
+            var uploadResult =
+                await _fileStorageService.UploadFileAsync(imageFile, RgbImageBucketName, fileNameInBucket);
 
             if (uploadResult.IsSuccess)
             {
                 uploadedImagePath = uploadResult.Value;
-                _logger.LogInformation("Imagen subida exitosamente. URL de almacenamiento: {ImageUrl}", uploadedImagePath);
+                _logger.LogInformation("Imagen subida exitosamente. URL de almacenamiento: {ImageUrl}",
+                    uploadedImagePath);
             }
             else
             {
-                _logger.LogError("Error al subir la imagen a través de IFileStorageService: {ErrorMessage}", uploadResult.ErrorMessage);
+                _logger.LogError("Error al subir la imagen a través de IFileStorageService: {ErrorMessage}",
+                    uploadResult.ErrorMessage);
             }
         }
         else
         {
-            _logger.LogInformation("Se omitió la subida de imagen RGB. Motivo: EsDeNoche={IsNight}, ArchivoPresente={HasFile}", isNight, imageFile != null);
+            _logger.LogInformation(
+                "Se omitió la subida de imagen RGB. Motivo: EsDeNoche={IsNight}, ArchivoPresente={HasFile}", isNight,
+                imageFile != null);
         }
 
         var thermalDataRecord = new ThermalCapture
@@ -148,13 +160,26 @@ public class DataSubmissionService : IDataSubmissionService
         {
             _context.ThermalCaptures.Add(thermalDataRecord);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Datos de captura guardados exitosamente. Nuevo CaptureId: {CaptureId}", thermalDataRecord.Id);
+            _logger.LogInformation("Datos de captura guardados exitosamente. Nuevo CaptureId: {CaptureId}",
+                thermalDataRecord.Id);
             return Result.Success();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Excepción al guardar datos de captura en la base de datos.");
             return Result.Failure("Error interno del servidor al guardar datos de captura.");
+        }
+    }
+
+    private async Task ReactivateDeviceIfInactiveAsync(DeviceIdentityContext deviceContext)
+    {
+        var device = await _context.Devices.FindAsync(deviceContext.DeviceId);
+
+        if (device != null && device.Status == DeviceStatus.INACTIVE)
+        {
+            _logger.LogInformation("El dispositivo {DeviceId} estaba INACTIVO. Reactivando...", device.Id);
+            device.Status = DeviceStatus.ACTIVE;
+            device.UpdatedAt = DateTime.UtcNow;
         }
     }
 }
