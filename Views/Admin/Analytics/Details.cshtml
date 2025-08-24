@@ -3,10 +3,11 @@
 @{
     ViewData["Title"] = $"Análisis de {Model.PlantName}";
     Layout = "_AdminLayout";
+    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Contenedor para el gráfico para controlar su tamaño y la responsividad */
@@ -36,13 +37,14 @@
     <form asp-action="Details" asp-route-id="@Model.PlantId" method="get">
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label fw-bold">Fecha Inicio</label>
-                <input type="date" name="startDate" class="form-control"
-                       value="@Model.StartDate.ToString("yyyy-MM-dd")"/>
+                <label class="form-label fw-bold">Desde</label>
+                <input type="date" name="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")"
+                       max="@maxDate"/>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold">Fecha Fin</label>
-                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"/>
+                <label class="form-label fw-bold">Hasta</label>
+                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"
+                       max="@maxDate"/>
             </div>
             <div class="col-md-4">
                 <button type="submit" class="btn btn-primary w-100">
@@ -92,11 +94,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo seleccionado.</p>
+                    <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo
+                        seleccionado.</p>
 
                     <input type="hidden" name="plantId" value="@Model.PlantId"/>
-                    <input type="hidden" name="startDate" value="@Model.StartDate.ToString("o")"/>
-                    <input type="hidden" name="endDate" value="@Model.EndDate.ToString("o")"/>
+                    <input type="date" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")"/>
+                    <input type="date" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")"/>
 
                     <div class="mb-3">
                         <label for="recipientEmail" class="form-label">Correo Electrónico del Destinatario</label>
@@ -117,13 +120,14 @@
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- Gráfico CWSI ---
             const cwsiData = JSON.parse('@Html.Raw(Model.CwsiChartDataJson)');
-            
+
             // Se añaden datasets "dummy" para que las líneas de estrés aparezcan en la leyenda interactiva.
             cwsiData.datasets.push({
                 label: 'Estrés Incipiente',
@@ -151,18 +155,18 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false, // Mejora la visualización en diferentes tamaños
-                    scales: { y: { beginAtZero: true, max: 1 } },
+                    scales: {y: {beginAtZero: true, max: 1}},
                     plugins: {
-                        legend: { 
+                        legend: {
                             position: 'top',
                             // Lógica para ocultar las anotaciones al hacer clic en la leyenda
                             onClick: (e, legendItem, legend) => {
                                 const index = legendItem.datasetIndex;
                                 const ci = legend.chart;
-                                
+
                                 // Ocultar/mostrar el dataset principal (CWSI)
                                 if (index === 0) {
-                                     if (ci.isDatasetVisible(index)) {
+                                    if (ci.isDatasetVisible(index)) {
                                         ci.hide(index);
                                         legendItem.hidden = true;
                                     } else {
@@ -211,10 +215,10 @@
             new Chart(ctxTemp, {
                 type: 'line',
                 data: tempData,
-                options: { 
+                options: {
                     responsive: true,
                     maintainAspectRatio: false, // Mejora la visualización
-                    plugins: { legend: { position: 'top' } }
+                    plugins: {legend: {position: 'top'}}
                 }
             });
         });
