@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -59,6 +60,7 @@ public class DailyTasksService : BackgroundService
 
         // Incluimos tanto lecturas ambientales como capturas térmicas
         var plantsData = await dbContext.Plants
+            .Where(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED)
             .Include(p => p.EnvironmentalReadings
                 .Where(er => er.RecordedAtServer >= startTime && er.RecordedAtServer < endTime)
                 .OrderBy(er => er.RecordedAtServer))
@@ -110,8 +112,19 @@ public class DailyTasksService : BackgroundService
                     if (plant.Status != PlantStatus.UNKNOWN)
                     {
                         _logger.LogWarning("Anomalía detectada para la planta {PlantName}", plant.Name);
+                        var historyRecord = new PlantStatusHistory
+                        {
+                            PlantId = plant.Id,
+                            Status = PlantStatus.UNKNOWN,
+                            Observation = "Cambio de estado automático por detección de anomalía nocturna.",
+                            UserId = null,
+                            ChangedAt = DateTime.UtcNow
+                        };
+                        dbContext.PlantStatusHistories.Add(historyRecord);
+
                         plant.Status = PlantStatus.UNKNOWN;
                         dbContext.Update(plant);
+
                         await dbContext.SaveChangesAsync(token);
                         await alertTriggerService.TriggerAnomalyAlertAsync(plant.Id, plant.Name);
                     }
