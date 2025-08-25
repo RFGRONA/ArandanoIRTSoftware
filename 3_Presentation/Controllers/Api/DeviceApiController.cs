@@ -4,7 +4,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
-using Serilog.Context; 
+using Serilog.Context;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Api;
 
@@ -85,7 +85,7 @@ public class DeviceApiController : ControllerBase
     {
         var deviceContext = GetDeviceIdentityFromClaims();
         if (deviceContext == null) return Unauthorized();
-        
+
         using (LogContext.PushProperty("DeviceId", deviceContext.DeviceId))
         using (LogContext.PushProperty("PlantId", deviceContext.PlantId))
         using (LogContext.PushProperty("CropId", deviceContext.CropId))
@@ -94,23 +94,23 @@ public class DeviceApiController : ControllerBase
             {
                 "WARNING" => LogLevel.Warning,
                 "ERROR" => LogLevel.Error,
-                _ => LogLevel.Information, 
+                _ => LogLevel.Information,
             };
 
             _logger.Log(logLevel,
                 "Log recibido desde dispositivo: {DeviceLogMessage}",
                 logDto.LogMessage);
-            
+
             if (logDto.InternalDeviceTemperature.HasValue)
             {
                 using (LogContext.PushProperty("DeviceInternalTemp", logDto.InternalDeviceTemperature.Value))
                 {
-                     _logger.Log(logLevel, "Log recibido desde dispositivo: {DeviceLogMessage}", logDto.LogMessage);
+                    _logger.Log(logLevel, "Log recibido desde dispositivo: {DeviceLogMessage}", logDto.LogMessage);
                 }
             }
             else
             {
-                 _logger.Log(logLevel, "Log recibido desde dispositivo: {DeviceLogMessage}", logDto.LogMessage);
+                _logger.Log(logLevel, "Log recibido desde dispositivo: {DeviceLogMessage}", logDto.LogMessage);
             }
 
             return NoContent();
@@ -122,7 +122,7 @@ public class DeviceApiController : ControllerBase
     public async Task<IActionResult> SubmitAmbientData([FromBody] AmbientDataDto ambientDataDto)
     {
         if (!ModelState.IsValid) return BadRequest("Payload de datos ambientales inválido.");
-        
+
         var deviceContext = GetDeviceIdentityFromClaims();
         if (deviceContext == null) return Unauthorized();
 
@@ -189,7 +189,7 @@ public class DeviceApiController : ControllerBase
             return StatusCode(500, new { message = "Failed to save thermal data.", error = result.ErrorMessage });
         }
     }
-    
+
     private DeviceIdentityContext? GetDeviceIdentityFromClaims()
     {
         var deviceIdClaim = User.FindFirstValue("DeviceId");

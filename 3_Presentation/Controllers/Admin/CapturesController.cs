@@ -75,7 +75,7 @@ public class CapturesController : Controller
         var availableDevices = new List<SelectListItem>();
         if (devicesResult.IsSuccess)
             availableDevices = devicesResult.Value.Select(d => new SelectListItem
-                    { Value = d.Id.ToString(), Text = d.Name, Selected = d.Id == filters.DeviceId })
+            { Value = d.Id.ToString(), Text = d.Name, Selected = d.Id == filters.DeviceId })
                 .OrderBy(t => t.Text)
                 .ToList();
         availableDevices.Insert(0,
@@ -86,7 +86,7 @@ public class CapturesController : Controller
         var availablePlants = new List<SelectListItem>();
         if (plantsResult.IsSuccess)
             availablePlants = plantsResult.Value.Select(p => new SelectListItem
-                    { Value = p.Id.ToString(), Text = $"{p.Name} ({p.CropName})", Selected = p.Id == filters.PlantId })
+            { Value = p.Id.ToString(), Text = $"{p.Name} ({p.CropName})", Selected = p.Id == filters.PlantId })
                 .OrderBy(t => t.Text).ToList();
         availablePlants.Insert(0,
             new SelectListItem { Value = "", Text = "Todas las Plantas", Selected = !filters.PlantId.HasValue });
@@ -96,7 +96,7 @@ public class CapturesController : Controller
         var availableCrops = new List<SelectListItem>();
         if (cropsResult.IsSuccess)
             availableCrops = cropsResult.Value.Select(c => new SelectListItem
-                    { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == filters.CropId }).OrderBy(t => t.Text)
+            { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == filters.CropId }).OrderBy(t => t.Text)
                 .ToList();
         availableCrops.Insert(0,
             new SelectListItem { Value = "", Text = "Todos los Cultivos", Selected = !filters.CropId.HasValue });

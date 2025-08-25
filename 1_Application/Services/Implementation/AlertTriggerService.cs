@@ -120,111 +120,111 @@ public class AlertTriggerService : IAlertTriggerService
 
 
     public async Task SendGroupedAlertSummaryAsync(string alertType, AlertGroupState group)
+    {
+        // 1. Obtenemos la lista de administradores que deben ser notificados para este tipo de alerta
+        List<User> recipients;
+        string title;
+
+        switch (alertType)
         {
-            // 1. Obtenemos la lista de administradores que deben ser notificados para este tipo de alerta
-            List<User> recipients;
-            string title;
+            case "device_failure":
+                recipients = await _userService.GetAdminsToNotifyAsync(s => s.EmailOnDeviceFailureAlert);
+                title = "Resumen de Alertas: Fallo de Dispositivos";
+                break;
+            case "application_failure":
+                recipients = await _userService.GetAdminsToNotifyAsync(s => s.EmailOnAppFailureAlert);
+                title = "Resumen de Alertas: Fallo de Aplicación";
+                break;
+            default:
+                return; // Tipo no reconocido, no hacemos nada
+        }
 
-            switch (alertType)
+        if (!recipients.Any()) return;
+
+        // 2. Creamos el ViewModel con los textos en español
+        var viewModel = new GenericAlertViewModel
+        {
+            Title = title,
+            Message =
+                $"Se han detectado {group.Count} alerta(s) de '{group.Summary}' en la última hora. Por favor, revise los logs del sistema para más detalles.",
+            Severity = "Critico",
+            AlertTime = DateTime.UtcNow
+        };
+
+        // 3. Enviamos el correo a cada destinatario
+        foreach (var admin in recipients)
+            await _alertService.SendGenericAlertEmailAsync(admin.Email, admin.FirstName, viewModel);
+
+        _logger.LogInformation("Resumen de alertas para '{AlertType}' enviado a {RecipientCount} administradores.",
+            alertType, recipients.Count);
+    }
+
+    public async Task TriggerAnomalyAlertAsync(int plantId, string plantName)
+    {
+        var usersToNotify = await _userService.GetAllUsersAsync();
+        if (!usersToNotify.Any()) return;
+
+        foreach (var user in usersToNotify)
+        {
+            var viewModel = new AnomalyAlertViewModel
             {
-                case "device_failure":
-                    recipients = await _userService.GetAdminsToNotifyAsync(s => s.EmailOnDeviceFailureAlert);
-                    title = "Resumen de Alertas: Fallo de Dispositivos";
-                    break;
-                case "application_failure":
-                    recipients = await _userService.GetAdminsToNotifyAsync(s => s.EmailOnAppFailureAlert);
-                    title = "Resumen de Alertas: Fallo de Aplicación";
-                    break;
-                default:
-                    return; // Tipo no reconocido, no hacemos nada
-            }
-
-            if (!recipients.Any()) return;
-
-            // 2. Creamos el ViewModel con los textos en español
-            var viewModel = new GenericAlertViewModel
-            {
-                Title = title,
-                Message =
-                    $"Se han detectado {group.Count} alerta(s) de '{group.Summary}' en la última hora. Por favor, revise los logs del sistema para más detalles.",
-                Severity = "Critico",
+                UserName = user.FirstName,
+                PlantName = plantName,
+                PlantId = plantId,
                 AlertTime = DateTime.UtcNow
             };
-
-            // 3. Enviamos el correo a cada destinatario
-            foreach (var admin in recipients)
-                await _alertService.SendGenericAlertEmailAsync(admin.Email, admin.FirstName, viewModel);
-
-            _logger.LogInformation("Resumen de alertas para '{AlertType}' enviado a {RecipientCount} administradores.",
-                alertType, recipients.Count);
+            await _alertService.SendAnomalyAlertEmailAsync(user.Email, viewModel);
         }
 
-        public async Task TriggerAnomalyAlertAsync(int plantId, string plantName)
-        {
-            var usersToNotify = await _userService.GetAllUsersAsync();
-            if (!usersToNotify.Any()) return;
-
-            foreach (var user in usersToNotify)
-            {
-                var viewModel = new AnomalyAlertViewModel
-                {
-                    UserName = user.FirstName,
-                    PlantName = plantName,
-                    PlantId = plantId,
-                    AlertTime = DateTime.UtcNow
-                };
-                await _alertService.SendAnomalyAlertEmailAsync(user.Email, viewModel);
-            }
-
-            _logger.LogWarning("Alerta de comportamiento anómalo enviada para la planta {PlantName}", plantName);
-        }
-
-        public async Task TriggerMaskCreationAlertAsync(List<string> plantNames)
-        {
-            if (!plantNames.Any()) return;
-
-            var usersToNotify = await _userService.GetAllUsersAsync();
-            if (!usersToNotify.Any()) return;
-
-            foreach (var user in usersToNotify)
-            {
-                var viewModel = new MaskCreationAlertViewModel
-                {
-                    UserName = user.FirstName,
-                    PlantNames = plantNames
-                };
-                await _alertService.SendMaskCreationAlertEmailAsync(user.Email, viewModel);
-            }
-
-            _logger.LogInformation("Alerta de creación de máscara enviada para {Count} plantas.", plantNames.Count);
-        }
-
-        public async Task TriggerStressAlertAsync(int plantId, string plantName, PlantStatus newStatus,
-            PlantStatus previousStatus, float cwsiValue)
-        {
-            var usersToNotify = await _userService.GetAllUsersAsync();
-            if (!usersToNotify.Any()) return;
-
-            // Construir la URL una sola vez
-            var baseUrl = _configuration["BaseUrl"]; // Asegúrate de tener "BaseUrl" en appsettings.json
-            var analysisUrl = $"{baseUrl}/Admin/Analytics/Details/{plantId}";
-
-            foreach (var user in usersToNotify)
-            {
-                var viewModel = new StressAlertViewModel
-                {
-                    UserName = user.FirstName,
-                    PlantName = plantName,
-                    NewStatus = newStatus.ToString().Replace("_", " "),
-                    PreviousStatus = previousStatus.ToString().Replace("_", " "),
-                    CwsiValue = cwsiValue,
-                    CtaButtonUrl = analysisUrl
-                };
-                await _alertService.SendStressAlertEmailAsync(user.Email, viewModel);
-            }
-
-            _logger.LogInformation(
-                "Disparando alerta de cambio de estado para la planta {PlantName}. Nuevo estado: {NewStatus}",
-                plantName, newStatus);
-        }
+        _logger.LogWarning("Alerta de comportamiento anómalo enviada para la planta {PlantName}", plantName);
     }
+
+    public async Task TriggerMaskCreationAlertAsync(List<string> plantNames)
+    {
+        if (!plantNames.Any()) return;
+
+        var usersToNotify = await _userService.GetAllUsersAsync();
+        if (!usersToNotify.Any()) return;
+
+        foreach (var user in usersToNotify)
+        {
+            var viewModel = new MaskCreationAlertViewModel
+            {
+                UserName = user.FirstName,
+                PlantNames = plantNames
+            };
+            await _alertService.SendMaskCreationAlertEmailAsync(user.Email, viewModel);
+        }
+
+        _logger.LogInformation("Alerta de creación de máscara enviada para {Count} plantas.", plantNames.Count);
+    }
+
+    public async Task TriggerStressAlertAsync(int plantId, string plantName, PlantStatus newStatus,
+        PlantStatus previousStatus, float cwsiValue)
+    {
+        var usersToNotify = await _userService.GetAllUsersAsync();
+        if (!usersToNotify.Any()) return;
+
+        // Construir la URL una sola vez
+        var baseUrl = _configuration["BaseUrl"]; // Asegúrate de tener "BaseUrl" en appsettings.json
+        var analysisUrl = $"{baseUrl}/Admin/Analytics/Details/{plantId}";
+
+        foreach (var user in usersToNotify)
+        {
+            var viewModel = new StressAlertViewModel
+            {
+                UserName = user.FirstName,
+                PlantName = plantName,
+                NewStatus = newStatus.ToString().Replace("_", " "),
+                PreviousStatus = previousStatus.ToString().Replace("_", " "),
+                CwsiValue = cwsiValue,
+                CtaButtonUrl = analysisUrl
+            };
+            await _alertService.SendStressAlertEmailAsync(user.Email, viewModel);
+        }
+
+        _logger.LogInformation(
+            "Disparando alerta de cambio de estado para la planta {PlantName}. Nuevo estado: {NewStatus}",
+            plantName, newStatus);
+    }
+}

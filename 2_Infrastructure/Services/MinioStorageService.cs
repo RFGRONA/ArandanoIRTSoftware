@@ -38,7 +38,7 @@ public class MinioStorageService : IFileStorageService
             var bucketExistsArgs = new BucketExistsArgs().WithBucket(containerName);
             _logger.LogDebug("Verificando existencia del bucket {BucketName}...", containerName);
             bool found = await _minioClient.BucketExistsAsync(bucketExistsArgs);
-            
+
             if (!found)
             {
                 _logger.LogInformation("El bucket {BucketName} no existe. Se procederá a crearlo.", containerName);
@@ -71,9 +71,9 @@ public class MinioStorageService : IFileStorageService
                 .WithContentType(file.ContentType);
 
             await _minioClient.PutObjectAsync(putObjectArgs);
-            
+
             string publicUrl = $"{_settings.PublicUrlBase.TrimEnd('/')}/{containerName}/{fileName}";
-            
+
             _logger.LogInformation("Archivo {FileName} ({FileSizeInBytes} bytes) subido exitosamente al bucket {BucketName}.", fileName, file.Length, containerName);
 
             return Result.Success(publicUrl);

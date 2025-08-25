@@ -74,7 +74,7 @@ public class AmbientDataController : Controller
         var devicesResult = await _deviceAdminService.GetAllDevicesAsync();
         ViewBag.AvailableDevices = devicesResult.IsSuccess && devicesResult.Value != null
             ? devicesResult.Value.Select(d => new SelectListItem
-                    { Value = d.Id.ToString(), Text = d.Name, Selected = d.Id == filters.DeviceId })
+            { Value = d.Id.ToString(), Text = d.Name, Selected = d.Id == filters.DeviceId })
                 .OrderBy(t => t.Text)
                 .ToList()
             : new List<SelectListItem> { new("Sin dispositivos", "") };
@@ -84,7 +84,7 @@ public class AmbientDataController : Controller
         var plantsResult = await _plantService.GetAllPlantsAsync();
         ViewBag.AvailablePlants = plantsResult.IsSuccess && plantsResult.Value != null
             ? plantsResult.Value.Select(p => new SelectListItem
-                    { Value = p.Id.ToString(), Text = $"{p.Name} ({p.CropName})", Selected = p.Id == filters.PlantId })
+            { Value = p.Id.ToString(), Text = $"{p.Name} ({p.CropName})", Selected = p.Id == filters.PlantId })
                 .OrderBy(t => t.Text).ToList()
             : new List<SelectListItem> { new("Sin plantas", "") };
         ((List<SelectListItem>)ViewBag.AvailablePlants).Insert(0,
@@ -93,7 +93,7 @@ public class AmbientDataController : Controller
         var cropsResult = await _cropService.GetAllCropsAsync();
         ViewBag.AvailableCrops = cropsResult.IsSuccess && cropsResult.Value != null
             ? cropsResult.Value.Select(c => new SelectListItem
-                    { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == filters.CropId }).OrderBy(t => t.Text)
+            { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == filters.CropId }).OrderBy(t => t.Text)
                 .ToList()
             : new List<SelectListItem> { new("Sin cultivos", "") };
         ((List<SelectListItem>)ViewBag.AvailableCrops).Insert(0,

@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using ArandanoIRT.Web._3_Presentation.ViewModels; 
+using ArandanoIRT.Web._3_Presentation.ViewModels;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Authorization; 
+using Microsoft.AspNetCore.Authorization;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers;
 
-[AllowAnonymous] 
+[AllowAnonymous]
 [ApiExplorerSettings(IgnoreApi = true)]
 public class ErrorController : Controller
 {
@@ -17,7 +17,7 @@ public class ErrorController : Controller
         _logger = logger;
     }
 
-    [Route("/Error")] 
+    [Route("/Error")]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Index(int? statusCode = null)
     {
