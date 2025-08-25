@@ -8,4 +8,5 @@ public class PlantMonitorViewModel
     public string Name { get; set; }
     public PlantStatus Status { get; set; }
     public bool HasMask { get; set; }
+    public ExperimentalGroupType ExperimentalGroup { get; set; }
 }

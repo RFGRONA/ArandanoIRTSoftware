@@ -5,7 +5,6 @@
 @{
     ViewData["Title"] = "Monitor de Cultivo y Analíticas";
     Layout = "_AdminLayout";
-    
     string GetStatusClass(PlantStatus status) => status switch
     {
         PlantStatus.OPTIMAL => "status-optimal",
@@ -41,66 +40,91 @@
 
 @foreach (var crop in Model)
 {
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Cultivo: @crop.Name</h3>
+    <div class="card table-card mb-4">
+        <div class="card-header bg-white py-3">
+            <h3 class="mb-0">Cultivo: @crop.Name</h3>
         </div>
-        <div class="card-body">
-            @if (!crop.IsConfigurationValid)
+        <div class="card-body p-4">
+            
+            <h6 class="text-muted text-uppercase small mb-3">Requisitos para el Análisis</h6>
+            <div class="readiness-container">
+                @{
+                    var readiness = crop.AnalysisReadiness;
+                    void RenderRequirement(bool isValid, string text)
+                    {
+                        <div class="readiness-item">
+                            <i class="icon fas @(isValid ? "fa-check-circle" : "fa-times-circle") @(isValid ? "valid" : "invalid")"></i>
+                            <span>@text</span>
+                        </div>
+                    }
+
+                    RenderRequirement(readiness.HasControlGroup, "Grupo 'Control' definido");
+                    RenderRequirement(readiness.HasStressGroup, "Grupo 'Estrés' definido");
+                    RenderRequirement(readiness.HasMonitoredGroup, "Grupo 'Monitoreado' definido");
+                    RenderRequirement(readiness.HasControlWithMask, "Máscara en 'Control'");
+                    RenderRequirement(readiness.HasStressWithMask, "Máscara en 'Estrés'");
+                }
+            </div>
+            
+            @if (crop.Plants.Any())
             {
-                <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>@crop.ValidationMessage</strong>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr class="text-center text-no-wrap">
+                                <th >Planta (Grupo)</th>
+                                <th >Estado Actual</th>
+                                <th >Máscara Térmica</th>
+                                <th >Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var plant in crop.Plants)
+                            {
+                                <tr>
+                                    <td class="fw-bold">
+                                        @plant.Name
+                                        <small class="d-block fw-normal text-muted">@plant.ExperimentalGroup.GetDisplayName()</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="status-badge @GetStatusClass(plant.Status)">
+                                            @plant.Status.GetDisplayName()
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (plant.HasMask)
+                                        {
+                                            <i class="fas fa-check-circle text-success fs-5" title="Definida"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times-circle text-danger fs-5" title="No Definida"></i>
+                                        }
+
+                                    <td class="text-center">
+                                        <a asp-action="Details" asp-route-id="@plant.Id"
+                                           class="btn btn-primary btn-sm @(plant.ExperimentalGroup != ExperimentalGroupType.MONITORED || !crop.AnalysisReadiness.IsReady || !plant.HasMask ? "disabled" : "")"
+                                           title="Analizar">
+                                            <i class="fas fa-chart-line"></i> Analizar
+                                        </a>
+                                        <a asp-action="CreateMask" asp-route-id="@plant.Id"
+                                           class="btn btn-outline-secondary btn-sm"
+                                           title="Crear o Editar Máscara">
+                                            <i class="fas fa-draw-polygon"></i> Máscara
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
-
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Planta</th>
-                            <th>Estado Actual</th>
-                            <th>Máscara Térmica</th>
-                            <th style="width: 25%;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var plant in crop.Plants)
-                        {
-                            <tr>
-                                <td>@plant.Name</td>
-                                <td>
-                                    <span class="status-badge @GetStatusClass(plant.Status)">
-                                        @plant.Status.GetDisplayName()
-                                    </span>
-                                </td>
-                                <td>
-                                    @if (plant.HasMask)
-                                    {
-                                        <i class="fas fa-check-circle text-success" title="Definida"></i>
-                                    }
-                                    else
-                                    {
-                                        <i class="fas fa-times-circle text-danger" title="No Definida"></i>
-                                    }
-                                </td>
-                                <td>
-                                    <a asp-action="Details" asp-route-id="@plant.Id" 
-                                       class="btn btn-primary btn-sm @(!crop.IsConfigurationValid || !plant.HasMask ? "disabled" : "")"
-                                       title="Analizar">
-                                        <i class="fas fa-chart-line"></i> Analizar
-                                    </a>
-                                    <a asp-action="CreateMask" asp-route-id="@plant.Id" 
-                                       class="btn btn-secondary btn-sm"
-                                       title="Crear o Editar Máscara">
-                                        <i class="fas fa-draw-polygon"></i> Máscara
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            else
+            {
+                <div class="alert alert-secondary text-center mt-4">
+                    Este cultivo aún no tiene plantas registradas.
+                </div>
+            }
         </div>
     </div>
 }

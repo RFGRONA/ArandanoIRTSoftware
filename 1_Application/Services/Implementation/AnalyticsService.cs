@@ -50,61 +50,61 @@ public class AnalyticsService : IAnalyticsService
     }
 
     public async Task<Result<List<CropMonitorViewModel>>> GetCropsForMonitoringAsync()
+{
+    try
     {
-        try
+        var crops = await _context.Crops
+            .AsNoTracking()
+            .Include(c => c.Plants)
+            .ToListAsync();
+
+        var resultList = new List<CropMonitorViewModel>();
+
+        foreach (var crop in crops)
         {
-            var crops = await _context.Crops
-                .AsNoTracking()
-                .Include(c => c.Plants)
-                .ToListAsync();
-
-            var resultList = new List<CropMonitorViewModel>();
-
-            foreach (var crop in crops)
+            var cropViewModel = new CropMonitorViewModel
             {
-                var cropViewModel = new CropMonitorViewModel
+                Id = crop.Id,
+                Name = crop.Name
+            };
+
+            // 1. Separar las plantas por grupo
+            var controlPlants = crop.Plants.Where(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL).ToList();
+            var stressPlants = crop.Plants.Where(p => p.ExperimentalGroup == ExperimentalGroupType.STRESS).ToList();
+            var monitoredPlants = crop.Plants.Where(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED).ToList();
+
+            // 2. Verificar cada una de las condiciones
+            cropViewModel.AnalysisReadiness.HasControlGroup = controlPlants.Any();
+            cropViewModel.AnalysisReadiness.HasStressGroup = stressPlants.Any();
+            cropViewModel.AnalysisReadiness.HasMonitoredGroup = monitoredPlants.Any();
+            
+            // 3. Verificar si los grupos requeridos tienen al menos una máscara
+            cropViewModel.AnalysisReadiness.HasControlWithMask = controlPlants.Any(p => !string.IsNullOrEmpty(p.ThermalMaskData));
+            cropViewModel.AnalysisReadiness.HasStressWithMask = stressPlants.Any(p => !string.IsNullOrEmpty(p.ThermalMaskData));
+
+            foreach (var plant in crop.Plants)
+            {
+                cropViewModel.Plants.Add(new PlantMonitorViewModel
                 {
-                    Id = crop.Id,
-                    Name = crop.Name
-                };
-
-                // Lógica de validación
-                var hasControl = crop.Plants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL);
-                var hasStress = crop.Plants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.STRESS);
-                var hasMonitored = crop.Plants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED);
-
-                if (hasControl && hasStress && hasMonitored)
-                {
-                    cropViewModel.IsConfigurationValid = true;
-                    cropViewModel.ValidationMessage = "Configuración correcta para el análisis.";
-                }
-                else
-                {
-                    cropViewModel.IsConfigurationValid = false;
-                    cropViewModel.ValidationMessage =
-                        "Configuración Incompleta: Se requiere al menos una planta de tipo 'Control', 'Stress' y 'Monitored' para activar el análisis.";
-                }
-
-                foreach (var plant in crop.Plants)
-                    cropViewModel.Plants.Add(new PlantMonitorViewModel
-                    {
-                        Id = plant.Id,
-                        Name = plant.Name,
-                        Status = plant.Status,
-                        HasMask = !string.IsNullOrEmpty(plant.ThermalMaskData)
-                    });
-
-                resultList.Add(cropViewModel);
+                    Id = plant.Id,
+                    Name = plant.Name,
+                    Status = plant.Status,
+                    HasMask = !string.IsNullOrEmpty(plant.ThermalMaskData),
+                    ExperimentalGroup = plant.ExperimentalGroup
+                });
             }
 
-            return Result.Success(resultList);
+            resultList.Add(cropViewModel);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al obtener los cultivos para el monitoreo.");
-            return Result.Failure<List<CropMonitorViewModel>>("Error interno al preparar los datos de monitoreo.");
-        }
+
+        return Result.Success(resultList);
     }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error al obtener los cultivos para el monitoreo.");
+        return Result.Failure<List<CropMonitorViewModel>>("Error interno al preparar los datos de monitoreo.");
+    }
+}
 
     public async Task<Result<AnalysisDetailsViewModel>> GetAnalysisDetailsAsync(int plantId, DateTime? startDate,
         DateTime? endDate)
