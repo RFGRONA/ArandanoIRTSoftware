@@ -41,20 +41,16 @@ public class PlantStatusController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    // RECOMENDACIÓN: Activa la autorización para asegurar que solo usuarios logueados lleguen aquí.
-    // [Authorize(Roles = "Admin")] 
     public async Task<IActionResult> Change(PlantStatusUpdateDto model)
     {
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
+        if (!ModelState.IsValid) return View(model);
 
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrEmpty(userIdString))
         {
-            ModelState.AddModelError("", "No se pudo identificar al usuario. Por favor, asegúrese de haber iniciado sesión.");
+            ModelState.AddModelError("",
+                "No se pudo identificar al usuario. Por favor, asegúrese de haber iniciado sesión.");
             return View(model);
         }
 
@@ -64,7 +60,8 @@ public class PlantStatusController : Controller
             return View(model);
         }
 
-        var result = await _plantService.UpdatePlantStatusAsync(model.PlantId, model.NewStatus, model.Observation, userId);
+        var result =
+            await _plantService.UpdatePlantStatusAsync(model.PlantId, model.NewStatus, model.Observation, userId);
 
         if (result.IsSuccess)
         {
@@ -79,6 +76,17 @@ public class PlantStatusController : Controller
     // GET: /Admin/PlantStatus/History
     public async Task<IActionResult> History(int? plantId, int? userId, DateTime? startDate, DateTime? endDate)
     {
+        if (!startDate.HasValue || !endDate.HasValue)
+        {
+            endDate = DateTime.Now;
+            startDate = endDate.Value.AddDays(-7);
+        }
+
+        if (startDate > endDate) (startDate, endDate) = (endDate, startDate);
+
+        ViewBag.StartDate = startDate;
+        ViewBag.EndDate = endDate;
+
         var utcStartDate = startDate?.ToSafeUniversalTime();
         var utcEndDate = endDate?.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 

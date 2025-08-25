@@ -9,7 +9,7 @@
     --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     --border-radius: 0.75rem;
     --success-color: #5D3EBF;
-    --info-color: #0dcaf0;
+    --info-color: #198754;
 }
 
 /* --- Encabezado de Página --- */
@@ -89,8 +89,8 @@
 .btn-primary:hover { background-color: #4a319a; border-color: #4a319a; }
 .btn-success { background-color: var(--success-color); border-color: var(--success-color); }
 .btn-success:hover { background-color: #3c0daa; border-color: #000000; }
-.btn-info { background-color: var(--info-color); border-color: var(--info-color); color: #000; }
-.btn-info:hover { background-color: #17afce; border-color: #000000; }
+.btn-info { background-color: var(--info-color); border-color: var(--info-color); color: #f8f9fa; }
+.btn-info:hover { background-color: #156841; border-color: #000000; color: #f8f9fa; }
 
 .btn-secondary-outline {
     background-color: transparent;

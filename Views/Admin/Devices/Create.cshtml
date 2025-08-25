@@ -29,25 +29,37 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
                     <div class="mb-3">
-                        <label asp-for="Name" class="form-label">Nombre del Dispositivo</label>
+                        <label asp-for="Name" class="form-label">
+                            Nombre del Dispositivo
+                            <span class="tooltip-icon" data-tooltip="Dale un nombre descriptivo al dispositivo para identificarlo fácilmente (ej. 'Sensor Fila C').">?</span>
+                        </label>
                         <input asp-for="Name" class="form-control" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="MacAddress" class="form-label">Dirección MAC (Opcional)</label>
+                        <label asp-for="MacAddress" class="form-label">
+                            Dirección MAC (Opcional)
+                            <span class="tooltip-icon" data-tooltip="Introduce la dirección MAC del dispositivo si la tienes. Este campo es opcional pero ayuda a una identificación única.">?</span>
+                        </label>
                         <input asp-for="MacAddress" class="form-control" />
                         <span asp-validation-for="MacAddress" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Description" class="form-label">Descripción</label>
+                        <label asp-for="Description" class="form-label">
+                            Descripción
+                            <span class="tooltip-icon" data-tooltip="Añade una descripción o notas adicionales sobre el dispositivo, como su ubicación exacta o características especiales.">?</span>
+                        </label>
                         <textarea asp-for="Description" class="form-control auto-grow" rows="3"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="PlantId" class="form-label">Planta Asignada</label>
+                        <label asp-for="PlantId" class="form-label">
+                            Planta Asignada
+                            <span class="tooltip-icon" data-tooltip="Asocia este dispositivo a una planta específica. Los datos que recoja se vincularán directamente a ella.">?</span>
+                        </label>
                         <select asp-for="PlantId" class="form-select" asp-items="Model.AvailablePlants">
                             <option value="">-- Seleccione una Planta --</option>
                         </select>
@@ -55,7 +67,10 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="DataCollectionIntervalMinutes" class="form-label">Intervalo de Recolección de Datos (minutos)</label>
+                        <label asp-for="DataCollectionIntervalMinutes" class="form-label">
+                            Intervalo de Recolección de Datos (minutos)
+                             <span class="tooltip-icon" data-tooltip="Define cada cuántos minutos el dispositivo debe tomar y enviar datos. Un intervalo más corto ofrece más detalle pero consume más recursos.">?</span>
+                        </label>
                         <input asp-for="DataCollectionIntervalMinutes" type="number" class="form-control" />
                         <span asp-validation-for="DataCollectionIntervalMinutes" class="text-danger"></span>
                     </div>

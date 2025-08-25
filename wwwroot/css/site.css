@@ -1,10 +1,10 @@
 :root {
     --sidebar-width: 250px;
     --sidebar-bg: #111827;
-    --sidebar-text-color: #9ca3af;
+    --sidebar-text-color: #9ea4ae;
     --sidebar-text-hover: #ffffff;
     --sidebar-active-bg: #4b5563;
-    --content-bg: #f9fafb;
+    --content-bg: #fbf9fb;
 }
 
 /* El cuerpo ahora ocupa toda la ventana y no permite scroll */

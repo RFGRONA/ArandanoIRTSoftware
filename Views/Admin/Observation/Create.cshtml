@@ -26,7 +26,10 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                     <div class="mb-4">
-                        <label asp-for="PlantId" class="form-label">Planta Observada</label>
+                        <label asp-for="PlantId" class="form-label">
+                            Planta Observada
+                            <span class="tooltip-icon" data-tooltip="Seleccione la planta específica sobre la cual está registrando esta observación.">?</span>
+                        </label>
                         <select asp-for="PlantId" class="form-select" asp-items="Model.AvailablePlants">
                             <option value="">-- Seleccione una Planta --</option>
                         </select>
@@ -34,13 +37,19 @@
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Description" class="form-label">Descripción</label>
+                        <label asp-for="Description" class="form-label">
+                            Descripción
+                            <span class="tooltip-icon" data-tooltip="Detalle aquí sus hallazgos, como cambios en el color de las hojas, presencia de plagas, estado general, o cualquier otro dato relevante.">?</span>
+                        </label>
                         <textarea asp-for="Description" class="form-control auto-grow" rows="6" placeholder="Describe lo que observaste..."></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="SubjectiveRating" class="form-label d-block text-center mb-3">Calificación Subjetiva</label>
+                        <label asp-for="SubjectiveRating" class="form-label d-block text-center mb-3">
+                            Calificación Subjetiva
+                            <span class="tooltip-icon" data-tooltip="Evalúe el estado general de la planta en una escala simple: Mala, Regular o Buena. Esta es su percepción visual.">?</span>
+                        </label>
                         <div class="rating-selector">
                             <input type="radio" asp-for="SubjectiveRating" id="rating-mala" value="1" />
                             <label for="rating-mala">
@@ -83,7 +92,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                ¿Estás seguro de que quieres guardar esta observación?
+                ¿Esta seguro de que quieres guardar esta observación?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancelar</button>

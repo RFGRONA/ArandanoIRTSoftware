@@ -1,4 +1,5 @@
 @using ArandanoIRT.Web._0_Domain.Common
+@using ArandanoIRT.Web._0_Domain.Enums
 @model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Device.DeviceSummaryDto>
 @{
     ViewData["Title"] = "Gestión de Dispositivos";
@@ -43,21 +44,44 @@
                 {
                     <tr>
                         <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                        <td>@(item.PlantName ?? "No asignada")</td>
+                        <td>@(item.PlantName ?? "No asignada")</td> 
                         <td>@(item.CropName ?? "No asignado")</td>
                         <td>
                             @{
-                                var statusClass = "status-inactive";
-                                if (string.Equals(item.DeviceStatus.ToString(), "Activo", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-active"; }
-                                else if (string.Equals(item.DeviceStatus.ToString(), "Error", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-error"; }
+                                var statusClass = "";
+                                switch (item.DeviceStatus)
+                                {
+                                    case DeviceStatus.ACTIVE:
+                                        statusClass = "status-active";
+                                        break;
+                                    case DeviceStatus.INACTIVE:
+                                        statusClass = "status-inactive";
+                                        break;
+                                    case DeviceStatus.PENDING_ACTIVATION:
+                                        statusClass = "status-pending";
+                                        break;
+                                    case DeviceStatus.MAINTENANCE:
+                                        statusClass = "status-maintenance";
+                                        break;
+                                }
                             }
                             <span class="status-badge @statusClass">@item.DeviceStatus.GetDisplayName()</span>
                         </td>
                         <td>
                              @{
-                                var activationClass = "status-inactive";
-                                if (string.Equals(item.ActivationStatus.ToString(), "Activado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-active"; }
-                                else if (string.Equals(item.ActivationStatus.ToString(), "No Asignado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-unassigned"; }
+                                var activationClass = "";
+                                switch (item.ActivationStatus)
+                                {
+                                    case ActivationStatus.COMPLETED:
+                                        activationClass = "status-completed";
+                                        break;
+                                    case ActivationStatus.PENDING:
+                                        activationClass = "status-pending";
+                                        break;
+                                    case ActivationStatus.EXPIRED:
+                                        activationClass = "status-expired";
+                                        break;
+                                }
                             }
                             <span class="status-badge @activationClass">@item.ActivationStatus.GetDisplayName()</span>
                         </td>
@@ -65,13 +89,13 @@
                         <td>
                             <div class="action-buttons">
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action edit" title="Editar">
-                                    <i class="fas fa-pencil-alt"></i>
+                                    <i class="fas fa-pencil-alt"></i> 
                                 </a>
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn-action details" title="Detalles">
-                                    <i class="fas fa-info-circle"></i>
+                                    <i class="fas fa-info-circle"></i> 
                                 </a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action delete" title="Eliminar">
-                                    <i class="fas fa-trash-alt"></i>
+                                    <i class="fas fa-trash-alt"></i> 
                                 </a>
                             </div>
                         </td>
@@ -81,7 +105,7 @@
             else
             {
                 <tr>
-                    <td colspan="7" class="text-center py-4">No hay dispositivos registrados.</td>
+                    <td colspan="7" class="text-center py-4">No hay dispositivos registrados.</td> 
                 </tr>
             }
             </tbody>

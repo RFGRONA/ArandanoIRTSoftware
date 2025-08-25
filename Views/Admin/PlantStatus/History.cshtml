@@ -5,11 +5,14 @@
 @{
     ViewData["Title"] = "Historial de Estados de Plantas";
     Layout = "_AdminLayout";
+    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
+    var startDateValue = ViewBag.StartDate?.ToString("yyyy-MM-dd");
+    var endDateValue = ViewBag.EndDate?.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
-     <link rel="stylesheet" href="~/css/plantStatus.css" asp-append-version="true" /> 
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="~/css/plantStatus.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
 <div class="page-header">
@@ -27,12 +30,12 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-bold">Fecha Inicio</label>
-                <input type="date" name="startDate" class="form-control"/>
+                <label class="form-label fw-bold">Desde</label>
+                <input type="date" name="startDate" class="form-control" value="@startDateValue" max="@maxDate"/>
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-bold">Fecha Fin</label>
-                <input type="date" name="endDate" class="form-control"/>
+                <label class="form-label fw-bold">Hasta</label>
+                <input type="date" name="endDate" class="form-control" value="@endDateValue" max="@maxDate"/>
             </div>
             <div class="col-md-3">
                 <button type="submit" class="btn btn-primary w-100">
@@ -47,13 +50,13 @@
     <div class="table-responsive">
         <table class="table">
             <thead>
-                <tr>
-                    <th>Fecha de Cambio</th>
-                    <th>Planta</th>
-                    <th>Estado</th>
-                    <th>Origen</th>
-                    <th>Observación</th>
-                </tr>
+            <tr>
+                <th>Fecha de Cambio</th>
+                <th>Planta</th>
+                <th>Estado</th>
+                <th>Origen</th>
+                <th>Observación</th>
+            </tr>
             </thead>
             <tbody>
             @if (Model != null && Model.Any())
@@ -84,7 +87,9 @@
             else
             {
                 <tr>
-                    <td colspan="5" class="text-center py-4">No hay registros en el historial que coincidan con los filtros.</td>
+                    <td colspan="5" class="text-center py-4">No hay registros en el historial que coincidan con los
+                        filtros.
+                    </td>
                 </tr>
             }
             </tbody>

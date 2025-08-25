@@ -1,33 +1,106 @@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._0_Domain.Entities.InvitationCode
 @{
+
     Layout = "_EmailLayout.cshtml";
     ViewData["Title"] = "Invitación para unirte a Arandano IRT";
 }
 
-<h1>¡Has sido invitado a Arandano IRT!</h1>
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f7f6;
+        margin: 0;
+        padding: 20px;
+    }
+    .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.07);
+        border: 1px solid #e9e9e9;
+    }
+    h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    p {
+        margin-bottom: 16px;
+        color: #555;
+    }
+    .code-box {
+        background-color: #ecf0f1;
+        border: 1px dashed #bdc3c7;
+        color: #2c3e50;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        padding: 20px;
+        margin: 24px 0;
+        border-radius: 8px;
+        letter-spacing: 3px;
+    }
+    .button-container {
+        text-align: center;
+        margin: 32px 0;
+    }
+    .button {
+        background-color: #3498db;
+        color: #ffffff !important; 
+        padding: 15px 30px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: bold;
+        display: inline-block;
+        transition: background-color 0.3s ease;
+    }
+    .button:hover {
+        background-color: #2980b9;
+    }
+    .footer {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e9e9e9;
+        font-size: 0.9em;
+        color: #7f8c8d;
+        text-align: center;
+    }
+</style>
 
-<p>Hola,</p>
+<div class="container">
+    <h1>¡Has sido invitado a Arandano IRT!</h1>
 
-<p>Has recibido una invitación para crear una cuenta en la plataforma de monitoreo Arandano IRT. Para completar tu registro, utiliza el siguiente código de un solo uso:</p>
+    <p>Hola,</p>
 
-<div class="code-box">
-    @Model.Code
+    <p>Has recibido una invitación para crear una cuenta en la plataforma de monitoreo Arandano IRT. Para completar tu registro, utiliza el siguiente código de un solo uso:</p>
+
+    <div class="code-box">
+        @Model.Code
+    </div>
+
+    <p>Este código expirará el <strong>@Model.ExpiresAt.ToColombiaTime().ToString("F")</strong>.</p>
+
+    <p>Para registrarte, haz clic en el botón de abajo y proporciona este código cuando se te solicite.</p>
+    
+    <div class="button-container">
+        @*
+          Este botón genera el enlace de registro directamente en la vista.
+          1. Usa Url.Action() para crear un enlace al método "Register" en "AccountController".
+          2. Pasa el código de invitación como parámetro en la URL.
+          3. 'protocol: Context.Request.Scheme' asegura que se genere una URL absoluta (https://...)
+             para que funcione correctamente desde el cliente de correo del usuario.
+        *@
+        <a href="@Url.Action("Register", "Account", new { code = Model.Code }, protocol: Context.Request.Scheme)" class="button">Crear mi Cuenta</a>
+    </div>
+
+    <!-- Pie de página -->
+    <div class="footer">
+        <p>Si no esperabas esta invitación, puedes ignorar este correo de forma segura.</p>
+        <p>Gracias,<br>El equipo de Arandano IRT</p>
+    </div>
 </div>
-
-<p>Este código expirará el <strong>@Model.ExpiresAt.ToColombiaTime().ToString("F")</strong>.</p>
-
-<p>Para registrarte, haz clic en el botón de abajo y proporciona este código cuando se te solicite.</p>
-
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
-    <tr>
-        <td align="center">
-            @* AQUI SE CAMBIARA PARA QUE SE PUEDA REGISTRAR UN USUARIO *@
-            <a href="@ViewData["RegistrationLink"]" class="button">Crear mi Cuenta</a>
-        </td>
-    </tr>
-</table>
-
-<p>Si no esperabas esta invitación, puedes ignorar este correo de forma segura.</p>
-
-<p>Gracias,<br>El equipo de Arandano IRT</p>

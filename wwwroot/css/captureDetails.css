@@ -174,3 +174,18 @@
         font-size: 40px; font-weight: bold; transition: 0.3s; cursor: pointer;
     }
 
+    div.col-12{
+        padding: 25px;
+        border:1px solid #e6d0f3;
+        border-radius: 15px;
+        box-shadow: #e6d0f3 0px 5px 15px;
+    }
+
+    div.col-lg-5.col-xl-4{
+        padding: 25px;
+        border:1px solid #e6d0f3;
+        border-radius: 15px;
+        margin-bottom: 10px;
+    }
+
+

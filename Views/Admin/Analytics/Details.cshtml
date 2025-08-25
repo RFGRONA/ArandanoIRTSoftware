@@ -3,11 +3,20 @@
 @{
     ViewData["Title"] = $"Análisis de {Model.PlantName}";
     Layout = "_AdminLayout";
+    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Contenedor para el gráfico para controlar su tamaño y la responsividad */
+        .chart-container {
+            position: relative;
+            height: 400px; /* Aqui se le da una altura fija para que tenga mas consistencia */
+            width: 100%;
+        }
+    </style>
 }
 
 <div class="page-header">
@@ -28,13 +37,14 @@
     <form asp-action="Details" asp-route-id="@Model.PlantId" method="get">
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label fw-bold">Fecha Inicio</label>
-                <input type="date" name="startDate" class="form-control"
-                       value="@Model.StartDate.ToString("yyyy-MM-dd")"/>
+                <label class="form-label fw-bold">Desde</label>
+                <input type="date" name="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")"
+                       max="@maxDate"/>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold">Fecha Fin</label>
-                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"/>
+                <label class="form-label fw-bold">Hasta</label>
+                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"
+                       max="@maxDate"/>
             </div>
             <div class="col-md-4">
                 <button type="submit" class="btn btn-primary w-100">
@@ -53,7 +63,9 @@
                 <h5 class="card-header-title">Evolución del Índice de Estrés Hídrico (CWSI)</h5>
             </div>
             <div class="card-body">
-                <canvas id="cwsiChart"></canvas>
+                <div class="chart-container">
+                    <canvas id="cwsiChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -64,7 +76,9 @@
                 <h5 class="card-header-title">Evolución de Temperaturas</h5>
             </div>
             <div class="card-body">
-                <canvas id="tempChart"></canvas>
+                <div class="chart-container">
+                    <canvas id="tempChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -80,11 +94,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo seleccionado.</p>
+                    <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo
+                        seleccionado.</p>
 
                     <input type="hidden" name="plantId" value="@Model.PlantId"/>
-                    <input type="hidden" name="startDate" value="@Model.StartDate.ToString("o")"/>
-                    <input type="hidden" name="endDate" value="@Model.EndDate.ToString("o")"/>
+                    <input type="date" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")"/>
+                    <input type="date" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")"/>
 
                     <div class="mb-3">
                         <label for="recipientEmail" class="form-label">Correo Electrónico del Destinatario</label>
@@ -105,40 +120,88 @@
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- Gráfico CWSI ---
             const cwsiData = JSON.parse('@Html.Raw(Model.CwsiChartDataJson)');
+
+            // Se añaden datasets "dummy" para que las líneas de estrés aparezcan en la leyenda interactiva.
+            cwsiData.datasets.push({
+                label: 'Estrés Incipiente',
+                data: [], // Sin datos, solo para la leyenda
+                borderColor: '#ffc107',
+                borderDash: [6, 6],
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0,
+            });
+            cwsiData.datasets.push({
+                label: 'Estrés Crítico',
+                data: [], // Sin datos, solo para la leyenda
+                borderColor: '#dc3545',
+                borderDash: [6, 6],
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0,
+            });
+
             const ctxCswi = document.getElementById('cwsiChart').getContext('2d');
-            new Chart(ctxCswi, {
+            const cwsiChart = new Chart(ctxCswi, {
                 type: 'line',
                 data: cwsiData,
                 options: {
                     responsive: true,
-                    scales: { y: { beginAtZero: true, max: 1 } },
+                    maintainAspectRatio: false, // Mejora la visualización en diferentes tamaños
+                    scales: {y: {beginAtZero: true, max: 1}},
                     plugins: {
-                        legend: { position: 'top' },
+                        legend: {
+                            position: 'top',
+                            // Lógica para ocultar las anotaciones al hacer clic en la leyenda
+                            onClick: (e, legendItem, legend) => {
+                                const index = legendItem.datasetIndex;
+                                const ci = legend.chart;
+
+                                // Ocultar/mostrar el dataset principal (CWSI)
+                                if (index === 0) {
+                                    if (ci.isDatasetVisible(index)) {
+                                        ci.hide(index);
+                                        legendItem.hidden = true;
+                                    } else {
+                                        ci.show(index);
+                                        legendItem.hidden = false;
+                                    }
+                                } else {
+                                    // Ocultar/mostrar las líneas de anotación
+                                    const annotationName = index === 1 ? 'incipientStressLine' : 'criticalStressLine';
+                                    const isVisible = ci.options.plugins.annotation.annotations[annotationName].display;
+                                    ci.options.plugins.annotation.annotations[annotationName].display = !isVisible;
+                                    legendItem.hidden = isVisible;
+                                    ci.update();
+                                }
+                            }
+                        },
                         annotation: {
                             annotations: {
                                 incipientStressLine: {
                                     type: 'line',
                                     yMin: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
                                     yMax: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
-                                    borderColor: '#ffc107', // Color Warning
+                                    borderColor: '#ffc107',
                                     borderWidth: 2,
                                     borderDash: [6, 6],
-                                    label: { content: 'Estrés Incipiente', enabled: true, position: 'end', backgroundColor: 'rgba(255, 193, 7, 0.7)' }
+                                    display: true // Controlado por la leyenda
                                 },
                                 criticalStressLine: {
                                     type: 'line',
                                     yMin: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
                                     yMax: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
-                                    borderColor: '#dc3545', // Color Danger
+                                    borderColor: '#dc3545',
                                     borderWidth: 2,
                                     borderDash: [6, 6],
-                                    label: { content: 'Estrés Crítico', enabled: true, position: 'end', backgroundColor: 'rgba(220, 53, 69, 0.7)' }
+                                    display: true // Controlado por la leyenda
                                 }
                             }
                         }
@@ -152,9 +215,10 @@
             new Chart(ctxTemp, {
                 type: 'line',
                 data: tempData,
-                options: { 
+                options: {
                     responsive: true,
-                    plugins: { legend: { position: 'top' } }
+                    maintainAspectRatio: false, // Mejora la visualización
+                    plugins: {legend: {position: 'top'}}
                 }
             });
         });

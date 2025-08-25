@@ -15,31 +15,21 @@ public class UserAuditingMiddleware
 
     public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
     {
-        // Intentamos obtener el ID del usuario autenticado desde los Claims de la petición.
-        // El tipo de claim puede variar según cómo configures la identidad.
-        // "NameIdentifier" es común para el ID.
         var userIdClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        string appName = "arandano_app_unauthenticated"; // Valor por defecto
+        var appName = "arandano_app_unauthenticated";
+        if (!string.IsNullOrEmpty(userIdClaim)) appName = $"user_id_{userIdClaim}";
 
-        if (!string.IsNullOrEmpty(userIdClaim))
+        try
         {
-            // Si encontramos un usuario, construimos un identificador único.
-            appName = $"user_id_{userIdClaim}";
+            await dbContext.Database.ExecuteSqlRawAsync("SET application_name = {0}", appName);
+        }
+        catch (Exception ex)
+        {
+            var logger = context.RequestServices.GetRequiredService<ILogger<UserAuditingMiddleware>>();
+            logger.LogWarning(ex, "No se pudo establecer el application_name para la auditoría.");
         }
 
-        // Usamos el DbContext para obtener la conexión a la base de datos
-        // y ejecutar un comando SQL crudo para establecer el parámetro de la sesión.
-        // Este ajuste solo dura para la vida de esta conexión (es decir, esta petición).
-        var connection = dbContext.Database.GetDbConnection();
-        await connection.OpenAsync();
-        await using (var cmd = connection.CreateCommand())
-        {
-            cmd.CommandText = $"SET application_name = '{appName}';";
-            await cmd.ExecuteNonQueryAsync();
-        }
-
-        // Pasamos la petición al siguiente middleware en el pipeline.
         await _next(context);
     }
 }

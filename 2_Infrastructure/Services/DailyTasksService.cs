@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
@@ -7,17 +8,15 @@ using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using RestSharp.Portable.Serializers;
 using JsonException = Newtonsoft.Json.JsonException;
-using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
 public class DailyTasksService : BackgroundService
 {
+    private readonly AnomalyParametersSettings _anomalySettings;
     private readonly ILogger<DailyTasksService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly AnomalyParametersSettings _anomalySettings;
 
     public DailyTasksService(
         IServiceScopeFactory scopeFactory,
@@ -37,10 +36,7 @@ public class DailyTasksService : BackgroundService
 
         while (await timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
         {
-            if (DateTime.UtcNow.ToColombiaTime().Hour != 6)
-            {
-                continue; // Solo ejecutar a las 6:00 AM hora de Colombia
-            }
+            if (DateTime.UtcNow.ToColombiaTime().Hour != 6) continue; // Solo ejecutar a las 6:00 AM hora de Colombia
 
             _logger.LogInformation("Ejecutando ciclo de tareas diarias...");
 
@@ -64,6 +60,7 @@ public class DailyTasksService : BackgroundService
 
         // Incluimos tanto lecturas ambientales como capturas térmicas
         var plantsData = await dbContext.Plants
+            .Where(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED)
             .Include(p => p.EnvironmentalReadings
                 .Where(er => er.RecordedAtServer >= startTime && er.RecordedAtServer < endTime)
                 .OrderBy(er => er.RecordedAtServer))
@@ -74,7 +71,7 @@ public class DailyTasksService : BackgroundService
 
         foreach (var plant in plantsData)
         {
-            int consecutiveAnomalies = 0;
+            var consecutiveAnomalies = 0;
 
             // No podemos analizar si no hay datos de ambos tipos
             if (!plant.EnvironmentalReadings.Any() || !plant.ThermalCaptures.Any()) continue;
@@ -87,7 +84,8 @@ public class DailyTasksService : BackgroundService
                     .FirstOrDefault();
 
                 // Si no hay captura térmica cercana (ej. a menos de 5 min), no podemos comparar
-                if (closestCapture == null || Math.Abs((closestCapture.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) > 5)
+                if (closestCapture == null ||
+                    Math.Abs((closestCapture.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) > 5)
                 {
                     consecutiveAnomalies = 0; // Rompemos la racha si no hay datos
                     continue;
@@ -103,14 +101,10 @@ public class DailyTasksService : BackgroundService
                 var canopyTemp = thermalStats.Avg_Temp;
                 var airTemp = reading.Temperature;
 
-                if ((canopyTemp - airTemp) > _anomalySettings.DeltaTThreshold)
-                {
+                if (canopyTemp - airTemp > _anomalySettings.DeltaTThreshold)
                     consecutiveAnomalies++;
-                }
                 else
-                {
                     consecutiveAnomalies = 0;
-                }
 
                 if (consecutiveAnomalies >= 4)
                 {
@@ -118,11 +112,23 @@ public class DailyTasksService : BackgroundService
                     if (plant.Status != PlantStatus.UNKNOWN)
                     {
                         _logger.LogWarning("Anomalía detectada para la planta {PlantName}", plant.Name);
+                        var historyRecord = new PlantStatusHistory
+                        {
+                            PlantId = plant.Id,
+                            Status = PlantStatus.UNKNOWN,
+                            Observation = "Cambio de estado automático por detección de anomalía nocturna.",
+                            UserId = null,
+                            ChangedAt = DateTime.UtcNow
+                        };
+                        dbContext.PlantStatusHistories.Add(historyRecord);
+
                         plant.Status = PlantStatus.UNKNOWN;
                         dbContext.Update(plant);
+
                         await dbContext.SaveChangesAsync(token);
                         await alertTriggerService.TriggerAnomalyAlertAsync(plant.Id, plant.Name);
                     }
+
                     break; // Pasamos a la siguiente planta
                 }
             }
@@ -135,7 +141,8 @@ public class DailyTasksService : BackgroundService
         if (string.IsNullOrEmpty(thermalDataJson)) return null;
         try
         {
-            return System.Text.Json.JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         catch (JsonException ex)
         {
@@ -150,13 +157,10 @@ public class DailyTasksService : BackgroundService
         var alertTriggerService = services.GetRequiredService<IAlertTriggerService>();
 
         var plantsNeedingMask = await dbContext.Plants
-            .Where(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED && string.IsNullOrEmpty(p.ThermalMaskData))
+            .Where(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED && p.ThermalMaskData == null)
             .Select(p => p.Name)
             .ToListAsync(token);
 
-        if (plantsNeedingMask.Any())
-        {
-            await alertTriggerService.TriggerMaskCreationAlertAsync(plantsNeedingMask);
-        }
+        if (plantsNeedingMask.Any()) await alertTriggerService.TriggerMaskCreationAlertAsync(plantsNeedingMask);
     }
 }

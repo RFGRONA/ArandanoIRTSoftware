@@ -1,14 +1,14 @@
+using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
+using ArandanoIRT.Web._1_Application.DTOs.Analysis;
+using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
-using ArandanoIRT.Web._1_Application.DTOs.Analysis;
-using ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
@@ -32,7 +32,8 @@ public class WaterStressAnalysisService : BackgroundService
     {
         var interval = TimeSpan.FromMinutes(_settings.AnalysisIntervalMinutes);
         using var timer = new PeriodicTimer(interval);
-        _logger.LogInformation("Servicio de Análisis de Estrés Hídrico iniciado. Verificando cada {Minutes} minutos.", _settings.AnalysisIntervalMinutes);
+        _logger.LogInformation("Servicio de Análisis de Estrés Hídrico iniciado. Verificando cada {Minutes} minutos.",
+            _settings.AnalysisIntervalMinutes);
 
         while (await timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
         {
@@ -50,10 +51,9 @@ public class WaterStressAnalysisService : BackgroundService
                 var parameters = parametersResult.Value.AnalysisParameters;
                 var nowUtc = DateTime.UtcNow;
 
-                if (!nowUtc.IsWithinColombiaTimeWindow(parameters.AnalysisWindowStartHour, parameters.AnalysisWindowEndHour))
-                {
+                if (!nowUtc.IsWithinColombiaTimeWindow(parameters.AnalysisWindowStartHour,
+                        parameters.AnalysisWindowEndHour))
                     continue; // No estamos en la ventana de análisis para este cultivo
-                }
 
                 _logger.LogInformation("Iniciando ciclo de análisis para el cultivo: {CropName}", crop.Name);
                 await RunAnalysisCycleAsync(scope.ServiceProvider, crop, parameters, nowUtc, stoppingToken);
@@ -61,7 +61,8 @@ public class WaterStressAnalysisService : BackgroundService
         }
     }
 
-    private async Task RunAnalysisCycleAsync(IServiceProvider services, Crop crop, AnalysisParameters parameters, DateTime nowUtc, CancellationToken token)
+    private async Task RunAnalysisCycleAsync(IServiceProvider services, Crop crop, AnalysisParameters parameters,
+        DateTime nowUtc, CancellationToken token)
     {
         var dataQueryService = services.GetRequiredService<IDataQueryService>();
         var environmentalDataProvider = services.GetRequiredService<IEnvironmentalDataProvider>();
@@ -79,7 +80,9 @@ public class WaterStressAnalysisService : BackgroundService
 
         if (!hasControl || !hasStress || !hasMonitored)
         {
-            _logger.LogWarning("El cultivo {CropName} no puede ser analizado. Se requiere al menos una planta de tipo 'Control', 'Stress' y 'Monitored'.", crop.Name);
+            _logger.LogWarning(
+                "El cultivo {CropName} no puede ser analizado. Se requiere al menos una planta de tipo 'Control', 'Stress' y 'Monitored'.",
+                crop.Name);
             return; // Detenemos el análisis para este cultivo
         }
 
@@ -97,25 +100,32 @@ public class WaterStressAnalysisService : BackgroundService
 
         var lightValue = GetLightValueFromJson(referenceReading.ExtraData);
         var envDataResult = await environmentalDataProvider.GetEnvironmentalDataForAnalysisAsync(
-            crop.CityName, lightValue, parameters.LightIntensityThreshold, referenceReading.Temperature, referenceReading.Humidity);
+            crop.CityName, lightValue, parameters.LightIntensityThreshold, referenceReading.Temperature,
+            referenceReading.Humidity);
 
         if (envDataResult.IsFailure || !envDataResult.Value.IsConditionSuitable)
         {
-            _logger.LogWarning("Las condiciones ambientales para el cultivo {CropName} no son adecuadas para el análisis.", crop.Name);
+            _logger.LogWarning(
+                "Las condiciones ambientales para el cultivo {CropName} no son adecuadas para el análisis.", crop.Name);
             return;
         }
+
         var envData = envDataResult.Value;
 
         // 4. Calcular Líneas Base T_wet y T_dry
         var controlPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.CONTROL);
         var stressPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.STRESS);
 
-        var wetTemperatures = controlPlantsData.SelectMany(p => p.ThermalCaptures).Select(tc => DeserializeThermalStats(tc.ThermalDataStats)?.Avg_Temp ?? 0).Where(t => t > 0).ToList();
-        var dryTemperatures = stressPlantsData.SelectMany(p => p.ThermalCaptures).Select(tc => DeserializeThermalStats(tc.ThermalDataStats)?.Avg_Temp ?? 0).Where(t => t > 0).ToList();
+        var wetTemperatures = controlPlantsData.SelectMany(p => p.ThermalCaptures)
+            .Select(tc => DeserializeThermalStats(tc.ThermalDataStats)?.Avg_Temp ?? 0).Where(t => t > 0).ToList();
+        var dryTemperatures = stressPlantsData.SelectMany(p => p.ThermalCaptures)
+            .Select(tc => DeserializeThermalStats(tc.ThermalDataStats)?.Avg_Temp ?? 0).Where(t => t > 0).ToList();
 
         if (!wetTemperatures.Any() || !dryTemperatures.Any())
         {
-            _logger.LogWarning("No hay suficientes datos de plantas 'Control' o 'Stress' para calcular las líneas base en el cultivo {CropName}.", crop.Name);
+            _logger.LogWarning(
+                "No hay suficientes datos de plantas 'Control' o 'Stress' para calcular las líneas base en el cultivo {CropName}.",
+                crop.Name);
             return;
         }
 
@@ -129,7 +139,7 @@ public class WaterStressAnalysisService : BackgroundService
             var plantTc = CalculateCanopyTemperature(plantData);
             if (!plantTc.HasValue) continue;
 
-            double cwsi = (tDry - tWet > 0) ? (plantTc.Value - tWet) / (tDry - tWet) : 0;
+            var cwsi = tDry - tWet > 0 ? (plantTc.Value - tWet) / (tDry - tWet) : 0;
             cwsi = Math.Clamp(cwsi, 0, 1); // Asegurar que el valor esté entre 0 y 1
 
             var previousStatus = plantData.Plant.Status;
@@ -142,7 +152,7 @@ public class WaterStressAnalysisService : BackgroundService
                 RecordedAt = nowUtc,
                 CwsiValue = (float)cwsi,
                 Status = newStatus,
-                CanopyTemperature = (float)plantTc.Value,
+                CanopyTemperature = plantTc.Value,
                 AmbientTemperature = (float)envData.AmbientTemperatureC,
                 Vpd = (float)envData.VpdKpa,
                 BaselineTwet = (float)tWet,
@@ -153,7 +163,6 @@ public class WaterStressAnalysisService : BackgroundService
 
             if (newStatus != previousStatus)
             {
-                // --- INICIO DE LA CORRECCIÓN ---
                 // Llamar al servicio de alertas ANTES de cambiar el estado en la base de datos
                 await alertTriggerService.TriggerStressAlertAsync(
                     plantData.Plant.Id,
@@ -163,14 +172,24 @@ public class WaterStressAnalysisService : BackgroundService
                     (float)cwsi
                 );
 
-                // Actualizar el estado de la planta en la entidad
+                // 1. Crear el registro en la tabla de historial
+                var historyRecord = new PlantStatusHistory
+                {
+                    PlantId = plantData.Plant.Id,
+                    Status = newStatus,
+                    Observation = $"Cambio de estado automático por el sistema basado en un valor CWSI de {cwsi:F2}.",
+                    UserId = null,
+                    ChangedAt = nowUtc
+                };
+                dbContext.PlantStatusHistories.Add(historyRecord);
+
+                // 2. Actualizar el estado de la planta en la entidad principal
                 var plantToUpdate = await dbContext.Plants.FindAsync(plantData.Plant.Id);
                 if (plantToUpdate != null)
                 {
                     plantToUpdate.Status = newStatus;
                     plantToUpdate.UpdatedAt = nowUtc;
                 }
-                // --- FIN DE LA CORRECCIÓN ---
             }
         }
 
@@ -188,7 +207,6 @@ public class WaterStressAnalysisService : BackgroundService
 
         // Lógica de máscara/fallback
         if (!string.IsNullOrWhiteSpace(plantData.Plant.ThermalMaskData) && stats.Temperatures != null)
-        {
             try
             {
                 var mask = JsonSerializer.Deserialize<ThermalMask>(plantData.Plant.ThermalMaskData);
@@ -197,12 +215,10 @@ public class WaterStressAnalysisService : BackgroundService
                     var maskedTemperatures = new List<float>();
                     foreach (var coord in mask.Coordinates)
                     {
-                        int index = coord.Y * 32 + coord.X; // Asumiendo 32x24
-                        if (index < stats.Temperatures.Count)
-                        {
-                            maskedTemperatures.Add(stats.Temperatures[index].Value);
-                        }
+                        var index = coord.Y * 32 + coord.X; // Asumiendo 32x24
+                        if (index < stats.Temperatures.Count) maskedTemperatures.Add(stats.Temperatures[index].Value);
                     }
+
                     return maskedTemperatures.Any() ? maskedTemperatures.Average() : stats.Avg_Temp;
                 }
             }
@@ -211,7 +227,6 @@ public class WaterStressAnalysisService : BackgroundService
                 _logger.LogError(ex, "Error al procesar máscara térmica para la planta {PlantId}", plantData.Plant.Id);
                 return stats.Avg_Temp; // Fallback a avg_temp si la máscara falla
             }
-        }
 
         return stats.Avg_Temp; // Fallback si no hay máscara
     }
@@ -220,30 +235,18 @@ public class WaterStressAnalysisService : BackgroundService
     {
         PlantStatus newStatus;
         if (cwsi > parameters.CwsiThresholdCritical)
-        {
             newStatus = PlantStatus.SEVERE_STRESS;
-        }
         else if (cwsi > parameters.CwsiThresholdIncipient)
-        {
             newStatus = PlantStatus.MILD_STRESS;
-        }
         else
-        {
             newStatus = PlantStatus.OPTIMAL;
-        }
 
         // Lógica de recuperación
-        bool wasStressed = previousStatus == PlantStatus.MILD_STRESS || previousStatus == PlantStatus.SEVERE_STRESS;
-        if (wasStressed && newStatus == PlantStatus.OPTIMAL)
-        {
-            return PlantStatus.RECOVERING;
-        }
+        var wasStressed = previousStatus == PlantStatus.MILD_STRESS || previousStatus == PlantStatus.SEVERE_STRESS;
+        if (wasStressed && newStatus == PlantStatus.OPTIMAL) return PlantStatus.RECOVERING;
 
         // Si ya estaba en recuperación y sigue óptimo, se considera recuperado.
-        if (previousStatus == PlantStatus.RECOVERING && newStatus == PlantStatus.OPTIMAL)
-        {
-            return PlantStatus.OPTIMAL;
-        }
+        if (previousStatus == PlantStatus.RECOVERING && newStatus == PlantStatus.OPTIMAL) return PlantStatus.OPTIMAL;
 
         return newStatus;
     }
@@ -255,9 +258,14 @@ public class WaterStressAnalysisService : BackgroundService
         try
         {
             using var jsonDoc = JsonDocument.Parse(extraDataJson);
-            if (jsonDoc.RootElement.TryGetProperty("light", out var lightElement) && lightElement.TryGetSingle(out var lightValue)) return lightValue;
+            if (jsonDoc.RootElement.TryGetProperty("light", out var lightElement) &&
+                lightElement.TryGetSingle(out var lightValue)) return lightValue;
         }
-        catch { /* Ignorar error */ }
+        catch
+        {
+            /* Ignorar error */
+        }
+
         return null;
     }
 
@@ -266,9 +274,14 @@ public class WaterStressAnalysisService : BackgroundService
         if (string.IsNullOrEmpty(thermalDataJson)) return null;
         try
         {
-            return JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
-        catch { /* Ignorar error */ }
+        catch
+        {
+            /* Ignorar error */
+        }
+
         return null;
     }
 
@@ -277,6 +290,7 @@ public class WaterStressAnalysisService : BackgroundService
     {
         public List<Coord>? Coordinates { get; set; }
     }
+
     private class Coord
     {
         public int X { get; set; }

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Enums;
-using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Analysis;
@@ -69,31 +68,31 @@ public class AnalyticsService : IAnalyticsService
                     Name = crop.Name
                 };
 
-                // Lógica de validación
-                var hasControl = crop.Plants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL);
-                var hasStress = crop.Plants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.STRESS);
-                var hasMonitored = crop.Plants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED);
+                // 1. Separar las plantas por grupo
+                var controlPlants = crop.Plants.Where(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL).ToList();
+                var stressPlants = crop.Plants.Where(p => p.ExperimentalGroup == ExperimentalGroupType.STRESS).ToList();
+                var monitoredPlants = crop.Plants.Where(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED).ToList();
 
-                if (hasControl && hasStress && hasMonitored)
-                {
-                    cropViewModel.IsConfigurationValid = true;
-                    cropViewModel.ValidationMessage = "Configuración correcta para el análisis.";
-                }
-                else
-                {
-                    cropViewModel.IsConfigurationValid = false;
-                    cropViewModel.ValidationMessage =
-                        "Configuración Incompleta: Se requiere al menos una planta de tipo 'Control', 'Stress' y 'Monitored' para activar el análisis.";
-                }
+                // 2. Verificar cada una de las condiciones
+                cropViewModel.AnalysisReadiness.HasControlGroup = controlPlants.Any();
+                cropViewModel.AnalysisReadiness.HasStressGroup = stressPlants.Any();
+                cropViewModel.AnalysisReadiness.HasMonitoredGroup = monitoredPlants.Any();
+
+                // 3. Verificar si los grupos requeridos tienen al menos una máscara
+                cropViewModel.AnalysisReadiness.HasControlWithMask = controlPlants.Any(p => !string.IsNullOrEmpty(p.ThermalMaskData));
+                cropViewModel.AnalysisReadiness.HasStressWithMask = stressPlants.Any(p => !string.IsNullOrEmpty(p.ThermalMaskData));
 
                 foreach (var plant in crop.Plants)
+                {
                     cropViewModel.Plants.Add(new PlantMonitorViewModel
                     {
                         Id = plant.Id,
                         Name = plant.Name,
                         Status = plant.Status,
-                        HasMask = !string.IsNullOrEmpty(plant.ThermalMaskData)
+                        HasMask = !string.IsNullOrEmpty(plant.ThermalMaskData),
+                        ExperimentalGroup = plant.ExperimentalGroup
                     });
+                }
 
                 resultList.Add(cropViewModel);
             }
@@ -110,7 +109,7 @@ public class AnalyticsService : IAnalyticsService
     public async Task<Result<AnalysisDetailsViewModel>> GetAnalysisDetailsAsync(int plantId, DateTime? startDate,
         DateTime? endDate)
     {
-        // 1. Validar la configuración del cultivo
+        // 1. Validar la configuración del cultivo (sin cambios)
         var plant = await _context.Plants.Include(p => p.Crop).FirstOrDefaultAsync(p => p.Id == plantId);
         if (plant == null) return Result.Failure<AnalysisDetailsViewModel>("Planta no encontrada.");
 
@@ -124,16 +123,17 @@ public class AnalyticsService : IAnalyticsService
             return Result.Failure<AnalysisDetailsViewModel>(
                 "La configuración del cultivo es inválida para el análisis.");
 
-        // 2. Definir rango de fechas (default: últimos 7 días)
-        var finalEndDate = endDate ?? DateTime.UtcNow;
-        var finalStartDate = startDate ?? finalEndDate.AddDays(-7);
+        // 2. Definir las fechas de visualización. Estas siempre serán locales y sin parte de tiempo.
+        var displayEndDate = endDate ?? DateTime.Now.Date;
+        var displayStartDate = startDate ?? displayEndDate.AddDays(-7);
 
-        // Usamos el nuevo método de extensión para una conversión segura
-        var queryStartDate = finalStartDate.Date.ToSafeUniversalTime();
-        var queryEndDate = finalEndDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        // 3. Preparar las fechas para la consulta a la base de datos (convertidas a UTC)
+        var queryStartDate = displayStartDate.ToSafeUniversalTime();
+        var queryEndDate = displayEndDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 
-        _logger.LogInformation("Ejecutando consulta de análisis para PlantId {PlantId} en el rango de fechas (UTC): {StartDate} a {EndDate}",
-            plantId, queryStartDate.ToUniversalTime(), queryEndDate.ToUniversalTime());
+        _logger.LogInformation(
+            "Ejecutando consulta de análisis para PlantId {PlantId} en el rango de fechas (UTC): {StartDate} a {EndDate}",
+            plantId, queryStartDate, queryEndDate);
 
         var analysisData = await _context.AnalysisResults
             .AsNoTracking()
@@ -141,10 +141,11 @@ public class AnalyticsService : IAnalyticsService
             .OrderBy(ar => ar.RecordedAt)
             .ToListAsync();
 
-        // Si no se encontraron datos en el rango solicitado, buscamos la última fecha disponible.
+        // 4. Lógica de Fallback: Si no hay datos, buscar el último rango disponible
         if (!analysisData.Any())
         {
-            _logger.LogInformation("No se encontraron datos en el rango inicial. Buscando el último registro disponible...");
+            _logger.LogInformation(
+                "No se encontraron datos en el rango inicial. Buscando el último registro disponible...");
             var lastRecordDate = await _context.AnalysisResults
                 .Where(ar => ar.PlantId == plantId)
                 .OrderByDescending(ar => ar.RecordedAt)
@@ -153,17 +154,19 @@ public class AnalyticsService : IAnalyticsService
 
             if (lastRecordDate != default)
             {
-                _logger.LogInformation("Último registro encontrado en {LastDate}. Ajustando el rango de fechas.", lastRecordDate);
-                // Si encontramos un registro, ajustamos el rango y volvemos a consultar
-                finalEndDate = lastRecordDate;
-                finalStartDate = finalEndDate.AddDays(-7);
+                _logger.LogInformation("Último registro encontrado en {LastDate}. Ajustando el rango de fechas.",
+                    lastRecordDate);
 
-                queryStartDate = finalStartDate.Date;
-                queryEndDate = finalEndDate.Date.AddDays(1);
+                displayEndDate = lastRecordDate.ToColombiaTime().Date;
+                displayStartDate = displayEndDate.AddDays(-7);
+
+                queryStartDate = displayStartDate.ToSafeUniversalTime();
+                queryEndDate = displayEndDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 
                 analysisData = await _context.AnalysisResults
                     .AsNoTracking()
-                    .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= queryStartDate && ar.RecordedAt < queryEndDate)
+                    .Where(ar =>
+                        ar.PlantId == plantId && ar.RecordedAt >= queryStartDate && ar.RecordedAt < queryEndDate)
                     .OrderBy(ar => ar.RecordedAt)
                     .ToListAsync();
             }
@@ -171,13 +174,16 @@ public class AnalyticsService : IAnalyticsService
 
         if (!analysisData.Any())
         {
-            _logger.LogWarning("No se encontraron datos de análisis para la planta {PlantId} en ningún rango.", plantId);
-            return Result.Failure<AnalysisDetailsViewModel>("No hay datos de análisis disponibles para esta planta en el periodo seleccionado o en su historial.");
+            _logger.LogWarning("No se encontraron datos de análisis para la planta {PlantId} en ningún rango.",
+                plantId);
+            return Result.Failure<AnalysisDetailsViewModel>(
+                "No hay datos de análisis disponibles para esta planta en el periodo seleccionado o en su historial.");
         }
 
-        _logger.LogInformation("Consulta completada. Se encontraron {Count} registros de análisis.", analysisData.Count);
+        _logger.LogInformation("Consulta completada. Se encontraron {Count} registros de análisis.",
+            analysisData.Count);
 
-        // 4. Formatear datos para Chart.js
+        // 5. Formatear datos para Chart.js (sin cambios)
         var labels = analysisData.Select(ar => ar.RecordedAt.ToColombiaTime().ToString("dd/MM HH:mm")).ToList();
 
         var cwsiChartData = new
@@ -217,14 +223,14 @@ public class AnalyticsService : IAnalyticsService
             }
         };
 
-        // 5. Poblar y devolver el ViewModel
+        // 6. Poblar y devolver el ViewModel usando las fechas de visualización correctas
         var viewModel = new AnalysisDetailsViewModel
         {
             PlantId = plant.Id,
             PlantName = plant.Name,
             CropName = plant.Crop.Name,
-            StartDate = finalStartDate,
-            EndDate = finalEndDate,
+            StartDate = displayStartDate,
+            EndDate = displayEndDate,
             CwsiChartDataJson = JsonSerializer.Serialize(cwsiChartData),
             TempChartDataJson = JsonSerializer.Serialize(tempChartData),
             CwsiThresholdIncipient = (float)plant.Crop.CropSettings.AnalysisParameters.CwsiThresholdIncipient,
