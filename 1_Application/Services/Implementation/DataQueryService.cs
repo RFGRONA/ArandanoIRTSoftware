@@ -179,7 +179,8 @@ public class DataQueryService : IDataQueryService
                     PlantName = tc.Plant != null ? tc.Plant.Name : "N/A",
                     tc.ThermalDataStats,
                     tc.RgbImagePath,
-                    tc.RecordedAtServer
+                    tc.RecordedAtServer,
+                    tc.RecordedAtDevice 
                 })
                 .ToListAsync();
 
@@ -197,7 +198,7 @@ public class DataQueryService : IDataQueryService
                     MinTemp = thermalStats?.Min_Temp,
                     AvgTemp = thermalStats?.Avg_Temp,
                     RgbImagePath = m.RgbImagePath,
-                    RecordedAt = thermalStats?.RecordedAtDevice ?? m.RecordedAtServer
+                    RecordedAt = m.RecordedAtDevice ?? m.RecordedAtServer
                 };
             }).ToList();
 
