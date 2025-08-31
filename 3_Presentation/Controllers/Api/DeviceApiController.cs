@@ -63,7 +63,7 @@ public class DeviceApiController : ControllerBase
             _logger.LogInformation("API de Dispositivo: {ApiEvent}", "TokenRefreshSuccess");
             return Ok(result.Value);
         }
-        
+
         _logger.LogWarning("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "TokenRefreshFailed", result.ErrorMessage);
         return Unauthorized("Refresh token inválido o expirado.");
     }
@@ -78,14 +78,14 @@ public class DeviceApiController : ControllerBase
         using (LogContext.PushProperty("DeviceId", deviceContext.DeviceId))
         {
             _logger.LogInformation("API de Dispositivo: {ApiEvent}", "AuthenticationSuccess");
-            
+
             var dataCollectionTimeClaim = User.FindFirstValue("DataCollectionTimeMinutes");
             int.TryParse(dataCollectionTimeClaim, out int dataCollectionTimeMinutes);
-            
+
             var response = new DeviceAuthResponseDto
             {
-                AccessToken = null, 
-                RefreshToken = null, 
+                AccessToken = null,
+                RefreshToken = null,
                 DataCollectionTime = dataCollectionTimeMinutes
             };
 
@@ -99,7 +99,7 @@ public class DeviceApiController : ControllerBase
     {
         var deviceContext = GetDeviceIdentityFromClaims();
         if (deviceContext == null) return Unauthorized();
-        
+
         using (LogContext.PushProperty("DeviceId", deviceContext.DeviceId))
         using (LogContext.PushProperty("PlantId", deviceContext.PlantId))
         using (LogContext.PushProperty("CropId", deviceContext.CropId))
@@ -137,11 +137,11 @@ public class DeviceApiController : ControllerBase
         {
             _logger.LogInformation("API de Dispositivo: {ApiEvent}", "AmbientDataReceived");
             var result = await _dataSubmissionService.SaveAmbientDataAsync(deviceContext, ambientDataDto);
-            
-            if(!result.IsSuccess)
+
+            if (!result.IsSuccess)
             {
-                 _logger.LogError("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "AmbientDataFailed", result.ErrorMessage);
-                 return BadRequest(result.ErrorMessage);
+                _logger.LogError("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "AmbientDataFailed", result.ErrorMessage);
+                return BadRequest(result.ErrorMessage);
             }
             return NoContent();
         }
@@ -192,7 +192,7 @@ public class DeviceApiController : ControllerBase
                 _logger.LogInformation("API de Dispositivo: {ApiEvent}", "CaptureDataSuccess");
                 return Ok(new { message = "Thermal data received and saved successfully." });
             }
-            
+
             _logger.LogError("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "CaptureDataFailed", result.ErrorMessage);
             return StatusCode(500, new { message = "Failed to save thermal data.", error = result.ErrorMessage });
         }

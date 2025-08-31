@@ -180,7 +180,7 @@ public class DataQueryService : IDataQueryService
                     tc.ThermalDataStats,
                     tc.RgbImagePath,
                     tc.RecordedAtServer,
-                    tc.RecordedAtDevice 
+                    tc.RecordedAtDevice
                 })
                 .ToListAsync();
 
