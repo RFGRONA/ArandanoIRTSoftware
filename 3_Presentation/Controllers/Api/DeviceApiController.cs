@@ -29,21 +29,23 @@ public class DeviceApiController : ControllerBase
     [HttpPost("activate")]
     public async Task<IActionResult> ActivateDevice([FromBody] DeviceActivationRequestDto requestDto)
     {
-        if (!ModelState.IsValid)
+        using (LogContext.PushProperty("HardwareId", requestDto.DeviceId))
         {
-            return BadRequest("Solicitud inválida.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Solicitud inválida.");
+            }
+
+            var result = await _deviceService.ActivateDeviceAsync(requestDto);
+
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("API de Dispositivo: {ApiEvent}", "ActivationSuccess");
+            }
+
+            _logger.LogWarning("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "ActivationFailed", result.ErrorMessage);
+            return BadRequest("Código de activación inválido, expirado, o el HardwareId ya está en uso.");
         }
-
-        var result = await _deviceService.ActivateDeviceAsync(requestDto);
-
-        if (result.IsSuccess)
-        {
-            _logger.LogInformation("Dispositivo con HardwareId {HardwareId} activado exitosamente.", requestDto.DeviceId);
-            return Ok(result.Value);
-        }
-
-        _logger.LogWarning("Fallo en la activación para HardwareId {HardwareId}. Error: {ErrorMessage}", requestDto.DeviceId, result.ErrorMessage);
-        return BadRequest("Código de activación inválido, expirado, o el HardwareId ya está en uso.");
     }
 
     [HttpPost("refresh-token")]
@@ -58,10 +60,11 @@ public class DeviceApiController : ControllerBase
 
         if (result.IsSuccess)
         {
+            _logger.LogInformation("API de Dispositivo: {ApiEvent}", "TokenRefreshSuccess");
             return Ok(result.Value);
         }
 
-        _logger.LogWarning("Fallo en refresco de token. Error: {ErrorMessage}", result.ErrorMessage);
+        _logger.LogWarning("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "TokenRefreshFailed", result.ErrorMessage);
         return Unauthorized("Refresh token inválido o expirado.");
     }
 
@@ -74,8 +77,19 @@ public class DeviceApiController : ControllerBase
 
         using (LogContext.PushProperty("DeviceId", deviceContext.DeviceId))
         {
-            _logger.LogInformation("Check de autenticación exitoso.");
-            return Ok(new { status = "authenticated" });
+            _logger.LogInformation("API de Dispositivo: {ApiEvent}", "AuthenticationSuccess");
+
+            var dataCollectionTimeClaim = User.FindFirstValue("DataCollectionTimeMinutes");
+            int.TryParse(dataCollectionTimeClaim, out int dataCollectionTimeMinutes);
+
+            var response = new DeviceAuthResponseDto
+            {
+                AccessToken = null,
+                RefreshToken = null,
+                DataCollectionTime = dataCollectionTimeMinutes
+            };
+
+            return Ok(response);
         }
     }
 
@@ -89,29 +103,20 @@ public class DeviceApiController : ControllerBase
         using (LogContext.PushProperty("DeviceId", deviceContext.DeviceId))
         using (LogContext.PushProperty("PlantId", deviceContext.PlantId))
         using (LogContext.PushProperty("CropId", deviceContext.CropId))
+        using (LogContext.PushProperty("DeviceLogType", logDto.LogType.ToUpperInvariant()))
         {
+            if (logDto.InternalDeviceTemperature.HasValue)
+            {
+                LogContext.PushProperty("DeviceInternalTemp", logDto.InternalDeviceTemperature.Value);
+            }
+
             var logLevel = logDto.LogType.ToUpperInvariant() switch
             {
                 "WARNING" => LogLevel.Warning,
                 "ERROR" => LogLevel.Error,
                 _ => LogLevel.Information,
             };
-
-            _logger.Log(logLevel,
-                "Log recibido desde dispositivo: {DeviceLogMessage}",
-                logDto.LogMessage);
-
-            if (logDto.InternalDeviceTemperature.HasValue)
-            {
-                using (LogContext.PushProperty("DeviceInternalTemp", logDto.InternalDeviceTemperature.Value))
-                {
-                    _logger.Log(logLevel, "Log recibido desde dispositivo: {DeviceLogMessage}", logDto.LogMessage);
-                }
-            }
-            else
-            {
-                _logger.Log(logLevel, "Log recibido desde dispositivo: {DeviceLogMessage}", logDto.LogMessage);
-            }
+            _logger.Log(logLevel, "API de Dispositivo: {ApiEvent} - Mensaje: {DeviceLogMessage}", "DeviceLogReceived", logDto.LogMessage);
 
             return NoContent();
         }
@@ -130,13 +135,17 @@ public class DeviceApiController : ControllerBase
         using (LogContext.PushProperty("PlantId", deviceContext.PlantId))
         using (LogContext.PushProperty("CropId", deviceContext.CropId))
         {
-            _logger.LogInformation("Iniciando procesamiento de datos ambientales.");
+            _logger.LogInformation("API de Dispositivo: {ApiEvent}", "AmbientDataReceived");
             var result = await _dataSubmissionService.SaveAmbientDataAsync(deviceContext, ambientDataDto);
-            return result.IsSuccess ? NoContent() : BadRequest(result.ErrorMessage);
+
+            if (!result.IsSuccess)
+            {
+                _logger.LogError("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "AmbientDataFailed", result.ErrorMessage);
+                return BadRequest(result.ErrorMessage);
+            }
+            return NoContent();
         }
     }
-
-
 
     [HttpPost("capture-data")]
     [Authorize(Policy = "DeviceAuthenticated")]
@@ -152,11 +161,11 @@ public class DeviceApiController : ControllerBase
         using (LogContext.PushProperty("PlantId", deviceContext.PlantId))
         using (LogContext.PushProperty("CropId", deviceContext.CropId))
         {
-            _logger.LogInformation("Iniciando procesamiento de datos de captura. Archivo de imagen presente: {HasImageFile}", imageFile != null);
+            _logger.LogInformation("API de Dispositivo: {ApiEvent} con imagen: {HasImageFile}", "CaptureDataReceived", imageFile != null);
 
             if (string.IsNullOrEmpty(thermalDataJson))
             {
-                _logger.LogWarning("El JSON de datos térmicos está ausente en la petición.");
+                _logger.LogWarning("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "CaptureDataInvalid", "Thermal JSON data is missing");
                 return BadRequest("Thermal data JSON is missing.");
             }
 
@@ -166,26 +175,25 @@ public class DeviceApiController : ControllerBase
                 thermalDataDto = JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (thermalDataDto == null)
                 {
-                    _logger.LogWarning("El JSON de datos térmicos no pudo ser deserializado a un objeto.");
+                    _logger.LogWarning("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "CaptureDataInvalid", "Failed to deserialize thermal data");
                     return BadRequest("Failed to deserialize thermal data.");
                 }
             }
             catch (JsonException ex)
             {
-                _logger.LogError(ex, "Excepción al deserializar el JSON de datos térmicos.");
+                _logger.LogError(ex, "API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "CaptureDataInvalid", "Invalid JSON format for thermal data");
                 return BadRequest("Invalid JSON format for thermal data.");
             }
 
-            var result = await _dataSubmissionService.SaveCaptureDataAsync(
-                deviceContext, thermalDataDto, thermalDataJson, imageFile, DateTime.UtcNow);
+            var result = await _dataSubmissionService.SaveCaptureDataAsync(deviceContext, thermalDataDto, thermalDataJson, imageFile, DateTime.UtcNow);
 
             if (result.IsSuccess)
             {
-                _logger.LogInformation("Datos de captura procesados y guardados exitosamente.");
+                _logger.LogInformation("API de Dispositivo: {ApiEvent}", "CaptureDataSuccess");
                 return Ok(new { message = "Thermal data received and saved successfully." });
             }
 
-            _logger.LogError("Fallo al guardar los datos de captura: {ErrorMessage}", result.ErrorMessage);
+            _logger.LogError("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "CaptureDataFailed", result.ErrorMessage);
             return StatusCode(500, new { message = "Failed to save thermal data.", error = result.ErrorMessage });
         }
     }
@@ -195,7 +203,7 @@ public class DeviceApiController : ControllerBase
         var deviceIdClaim = User.FindFirstValue("DeviceId");
         if (string.IsNullOrEmpty(deviceIdClaim) || !int.TryParse(deviceIdClaim, out int deviceId) || deviceId <= 0)
         {
-            _logger.LogError("Claim 'DeviceId' no encontrado o es inválido en el token JWT.");
+            _logger.LogError("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "AuthenticationInvalidClaim", "Claim 'DeviceId' is missing or invalid in JWT");
             return null;
         }
 
