@@ -231,14 +231,18 @@ public class DeviceAdminService : IDeviceAdminService
 
             if (existingDevice.PlantId.HasValue)
             {
-                var plant = await _context.Plants
+                var assignedPlant = await _context.Plants
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.Id == existingDevice.PlantId.Value);
-                existingDevice.CropId = plant?.CropId ?? 0;
+
+                if (assignedPlant != null)
+                {
+                    existingDevice.CropId = assignedPlant.CropId;
+                }
             }
             else
             {
-                existingDevice.CropId = 0;
+                existingDevice.CropId = existingDevice.CropId;
             }
 
             await _context.SaveChangesAsync();

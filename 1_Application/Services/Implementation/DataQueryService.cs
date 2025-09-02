@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 using ArandanoIRT.Web._1_Application.DTOs.Common;
@@ -30,12 +31,25 @@ public class DataQueryService : IDataQueryService
         _logger.LogInformation("Obteniendo datos de sensores con filtros: {@Filters}", filters);
         try
         {
-            var query = _context.EnvironmentalReadings.AsNoTracking();
+            IQueryable<EnvironmentalReading> query = _context.EnvironmentalReadings.AsNoTracking()
+                .Include(er => er.Device)
+                .Include(er => er.Plant)
+                .ThenInclude(p => p.Crop);
 
-            // Filtros
-            if (filters.DeviceId.HasValue) query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
-            if (filters.PlantId.HasValue) query = query.Where(er => er.PlantId == filters.PlantId.Value);
-            if (filters.CropId.HasValue) query = query.Where(er => er.Device.CropId == filters.CropId.Value);
+            if (filters.DeviceId.HasValue)
+            {
+                query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
+            }
+
+            if (filters.PlantId.HasValue)
+            {
+                query = query.Where(er => er.PlantId == filters.PlantId.Value);
+            }
+            else if (filters.CropId.HasValue)
+            {
+                query = query.Where(er => er.Plant != null && er.Plant.CropId == filters.CropId.Value);
+            }
+
             query = query.ApplyDateFilters(filters, er => er.RecordedAtServer);
 
             var totalCount = await query.CountAsync();
@@ -48,7 +62,6 @@ public class DataQueryService : IDataQueryService
                     PageSize = filters.PageSize
                 });
 
-            // 1. Traer datos crudos
             var rawData = await query
                 .OrderByDescending(er => er.RecordedAtServer)
                 .Skip((filters.PageNumber - 1) * filters.PageSize)
@@ -59,7 +72,7 @@ public class DataQueryService : IDataQueryService
                     er.DeviceId,
                     DeviceName = er.Device.Name,
                     PlantName = er.Plant != null ? er.Plant.Name : "N/A",
-                    CropName = er.Device.Crop.Name,
+                    CropName = er.Plant != null ? er.Plant.Crop.Name : "N/A",
                     er.Temperature,
                     er.Humidity,
                     er.ExtraData,
@@ -71,13 +84,10 @@ public class DataQueryService : IDataQueryService
                 })
                 .ToListAsync();
 
-            // 2. Transformar en memoria
             var finalData = rawData.Select(er =>
             {
                 float? light = null;
                 var otherData = new Dictionary<string, JsonElement>();
-
-                // Diccionario de traducciones para las claves de ExtraData
                 var keyTranslations = new Dictionary<string, string>
                 {
                     { "pressure", "Presión (hPa)" }
@@ -89,15 +99,11 @@ public class DataQueryService : IDataQueryService
                         using var jsonDoc = JsonDocument.Parse(er.ExtraData);
                         foreach (var property in jsonDoc.RootElement.EnumerateObject())
                         {
-                            // Excluye 'is_night' explícitamente
-                            if (property.NameEquals("is_night")) continue; // Salta a la siguiente propiedad
-
-                            // Extrae 'light' a su propio campo porque tiene una columna dedicada
+                            if (property.NameEquals("is_night")) continue;
                             if (property.NameEquals("light") && property.Value.TryGetSingle(out var lightValue))
                             {
                                 light = lightValue;
                             }
-                            // El resto de campos se van al diccionario con su clave traducida
                             else
                             {
                                 var displayName = keyTranslations.GetValueOrDefault(property.Name, property.Name);
@@ -143,17 +149,30 @@ public class DataQueryService : IDataQueryService
     }
 
     public async Task<Result<PagedResultDto<ThermalCaptureSummaryDto>>> GetThermalCapturesAsync(
-        DataQueryFilters filters)
+    DataQueryFilters filters)
     {
         _logger.LogInformation("Obteniendo capturas térmicas con filtros: {@Filters}", filters);
         try
         {
-            var query = _context.ThermalCaptures.AsNoTracking();
+            IQueryable<ThermalCapture> query = _context.ThermalCaptures.AsNoTracking()
+                .Include(tc => tc.Device)
+                .Include(tc => tc.Plant)
+                .ThenInclude(p => p.Crop);
 
-            // Aplicar filtros (esta lógica no cambia)
-            if (filters.DeviceId.HasValue) query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
-            if (filters.PlantId.HasValue) query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
-            if (filters.CropId.HasValue) query = query.Where(tc => tc.Device.CropId == filters.CropId.Value);
+            if (filters.DeviceId.HasValue)
+            {
+                query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
+            }
+
+            if (filters.PlantId.HasValue)
+            {
+                query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
+            }
+            else if (filters.CropId.HasValue)
+            {
+                query = query.Where(tc => tc.Plant != null && tc.Plant.CropId == filters.CropId.Value);
+            }
+
             query = query.ApplyDateFilters(filters, tc => tc.RecordedAtServer);
 
             var totalCount = await query.CountAsync();
@@ -166,7 +185,6 @@ public class DataQueryService : IDataQueryService
                     PageSize = filters.PageSize
                 });
 
-            // 1. Traer datos crudos de la BD, incluyendo el JSON como texto.
             var rawData = await query
                 .OrderByDescending(tc => tc.RecordedAtServer)
                 .Skip((filters.PageNumber - 1) * filters.PageSize)
@@ -184,7 +202,6 @@ public class DataQueryService : IDataQueryService
                 })
                 .ToListAsync();
 
-            // 2. Transformar los datos en memoria. Ahora sí podemos llamar a los métodos de C#.
             var finalData = rawData.Select(m =>
             {
                 var thermalStats = DeserializeThermalStats(m.ThermalDataStats, m.Id);
