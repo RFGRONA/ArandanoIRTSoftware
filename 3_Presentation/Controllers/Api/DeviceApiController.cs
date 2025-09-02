@@ -41,6 +41,7 @@ public class DeviceApiController : ControllerBase
             if (result.IsSuccess)
             {
                 _logger.LogInformation("API de Dispositivo: {ApiEvent}", "ActivationSuccess");
+                return Ok(result.Value);
             }
 
             _logger.LogWarning("API de Dispositivo: {ApiEvent} - Causa: {FailureReason}", "ActivationFailed", result.ErrorMessage);

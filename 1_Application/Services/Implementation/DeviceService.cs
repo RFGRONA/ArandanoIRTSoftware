@@ -127,6 +127,12 @@ public class DeviceService : IDeviceService
                 _logger.LogInformation(
                     "Re-activación legítima detectada para DeviceId: {DeviceId}. Generando nuevos tokens.", device.Id);
 
+                if (device.Status == DeviceStatus.INACTIVE)
+                {
+                    device.Status = DeviceStatus.ACTIVE;
+                    _logger.LogInformation("El estado del dispositivo {DeviceId} ha sido cambiado de INACTIVO a ACTIVO durante la re-activación.", device.Id);
+                }
+
                 // Si es una re-activación, el estado del dispositivo ya debería ser ACTIVO, no lo cambiamos.
                 device.UpdatedAt = DateTime.UtcNow;
 
