@@ -1,6 +1,8 @@
 using ArandanoIRT.Web._2_Infrastructure;
 using ArandanoIRT.Web._2_Infrastructure.Middleware;
+using Hangfire;
 using Serilog;
+using Serilog.Events;
 using Serilog.Formatting.Json;
 
 // Configure Serilog for bootstrap logging
@@ -22,14 +24,14 @@ try
         loggerConfiguration
             .ReadFrom.Configuration(context.Configuration)
             .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
-            .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .WriteTo.Console(
-                formatter: new JsonFormatter(),
-                restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information
+                new JsonFormatter(),
+                LogEventLevel.Information
             );
     });
 
@@ -59,13 +61,14 @@ try
     app.UseSerilogRequestLogging();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseHangfireDashboard();
     app.UseMiddleware<UserAuditingMiddleware>();
 
     // Configure endpoints
     app.MapControllerRoute(
-        name: "admin_default",
-        pattern: "{controller=Dashboard}/{action=Index}/{id?}",
-        defaults: new { area = "Admin" });
+        "admin_default",
+        "{controller=Dashboard}/{action=Index}/{id?}",
+        new { area = "Admin" });
 
     app.Run();
 }
