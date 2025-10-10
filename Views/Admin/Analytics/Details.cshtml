@@ -9,80 +9,103 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* Contenedor para el gráfico para controlar su tamaño y la responsividad */
-        .chart-container {
+    <style>.chart-container {
             position: relative;
-            height: 400px; /* Aqui se le da una altura fija para que tenga mas consistencia */
+            height: 400px;
             width: 100%;
-        }
-    </style>
+        }</style>
 }
 
 <div class="page-header">
     <h1>@ViewData["Title"] <small class="text-muted fs-5">(@Model.CropName)</small></h1>
-    <div class="header-actions">
-        <a asp-action="GenerateReport" asp-route-plantId="@Model.PlantId"
-           asp-route-startDate="@Model.StartDate.ToString("o")" asp-route-endDate="@Model.EndDate.ToString("o")"
-           class="btn btn-success">
-            <i class="fas fa-download me-2"></i> Descargar PDF
-        </a>
-        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#emailReportModal">
-            <i class="fas fa-paper-plane me-2"></i> Enviar por Correo
-        </button>
-    </div>
+    @if (Model.HasData)
+    {
+        <div class="header-actions">
+            <a asp-action="GenerateReport" asp-route-plantId="@Model.PlantId"
+               asp-route-startDate="@Model.StartDate.ToString("o")" asp-route-endDate="@Model.EndDate.ToString("o")"
+               class="btn btn-success"><i class="fas fa-download me-2"></i> Descargar PDF</a>
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#emailReportModal">
+                <i class="fas fa-paper-plane me-2"></i> Enviar por Correo
+            </button>
+            <form asp-action="StartCatchUpAnalysis" method="post" class="d-inline">
+                <input type="hidden" name="plantId" value="@Model.PlantId" />
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-secondary" title="Busca y procesa cualquier dato crudo que no haya sido analizado. Útil para recuperar datos después de una interrupción del sistema.">
+                    <i class="fas fa-sync-alt me-2"></i> Refrescar Historial
+                </button>
+            </form>
+        </div>
+    }
 </div>
 
 <div class="card filter-card mb-4">
     <form asp-action="Details" asp-route-id="@Model.PlantId" method="get">
         <div class="row g-3 align-items-end">
+            <div class="col-md-4"><label class="form-label fw-bold">Desde</label><input type="date" name="startDate"
+                                                                                        class="form-control"
+                                                                                        value="@Model.StartDate.ToString("yyyy-MM-dd")"
+                                                                                        max="@maxDate"/></div>
+            <div class="col-md-4"><label class="form-label fw-bold">Hasta</label><input type="date" name="endDate"
+                                                                                        class="form-control"
+                                                                                        value="@Model.EndDate.ToString("yyyy-MM-dd")"
+                                                                                        max="@maxDate"/></div>
             <div class="col-md-4">
-                <label class="form-label fw-bold">Desde</label>
-                <input type="date" name="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")"
-                       max="@maxDate"/>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Hasta</label>
-                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"
-                       max="@maxDate"/>
-            </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-filter me-2"></i>Filtrar Periodo
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-2"></i>Filtrar Periodo
                 </button>
             </div>
         </div>
     </form>
 </div>
 
-<div class="row">
-    <div class="col-lg-12 mb-4">
-        <div class="card dashboard-card">
-            <div class="card-header">
-                <div class="card-header-icon"><i class="fas fa-water"></i></div>
-                <h5 class="card-header-title">Evolución del Índice de Estrés Hídrico (CWSI)</h5>
+@if (Model.HasData)
+{
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <div class="card-header-icon"><i class="fas fa-water"></i></div>
+                    <h5 class="card-header-title">Evolución del Índice de Estrés Hídrico (CWSI)</h5></div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="cwsiChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="cwsiChart"></canvas>
+        </div>
+        <div class="col-lg-12">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <div class="card-header-icon"><i class="fas fa-thermometer-half"></i></div>
+                    <h5 class="card-header-title">Evolución de Temperaturas</h5></div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="tempChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-12">
-        <div class="card dashboard-card">
-            <div class="card-header">
-                <div class="card-header-icon"><i class="fas fa-thermometer-half"></i></div>
-                <h5 class="card-header-title">Evolución de Temperaturas</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="tempChart"></canvas>
-                </div>
-            </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center p-5">
+            <i class="fas fa-info-circle fa-3x text-primary mb-3"></i>
+            <h4 class="card-title">No hay datos de análisis</h4>
+            <p class="card-text text-muted">No se encontraron resultados de análisis para el periodo seleccionado.</p>
+            <p>Puedes iniciar un proceso para analizar todo el historial de datos crudos de esta planta. El proceso se
+                ejecutará en segundo plano.</p>
+
+            <form asp-action="StartCatchUpAnalysis" method="post" class="mt-4">
+                <input type="hidden" name="plantId" value="@Model.PlantId"/>
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-lg btn-primary">
+                    <i class="fas fa-history me-2"></i> Generar Historial de Análisis
+                </button>
+            </form>
         </div>
     </div>
-</div>
+}
 
 <!-- Modal para Enviar Reporte -->
 <div class="modal fade" id="emailReportModal" tabindex="-1" aria-labelledby="emailReportModalLabel" aria-hidden="true">

@@ -381,10 +381,7 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
         });
 
-        modelBuilder.Entity<ApplicationRole>(entity =>
-        {
-            entity.ToTable("roles");
-        });
+        modelBuilder.Entity<ApplicationRole>(entity => { entity.ToTable("roles"); });
 
         modelBuilder.Entity<AnalysisResult>(entity =>
         {
@@ -401,7 +398,7 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
             entity.Property(e => e.RecordedAt).HasColumnName("recorded_at");
             entity.Property(e => e.CwsiValue).HasColumnName("cwsi_value");
-            entity.Property(e => e.Status).HasColumnName("status").HasConversion<string>();
+            entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.CanopyTemperature).HasColumnName("canopy_temperature");
             entity.Property(e => e.AmbientTemperature).HasColumnName("ambient_temperature");
             entity.Property(e => e.Vpd).HasColumnName("vpd");

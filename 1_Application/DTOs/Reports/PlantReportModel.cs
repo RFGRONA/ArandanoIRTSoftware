@@ -16,6 +16,8 @@ public class PlantReportModel
     public int MildStressAlerts { get; set; }
     public int SevereStressAlerts { get; set; }
     public int AnomalyAlerts { get; set; }
+    public float CwsiThresholdIncipient { get; set; }
+    public float CwsiThresholdCritical { get; set; }
 
     // Datos para Gráficos y Tablas
     public List<AnalysisResultDataPoint> AnalysisData { get; set; } = new();
@@ -26,7 +28,7 @@ public class PlantReportModel
 public class AnalysisResultDataPoint
 {
     public DateTime Timestamp { get; set; }
-    public float CwsiValue { get; set; }
+    public float? CwsiValue { get; set; }
     public float CanopyTemperature { get; set; }
     public float AmbientTemperature { get; set; }
 }

@@ -9,42 +9,55 @@ public static class GraphGenerator
     private const int Height = 400;
     private const int Padding = 60;
 
-    public static byte[] CreateCwsiGraph(List<AnalysisResultDataPoint> data, float thresholdIncipient, float thresholdCritical)
+    public static byte[] CreateCwsiGraph(List<AnalysisResultDataPoint> data, float thresholdIncipient,
+        float thresholdCritical)
     {
         using var surface = SKSurface.Create(new SKImageInfo(Width, Height));
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.White);
 
-        if (data == null || !data.Any())
-        {
-            return DrawPlaceholder(surface, "No hay datos de CWSI para mostrar");
-        }
+        if (data == null || !data.Any()) return DrawPlaceholder(surface, "No hay datos de CWSI para mostrar");
 
         var textPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true, TextSize = 12 };
-        var dataPaint = new SKPaint { Color = SKColors.DodgerBlue, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+        var dataPaint = new SKPaint
+        { Color = SKColors.DodgerBlue, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
 
         // Dibujar Ejes
         DrawAxes(canvas, textPaint, data.First().Timestamp, data.Last().Timestamp, 0f, 1f, "CWSI");
 
         // --- INICIO DE LA CORRECCIÓN #1: DIBUJAR LÍNEAS SIN TEXTO ---
         // Dibujamos las líneas de umbral sin intentar añadirles el texto al final
-        var incipientPaint = new SKPaint { Color = SKColors.Orange, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 4, 4 }, 0), IsAntialias = true };
-        var criticalPaint = new SKPaint { Color = SKColors.Red, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, PathEffect = SKPathEffect.CreateDash(new float[] { 4, 4 }, 0), IsAntialias = true };
+        var incipientPaint = new SKPaint
+        {
+            Color = SKColors.Orange,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 4, 4 }, 0),
+            IsAntialias = true
+        };
+        var criticalPaint = new SKPaint
+        {
+            Color = SKColors.Red,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.5f,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 4, 4 }, 0),
+            IsAntialias = true
+        };
 
-        float yIncipient = MapY(thresholdIncipient, 0f, 1f);
+        var yIncipient = MapY(thresholdIncipient, 0f, 1f);
         canvas.DrawLine(Padding, yIncipient, Width - Padding, yIncipient, incipientPaint);
 
-        float yCritical = MapY(thresholdCritical, 0f, 1f);
+        var yCritical = MapY(thresholdCritical, 0f, 1f);
         canvas.DrawLine(Padding, yCritical, Width - Padding, yCritical, criticalPaint);
         // --- FIN DE LA CORRECCIÓN #1 ---
 
         // Dibujar Datos (sin cambios)
         var path = new SKPath();
-        path.MoveTo(MapCoordinates(data[0].Timestamp, data[0].CwsiValue, data.First().Timestamp, data.Last().Timestamp, 0f, 1f));
+        path.MoveTo(MapCoordinates(data[0].Timestamp, data[0].CwsiValue ?? 0, data.First().Timestamp,
+            data.Last().Timestamp, 0f, 1f));
         foreach (var point in data.Skip(1))
-        {
-            path.LineTo(MapCoordinates(point.Timestamp, point.CwsiValue, data.First().Timestamp, data.Last().Timestamp, 0f, 1f));
-        }
+            path.LineTo(MapCoordinates(point.Timestamp, point.CwsiValue ?? 0, data.First().Timestamp,
+                data.Last().Timestamp, 0f, 1f));
         canvas.DrawPath(path, dataPaint);
 
         // --- INICIO DE LA CORRECCIÓN #2: DIBUJAR LEYENDA PERSONALIZADA ---
@@ -71,41 +84,47 @@ public static class GraphGenerator
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.White);
 
-        if (data == null || !data.Any())
-        {
-            return DrawPlaceholder(surface, "No hay datos de Temperatura para mostrar");
-        }
+        if (data == null || !data.Any()) return DrawPlaceholder(surface, "No hay datos de Temperatura para mostrar");
 
         // Configuración de Pinceles
         var axisPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true, StrokeWidth = 1 };
-        var gridPaint = new SKPaint { Color = SKColors.LightGray, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1, PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0) };
+        var gridPaint = new SKPaint
+        {
+            Color = SKColors.LightGray,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 2, 2 }, 0)
+        };
         var textPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true, TextSize = 12 };
-        var canopyPaint = new SKPaint { Color = SKColors.ForestGreen, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
-        var ambientPaint = new SKPaint { Color = SKColors.DarkOrange, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+        var canopyPaint = new SKPaint
+        { Color = SKColors.ForestGreen, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+        var ambientPaint = new SKPaint
+        { Color = SKColors.DarkOrange, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
 
         // Escala del Eje Y
-        float minY = data.Min(d => Math.Min(d.CanopyTemperature, d.AmbientTemperature)) - 2;
-        float maxY = data.Max(d => Math.Max(d.CanopyTemperature, d.AmbientTemperature)) + 2;
+        var minY = data.Min(d => Math.Min(d.CanopyTemperature, d.AmbientTemperature)) - 2;
+        var maxY = data.Max(d => Math.Max(d.CanopyTemperature, d.AmbientTemperature)) + 2;
 
         // Dibujar Ejes
         DrawAxes(canvas, textPaint, data.First().Timestamp, data.Last().Timestamp, minY, maxY, "Temperatura (°C)");
 
         // Dibujar Datos de Canopia
         var canopyPath = new SKPath();
-        canopyPath.MoveTo(MapCoordinates(data[0].Timestamp, data[0].CanopyTemperature, data.First().Timestamp, data.Last().Timestamp, minY, maxY));
+        canopyPath.MoveTo(MapCoordinates(data[0].Timestamp, data[0].CanopyTemperature, data.First().Timestamp,
+            data.Last().Timestamp, minY, maxY));
         foreach (var point in data.Skip(1))
-        {
-            canopyPath.LineTo(MapCoordinates(point.Timestamp, point.CanopyTemperature, data.First().Timestamp, data.Last().Timestamp, minY, maxY));
-        }
+            canopyPath.LineTo(MapCoordinates(point.Timestamp, point.CanopyTemperature, data.First().Timestamp,
+                data.Last().Timestamp, minY, maxY));
         canvas.DrawPath(canopyPath, canopyPaint);
 
         // Dibujar Datos de Ambiente
         var ambientPath = new SKPath();
-        ambientPath.MoveTo(MapCoordinates(data[0].Timestamp, data[0].AmbientTemperature, data.First().Timestamp, data.Last().Timestamp, minY, maxY));
+        ambientPath.MoveTo(MapCoordinates(data[0].Timestamp, data[0].AmbientTemperature, data.First().Timestamp,
+            data.Last().Timestamp, minY, maxY));
         foreach (var point in data.Skip(1))
-        {
-            ambientPath.LineTo(MapCoordinates(point.Timestamp, point.AmbientTemperature, data.First().Timestamp, data.Last().Timestamp, minY, maxY));
-        }
+            ambientPath.LineTo(MapCoordinates(point.Timestamp, point.AmbientTemperature, data.First().Timestamp,
+                data.Last().Timestamp, minY, maxY));
         canvas.DrawPath(ambientPath, ambientPaint);
 
         // Leyenda
@@ -126,7 +145,8 @@ public static class GraphGenerator
 
     // MÉTODOS AUXILIARES
 
-    private static void DrawAxes(SKCanvas canvas, SKPaint textPaint, DateTime minX, DateTime maxX, float minY, float maxY, string yAxisTitle)
+    private static void DrawAxes(SKCanvas canvas, SKPaint textPaint, DateTime minX, DateTime maxX, float minY,
+        float maxY, string yAxisTitle)
     {
         var axisPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true, StrokeWidth = 1 };
 
@@ -141,26 +161,27 @@ public static class GraphGenerator
         canvas.DrawLine(Padding, Height - Padding, Width - Padding, Height - Padding, axisPaint);
 
         // Etiquetas Eje Y
-        for (int i = 0; i <= 5; i++)
+        for (var i = 0; i <= 5; i++)
         {
-            float val = minY + (maxY - minY) * (i / 5f);
-            float y = MapY(val, minY, maxY);
+            var val = minY + (maxY - minY) * (i / 5f);
+            var y = MapY(val, minY, maxY);
             canvas.DrawText(val.ToString("F1"), Padding - 35, y + 5, textPaint);
             canvas.DrawLine(Padding - 5, y, Padding, y, axisPaint);
         }
 
         // Etiquetas Eje X
-        long totalSeconds = (long)(maxX - minX).TotalSeconds;
-        for (int i = 0; i <= 4; i++)
+        var totalSeconds = (long)(maxX - minX).TotalSeconds;
+        for (var i = 0; i <= 4; i++)
         {
             var date = minX.AddSeconds(totalSeconds * (i / 4.0));
-            float x = MapX(date, minX, maxX);
+            var x = MapX(date, minX, maxX);
             canvas.DrawText(date.ToString("dd/MM HH:mm"), x - 25, Height - Padding + 20, textPaint);
             canvas.DrawLine(x, Height - Padding, x, Height - Padding + 5, axisPaint);
         }
     }
 
-    private static void DrawThresholdLine(SKCanvas canvas, SKPaint textPaint, float value, string label, SKColor color, float minY, float maxY)
+    private static void DrawThresholdLine(SKCanvas canvas, SKPaint textPaint, float value, string label, SKColor color,
+        float minY, float maxY)
     {
         var linePaint = new SKPaint
         {
@@ -171,7 +192,7 @@ public static class GraphGenerator
             IsAntialias = true
         };
 
-        float y = MapY(value, minY, maxY);
+        var y = MapY(value, minY, maxY);
         canvas.DrawLine(Padding, y, Width - Padding, y, linePaint);
 
         using var labelPaint = new SKPaint
@@ -185,15 +206,16 @@ public static class GraphGenerator
         canvas.DrawText(label, Width - Padding + 5, y + 5, labelPaint);
     }
 
-    private static SKPoint MapCoordinates(DateTime time, float value, DateTime minX, DateTime maxX, float minY, float maxY)
+    private static SKPoint MapCoordinates(DateTime time, float value, DateTime minX, DateTime maxX, float minY,
+        float maxY)
     {
         return new SKPoint(MapX(time, minX, maxX), MapY(value, minY, maxY));
     }
 
     private static float MapX(DateTime time, DateTime minX, DateTime maxX)
     {
-        long totalSeconds = (long)(maxX - minX).TotalSeconds;
-        long elapsedSeconds = (long)(time - minX).TotalSeconds;
+        var totalSeconds = (long)(maxX - minX).TotalSeconds;
+        var elapsedSeconds = (long)(time - minX).TotalSeconds;
         if (totalSeconds == 0) return Padding;
         return Padding + (Width - 2 * Padding) * (elapsedSeconds / (float)totalSeconds);
     }
@@ -201,7 +223,7 @@ public static class GraphGenerator
     private static float MapY(float value, float minY, float maxY)
     {
         if (maxY - minY == 0) return Height - Padding;
-        return (Height - Padding) - (Height - 2 * Padding) * ((value - minY) / (maxY - minY));
+        return Height - Padding - (Height - 2 * Padding) * ((value - minY) / (maxY - minY));
     }
 
     private static byte[] DrawPlaceholder(SKSurface surface, string text)

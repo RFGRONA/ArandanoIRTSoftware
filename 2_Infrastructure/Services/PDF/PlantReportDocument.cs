@@ -73,7 +73,7 @@ public class PlantReportDocument : IDocument
                 {
                     graphContainer.Spacing(2); // Reducimos el espacio aquí
                     graphContainer.Item().Text("Evolución del Índice de Estrés Hídrico (CWSI)").Style(Styles.Header);
-                    graphContainer.Item().Image(GraphGenerator.CreateCwsiGraph(_model.AnalysisData, 0.3f, 0.5f));
+                    graphContainer.Item().Image(GraphGenerator.CreateCwsiGraph(_model.AnalysisData, _model.CwsiThresholdIncipient, _model.CwsiThresholdCritical));
                 });
 
                 column.Item().Column(graphContainer =>

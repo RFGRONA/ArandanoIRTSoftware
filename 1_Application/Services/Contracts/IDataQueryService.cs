@@ -39,4 +39,7 @@ public interface IDataQueryService
     Task<Result<(ThermalDataDto? Stats, string? ImagePath)>> GetLatestCaptureForMaskAsync(int plantId);
     Task<byte[]> GetAmbientDataAsCsvAsync(DataQueryFilters filters);
     Task<byte[]> GetThermalCapturesAsCsvAsync(DataQueryFilters filters);
+
+    float? GetLightValueFromJson(string? extraDataJson);
+    float? CalculateVpdKpa(float temperature, float humidity);
 }

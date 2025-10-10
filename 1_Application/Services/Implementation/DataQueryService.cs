@@ -36,19 +36,12 @@ public class DataQueryService : IDataQueryService
                 .Include(er => er.Plant)
                 .ThenInclude(p => p.Crop);
 
-            if (filters.DeviceId.HasValue)
-            {
-                query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
-            }
+            if (filters.DeviceId.HasValue) query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
 
             if (filters.PlantId.HasValue)
-            {
                 query = query.Where(er => er.PlantId == filters.PlantId.Value);
-            }
             else if (filters.CropId.HasValue)
-            {
                 query = query.Where(er => er.Plant != null && er.Plant.CropId == filters.CropId.Value);
-            }
 
             query = query.ApplyDateFilters(filters, er => er.RecordedAtServer);
 
@@ -149,7 +142,7 @@ public class DataQueryService : IDataQueryService
     }
 
     public async Task<Result<PagedResultDto<ThermalCaptureSummaryDto>>> GetThermalCapturesAsync(
-    DataQueryFilters filters)
+        DataQueryFilters filters)
     {
         _logger.LogInformation("Obteniendo capturas térmicas con filtros: {@Filters}", filters);
         try
@@ -159,19 +152,12 @@ public class DataQueryService : IDataQueryService
                 .Include(tc => tc.Plant)
                 .ThenInclude(p => p.Crop);
 
-            if (filters.DeviceId.HasValue)
-            {
-                query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
-            }
+            if (filters.DeviceId.HasValue) query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
 
             if (filters.PlantId.HasValue)
-            {
                 query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
-            }
             else if (filters.CropId.HasValue)
-            {
                 query = query.Where(tc => tc.Plant != null && tc.Plant.CropId == filters.CropId.Value);
-            }
 
             query = query.ApplyDateFilters(filters, tc => tc.RecordedAtServer);
 
@@ -605,7 +591,8 @@ public class DataQueryService : IDataQueryService
         // 3. Usamos CsvHelper para escribir los datos en un stream en memoria
         using var memoryStream = new MemoryStream();
         using (var writer = new StreamWriter(memoryStream, leaveOpen: true))
-        using (var csv = new CsvWriter(writer, CultureInfo.GetCultureInfo("es-CO"))) // Usamos cultura local para formatos
+        using (var csv = new CsvWriter(writer,
+                   CultureInfo.GetCultureInfo("es-CO"))) // Usamos cultura local para formatos
         {
             // Escribe las cabeceras y los registros
             csv.WriteRecords(dataToExport);
@@ -672,13 +659,24 @@ public class DataQueryService : IDataQueryService
         return memoryStream.ToArray();
     }
 
-    #region Métodos Auxiliares Internos
+    public float? CalculateVpdKpa(float temperature, float humidity)
+    {
+        if (humidity < 0 || humidity > 100) return null; // Humedad inválida
 
-    /// <summary>
-    ///     Parsea de forma segura el campo ExtraData (JSON) para extraer el valor de 'light'.
-    /// </summary>
-    /// <returns>El valor de 'light' o null si no se encuentra o hay un error.</returns>
-    private float? GetLightValueFromJson(string? extraDataJson)
+        // Fórmula de August-Roche-Magnus para la presión de vapor de saturación (SVP) en kPa
+        var svp = 0.61094 * Math.Exp(17.625 * temperature / (temperature + 243.04));
+
+        // Calcular la presión de vapor actual (AVP)
+        var avp = svp * (humidity / 100.0);
+
+        // VPD es la diferencia
+        var vpd = svp - avp;
+
+        return (float)vpd;
+    }
+
+
+    public float? GetLightValueFromJson(string? extraDataJson)
     {
         if (string.IsNullOrWhiteSpace(extraDataJson)) return null;
         try
@@ -696,6 +694,10 @@ public class DataQueryService : IDataQueryService
         return null;
     }
 
+    /// <summary>
+    ///     Parsea de forma segura el campo ExtraData (JSON) para extraer el valor de 'light'.
+    /// </summary>
+    /// <returns>El valor de 'light' o null si no se encuentra o hay un error.</returns>
     private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson, long entityId)
     {
         if (string.IsNullOrEmpty(thermalDataJson)) return null;
@@ -710,6 +712,4 @@ public class DataQueryService : IDataQueryService
             return null;
         }
     }
-
-    #endregion
 }

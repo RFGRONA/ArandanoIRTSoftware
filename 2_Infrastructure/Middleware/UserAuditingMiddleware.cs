@@ -18,11 +18,14 @@ public class UserAuditingMiddleware
         var userIdClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var appName = "arandano_app_unauthenticated";
-        if (!string.IsNullOrEmpty(userIdClaim)) appName = $"user_id_{userIdClaim}";
+        if (!string.IsNullOrEmpty(userIdClaim))
+        {
+            appName = $"user_id_{userIdClaim}";
+        }
 
         try
         {
-            await dbContext.Database.ExecuteSqlRawAsync("SET application_name = {0}", appName);
+            await dbContext.Database.ExecuteSqlAsync($"SET application_name = '{appName}'");
         }
         catch (Exception ex)
         {

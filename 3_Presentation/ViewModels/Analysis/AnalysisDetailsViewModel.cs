@@ -7,6 +7,7 @@ public class AnalysisDetailsViewModel
     public string CropName { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
+    public bool HasData { get; set; }
 
     // Datos pre-formateados como strings JSON para Chart.js
     public string CwsiChartDataJson { get; set; }

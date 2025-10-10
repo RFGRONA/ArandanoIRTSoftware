@@ -1,6 +1,7 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Analysis;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,18 +13,21 @@ public class AnalyticsController : BaseAdminController
 {
     private readonly IAlertService _alertService;
     private readonly IAnalyticsService _analyticsService;
+    private readonly IBackgroundJobClient _backgroundJobClient;
     private readonly IDataQueryService _dataQueryService;
     private readonly IPdfGeneratorService _pdfGeneratorService;
     private readonly IPlantService _plantService;
 
     public AnalyticsController(IPlantService plantService, IDataQueryService dataQueryService,
-        IAnalyticsService analyticsService, IPdfGeneratorService pdfGeneratorService, IAlertService alertService)
+        IAnalyticsService analyticsService, IPdfGeneratorService pdfGeneratorService, IAlertService alertService,
+        IBackgroundJobClient backgroundJobClient)
     {
         _plantService = plantService;
         _dataQueryService = dataQueryService;
         _analyticsService = analyticsService;
         _pdfGeneratorService = pdfGeneratorService;
         _alertService = alertService;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task<IActionResult> Index()
@@ -74,11 +78,8 @@ public class AnalyticsController : BaseAdminController
     {
         if (startDate > endDate) (startDate, endDate) = (endDate, startDate);
 
-        var utcStartDate = startDate.ToSafeUniversalTime();
-        var utcEndDate = endDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
-
         // 1. Llamar al servicio que hemos creado para generar el array de bytes del PDF
-        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, utcStartDate, utcEndDate);
+        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, startDate, endDate);
 
         // 2. Comprobar si el servicio devolvió un archivo válido
         if (pdfBytes.Length == 0)
@@ -171,5 +172,20 @@ public class AnalyticsController : BaseAdminController
 
         TempData["SuccessMessage"] = $"Reporte enviado exitosamente a {recipientEmail}.";
         return RedirectToAction("Details", new { id = plantId, startDate, endDate });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult StartCatchUpAnalysis(int plantId)
+    {
+        // Esta es la magia: encolamos el trabajo y nos olvidamos. Hangfire se encarga del resto.
+        _backgroundJobClient.Enqueue<IAnalysisExecutionService>(service =>
+            service.ExecuteCatchUpForPlantAsync(plantId));
+
+        TempData["SuccessMessage"] =
+            "Se ha iniciado el análisis del historial. Los datos aparecerán en esta página en unos minutos.";
+
+        // Redirigimos de vuelta a la página de detalles.
+        return RedirectToAction(nameof(Details), new { id = plantId });
     }
 }

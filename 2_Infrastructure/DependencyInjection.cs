@@ -6,8 +6,11 @@ using ArandanoIRT.Web._2_Infrastructure.Authentication;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Services;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Polly;
 using Polly.Extensions.Http;
@@ -56,6 +59,7 @@ public static class DependencyInjection
         services.Configure<CalibrationReminderSettings>(
             configuration.GetSection(CalibrationReminderSettings.SectionName));
         services.Configure<TurnstileSettings>(configuration.GetSection(TurnstileSettings.SectionName));
+        services.Configure<ModelSettings>(configuration.GetSection(ModelSettings.SectionName));
 
         // HTTP Client for Weather API
         services.AddHttpClient("WeatherApi", (serviceProvider, client) =>
@@ -72,8 +76,8 @@ public static class DependencyInjection
                 HttpPolicyExtensions
                     .HandleTransientHttpError()
                     .CircuitBreakerAsync(
-                        handledEventsAllowedBeforeBreaking: 3,
-                        durationOfBreak: TimeSpan.FromMinutes(3)
+                        3,
+                        TimeSpan.FromMinutes(3)
                     )
             );
 
@@ -95,6 +99,8 @@ public static class DependencyInjection
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
         services.AddScoped<ITurnstileService, TurnstileService>();
+        services.AddScoped<IAnalysisExecutionService, AnalysisExecutionService>();
+        services.AddScoped<IAnalysisExecutionService, AnalysisExecutionService>();
 
         // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
@@ -107,6 +113,28 @@ public static class DependencyInjection
         services.AddHostedService<WaterStressAnalysisService>();
         services.AddHostedService<DailyTasksService>();
         services.AddHostedService<AdminInactivityService>();
+
+        // Configuración de Hangfire
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(configuration.GetConnectionString("PostgresConnection"))));
+
+        services.AddHangfireServer(options => { options.WorkerCount = 2; });
+
+        // Cargar modelo
+        services.AddSingleton<IConditionPredictor>(serviceProvider =>
+        {
+            var modelSettings = serviceProvider.GetRequiredService<IOptions<ModelSettings>>().Value;
+            var environment = serviceProvider.GetRequiredService<IWebHostEnvironment>();
+            var modelPath = Path.Combine(environment.ContentRootPath, modelSettings.OnnxModelPath);
+
+            if (!File.Exists(modelPath))
+                throw new FileNotFoundException($"El archivo del modelo ONNX no se encontró en la ruta: {modelPath}");
+
+            return new OnnxConditionPredictor(modelPath);
+        });
 
         return services;
     }
@@ -134,10 +162,7 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
-        services.Configure<SecurityStampValidatorOptions>(options =>
-        {
-            options.ValidationInterval = TimeSpan.Zero;
-        });
+        services.Configure<SecurityStampValidatorOptions>(options => { options.ValidationInterval = TimeSpan.Zero; });
 
         // 2. CONFIGURAR LA AUTENTICACIÓN Y LA COOKIE DE IDENTITY
         services.ConfigureApplicationCookie(options =>
@@ -158,16 +183,12 @@ public static class DependencyInjection
             {
                 var principal = context.Principal;
                 if (principal != null)
-                {
                     // Si la cookie pertenece al usuario bootstrap (por nombre o rol), no validar security stamp
                     // - IsInRole usa las claims actuales (ClaimTypes.Role)
                     // - Identity name lo pusiste como "ROOT_BOOTSTRAP_USER"
                     if (principal.IsInRole("BootstrapAdmin") || principal.Identity?.Name == "ROOT_BOOTSTRAP_USER")
-                    {
                         // No ejecutamos la validación por security stamp para esta principal
                         return;
-                    }
-                }
 
                 // Para usuarios "normales", dejamos el comportamiento por defecto (validación contra DB)
                 await SecurityStampValidator.ValidatePrincipalAsync(context);

@@ -88,7 +88,9 @@ public class PdfGeneratorService : IPdfGeneratorService
             AnomalyAlerts = anomalyAlerts,
             AnalysisData = analysisData,
             ObservationData = observationData,
-            StatusHistory = statusHistory
+            StatusHistory = statusHistory,
+            CwsiThresholdIncipient = (float)(plant.Crop.CropSettings?.AnalysisParameters.CwsiThresholdIncipient ?? 0.3),
+            CwsiThresholdCritical = (float)(plant.Crop.CropSettings?.AnalysisParameters.CwsiThresholdCritical ?? 0.5)
         };
 
         _logger.LogInformation("Generando reporte en PDF para la planta {PlantName}", plant.Name);
