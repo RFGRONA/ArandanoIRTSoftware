@@ -10,8 +10,15 @@ using static ArandanoIRT.Web._1_Application.Services.Contracts.IAnalysisExecutio
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio que encapsula la lógica para ejecutar los cálculos de análisis de estrés hídrico.
+/// </summary>
 public class AnalysisExecutionService : IAnalysisExecutionService
 {
+    /// <summary>
+    ///     Contiene los umbrales de la línea base no estresada (T_canopia - T_ambiente) para cada hora del día.
+    ///     Estos valores son fundamentales para calcular la temperatura de referencia seca (T_dry).
+    /// </summary>
     private static readonly Dictionary<int, double> HourlyStressThresholds = new()
     {
         { 0, 0.71 }, { 1, 0.51 }, { 2, 0.55 }, { 3, 0.63 }, { 4, 0.67 },
@@ -26,6 +33,9 @@ public class AnalysisExecutionService : IAnalysisExecutionService
     private readonly ILogger<AnalysisExecutionService> _logger;
     private readonly IConditionPredictor _predictor;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AnalysisExecutionService" />.
+    /// </summary>
     public AnalysisExecutionService(ApplicationDbContext context, ILogger<AnalysisExecutionService> logger,
         IConditionPredictor predictor, IDataQueryService dataQueryService)
     {
@@ -35,6 +45,7 @@ public class AnalysisExecutionService : IAnalysisExecutionService
         _dataQueryService = dataQueryService;
     }
 
+    /// <inheritdoc />
     public async Task<Result<AnalysisResult>> CalculateCwsiAsync(CwsiCalculationInput input)
     {
         var lightValue = _dataQueryService.GetLightValueFromJson(input.EnvironmentalReading.ExtraData);
@@ -90,6 +101,7 @@ public class AnalysisExecutionService : IAnalysisExecutionService
         return Result.Success(result);
     }
 
+    /// <inheritdoc />
     public async Task ExecuteCatchUpForPlantAsync(int plantId)
     {
         _logger.LogInformation("Iniciando análisis de catch-up para la planta {PlantId}", plantId);
@@ -163,6 +175,13 @@ public class AnalysisExecutionService : IAnalysisExecutionService
         }
     }
 
+    /// <summary>
+    ///     Extrae la temperatura de la canopia desde una captura térmica.
+    ///     Prioriza el cálculo usando una máscara térmica si está disponible; de lo contrario, usa el promedio general.
+    /// </summary>
+    /// <param name="capture">La entidad de la captura térmica.</param>
+    /// <param name="maskJson">La cadena JSON con las coordenadas de la máscara térmica.</param>
+    /// <returns>La temperatura promedio de la canopia o null si no se puede calcular.</returns>
     private float? GetCanopyTemperature(ThermalCapture? capture, string? maskJson)
     {
         if (capture == null || string.IsNullOrWhiteSpace(capture.ThermalDataStats)) return null;
@@ -201,17 +220,25 @@ public class AnalysisExecutionService : IAnalysisExecutionService
         }
     }
 
-    // DTOs internos para el parseo del JSON de la máscara
+    /// <summary>
+    ///     DTO interno para deserializar el contenedor principal del JSON de la máscara.
+    /// </summary>
     private class MaskContainer
     {
         public MaskData? thermal_mask { get; set; }
     }
 
+    /// <summary>
+    ///     DTO interno para deserializar los datos de la máscara.
+    /// </summary>
     private class MaskData
     {
         public List<Coord>? coordinates { get; set; }
     }
 
+    /// <summary>
+    ///     DTO interno para deserializar las coordenadas x, y.
+    /// </summary>
     private class Coord
     {
         public int x { get; set; }

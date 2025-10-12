@@ -2,59 +2,60 @@ using System.Text.Json.Serialization;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Weather;
 
-// Este DTO es para la respuesta de nuestro IWeatherService
+/// <summary>
+///     DTO principal que representa la información del clima de una forma limpia y estandarizada para ser usada dentro de
+///     la aplicación.
+/// </summary>
 public class WeatherInfo
 {
     public float? TemperatureCelsius { get; set; }
-    public int? HumidityPercentage { get; set; } // WeatherAPI devuelve int
-    public bool? IsNight { get; set; } // Derivado de is_day
-    public string? ConditionText { get; set; } // NUEVA PROPIEDAD para la descripción del clima
+    public int? HumidityPercentage { get; set; }
+    public bool? IsNight { get; set; }
+    public string? ConditionText { get; set; }
 }
 
-// DTOs internos para deserializar la respuesta de WeatherAPI.com
-// Estos pueden ser clases privadas o internas dentro del servicio si solo se usan allí.
-// O públicas si se reutilizan. Por ahora, públicas en el mismo archivo por simplicidad.
-
+/// <summary>
+///     Modelo para deserializar la respuesta completa de la API externa WeatherAPI.com.
+/// </summary>
 public class WeatherApiResponse
 {
-    [JsonPropertyName("current")]
-    public CurrentWeather? Current { get; set; }
+    [JsonPropertyName("current")] public CurrentWeather? Current { get; set; }
 
-    [JsonPropertyName("error")]
-    public WeatherApiError? Error { get; set; } // Para capturar errores de la API
+    [JsonPropertyName("error")] public WeatherApiError? Error { get; set; }
 }
 
+/// <summary>
+///     Modelo para deserializar el objeto "current" de la respuesta de WeatherAPI.
+/// </summary>
 public class CurrentWeather
 {
-    [JsonPropertyName("temp_c")]
-    public float TempC { get; set; }
+    [JsonPropertyName("temp_c")] public float TempC { get; set; }
 
-    [JsonPropertyName("humidity")]
-    public int Humidity { get; set; } // Es un entero en la respuesta de WeatherAPI
+    [JsonPropertyName("humidity")] public int Humidity { get; set; }
 
-    [JsonPropertyName("is_day")]
-    public int IsDay { get; set; } // 1 = Yes, 0 = No
+    [JsonPropertyName("is_day")] public int IsDay { get; set; }
 
-    [JsonPropertyName("condition")] // NUEVO: Añadir el objeto condition
-    public WeatherCondition? Condition { get; set; }
+    [JsonPropertyName("condition")] public WeatherCondition? Condition { get; set; }
 }
 
-public class WeatherCondition // NUEVA CLASE para el objeto condition
+/// <summary>
+///     Modelo para deserializar el objeto "condition" dentro de la respuesta de WeatherAPI.
+/// </summary>
+public class WeatherCondition
 {
-    [JsonPropertyName("text")]
-    public string Text { get; set; } = string.Empty;
+    [JsonPropertyName("text")] public string Text { get; set; } = string.Empty;
 
-    [JsonPropertyName("icon")]
-    public string Icon { get; set; } = string.Empty;
+    [JsonPropertyName("icon")] public string Icon { get; set; } = string.Empty;
 
-    [JsonPropertyName("code")]
-    public int Code { get; set; }
+    [JsonPropertyName("code")] public int Code { get; set; }
 }
 
+/// <summary>
+///     Modelo para deserializar el objeto de error en caso de que la respuesta de WeatherAPI falle.
+/// </summary>
 public class WeatherApiError
 {
-    [JsonPropertyName("code")]
-    public int Code { get; set; }
-    [JsonPropertyName("message")]
-    public string Message { get; set; } = string.Empty;
+    [JsonPropertyName("code")] public int Code { get; set; }
+
+    [JsonPropertyName("message")] public string Message { get; set; } = string.Empty;
 }

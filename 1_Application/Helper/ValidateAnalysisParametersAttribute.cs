@@ -3,20 +3,27 @@ using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.Helper;
 
+/// <summary>
+///     Atributo de validación personalizado para la clase AnalysisParameters.
+///     Aplica reglas de negocio que involucran la comparación de múltiples propiedades.
+/// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class ValidateAnalysisParametersAttribute : ValidationAttribute
 {
+    /// <summary>
+    ///     Valida que los parámetros de análisis cumplan con las siguientes reglas:
+    ///     1. El umbral de estrés incipiente debe ser menor que el umbral crítico.
+    ///     2. La hora de inicio del análisis debe ser anterior a la hora de fin.
+    ///     3. La ventana de análisis debe estar dentro del rango de alta actividad solar (8:00 - 16:00).
+    /// </summary>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         const int minSolarHour = 8;
         const int maxSolarHour = 16;
 
-        // El atributo se aplica a la clase, por lo que 'value' es una instancia de AnalysisParameters.
         if (value is not AnalysisParameters analysisParams)
-            // Si no es del tipo esperado, dejamos que otras validaciones se encarguen.
             return ValidationResult.Success;
 
-        // Validación 1: El umbral de estrés incipiente debe ser menor que el crítico.
         if (analysisParams.CwsiThresholdIncipient >= analysisParams.CwsiThresholdCritical)
             return new ValidationResult(
                 "El umbral de estrés incipiente debe ser menor que el umbral de estrés crítico.",
@@ -26,7 +33,6 @@ public class ValidateAnalysisParametersAttribute : ValidationAttribute
                 }
             );
 
-        // Validación 2: La hora de inicio debe ser menor que la hora de fin.
         if (analysisParams.AnalysisWindowStartHour >= analysisParams.AnalysisWindowEndHour)
             return new ValidationResult(
                 "La hora de inicio del análisis debe ser anterior a la hora de fin.",
@@ -36,7 +42,6 @@ public class ValidateAnalysisParametersAttribute : ValidationAttribute
                 }
             );
 
-        // Validación 3: La ventana de análisis debe estar dentro del rango de actividad solar.
         if (analysisParams.AnalysisWindowStartHour < minSolarHour ||
             analysisParams.AnalysisWindowEndHour > maxSolarHour)
             return new ValidationResult(

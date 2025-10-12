@@ -3,7 +3,7 @@
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Stores single-use codes to activate new devices.
+/// Almacena los códigos de activación de un solo uso generados para registrar nuevos dispositivos en la plataforma.
 /// </summary>
 public partial class DeviceActivation
 {

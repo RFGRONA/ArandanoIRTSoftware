@@ -8,15 +8,22 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio que gestiona la lógica para disparar alertas.
+///     Utiliza un sistema de caché en memoria para agrupar alertas repetitivas y evitar el envío masivo de notificaciones.
+/// </summary>
 public class AlertTriggerService : IAlertTriggerService
 {
     private readonly IAlertService _alertService;
     private readonly IConfiguration _configuration;
     private readonly IDeviceService _deviceService;
     private readonly ILogger<AlertTriggerService> _logger;
-    private readonly IUserService _userService;
     private readonly IMemoryCache _memoryCache;
+    private readonly IUserService _userService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AlertTriggerService" />.
+    /// </summary>
     public AlertTriggerService(
         ILogger<AlertTriggerService> logger,
         IDeviceService deviceService,
@@ -33,9 +40,9 @@ public class AlertTriggerService : IAlertTriggerService
         _memoryCache = memoryCache;
     }
 
+    /// <inheritdoc />
     public async Task ProcessGrafanaWebhookAsync(GrafanaWebhookPayload payload)
     {
-        // 1. Extraemos la etiqueta personalizada que define el tipo de alerta
         if (!payload.CommonLabels.TryGetValue("alert_type", out var alertType) || string.IsNullOrEmpty(alertType))
         {
             _logger.LogWarning("Alerta de Grafana recibida sin la etiqueta 'alert_type'.");
@@ -44,7 +51,6 @@ public class AlertTriggerService : IAlertTriggerService
 
         var cacheKey = $"grafana_alert_group_{alertType}";
 
-        // 2. "Traducimos" el tipo de alerta a un resumen en español
         string summary;
         switch (alertType)
         {
@@ -59,26 +65,22 @@ public class AlertTriggerService : IAlertTriggerService
                 return;
         }
 
-        // 3. Buscamos un grupo de alertas existente en la caché
         if (!_memoryCache.TryGetValue(cacheKey, out AlertGroupState alertGroup))
         {
-            // Si no existe, creamos uno nuevo
             alertGroup = new AlertGroupState { Summary = summary };
             _logger.LogInformation("Creando nuevo grupo de alertas para: {AlertType}", alertType);
         }
         else
         {
-            // Si ya existe, solo incrementamos el contador
             alertGroup.Count++;
         }
 
-        // 4. Guardamos o actualizamos el grupo en la caché con una expiración de 1 hora
         _memoryCache.Set(cacheKey, alertGroup, TimeSpan.FromHours(1));
         _logger.LogInformation("Grupo de alertas '{AlertType}' actualizado. Conteo actual: {Count}", alertType,
             alertGroup.Count);
     }
 
-
+    /// <inheritdoc />
     public async Task CheckDeviceInactivityAsync()
     {
         var inactivityMultiplier = _configuration.GetValue("Alerting:InactivityCheckMultiplier", 4);
@@ -91,15 +93,12 @@ public class AlertTriggerService : IAlertTriggerService
         if (!adminsToNotify.Any()) return;
 
         foreach (var device in inactiveDevices)
-        {
             if (device.Status != DeviceStatus.INACTIVE)
             {
                 _logger.LogWarning("Dispositivo inactivo detectado: {DeviceName}", device.Name);
 
-                // 1. Cambiamos el estado del dispositivo
                 await _deviceService.UpdateDeviceStatusAsync(device.Id, DeviceStatus.INACTIVE);
 
-                // 2. Preparamos la notificación
                 var viewModel = new GenericAlertViewModel
                 {
                     Title = "Alerta de Inactividad de Dispositivo",
@@ -109,19 +108,14 @@ public class AlertTriggerService : IAlertTriggerService
                     AlertTime = DateTime.UtcNow
                 };
 
-                // 3. Enviamos el correo a cada administrador
                 foreach (var admin in adminsToNotify)
-                {
                     await _alertService.SendGenericAlertEmailAsync(admin.Email, admin.FirstName, viewModel);
-                }
             }
-        }
     }
 
-
+    /// <inheritdoc />
     public async Task SendGroupedAlertSummaryAsync(string alertType, AlertGroupState group)
     {
-        // 1. Obtenemos la lista de administradores que deben ser notificados para este tipo de alerta
         List<User> recipients;
         string title;
 
@@ -136,12 +130,11 @@ public class AlertTriggerService : IAlertTriggerService
                 title = "Resumen de Alertas: Fallo de Aplicación";
                 break;
             default:
-                return; // Tipo no reconocido, no hacemos nada
+                return;
         }
 
         if (!recipients.Any()) return;
 
-        // 2. Creamos el ViewModel con los textos en español
         var viewModel = new GenericAlertViewModel
         {
             Title = title,
@@ -151,7 +144,6 @@ public class AlertTriggerService : IAlertTriggerService
             AlertTime = DateTime.UtcNow
         };
 
-        // 3. Enviamos el correo a cada destinatario
         foreach (var admin in recipients)
             await _alertService.SendGenericAlertEmailAsync(admin.Email, admin.FirstName, viewModel);
 
@@ -159,6 +151,7 @@ public class AlertTriggerService : IAlertTriggerService
             alertType, recipients.Count);
     }
 
+    /// <inheritdoc />
     public async Task TriggerAnomalyAlertAsync(int plantId, string plantName)
     {
         var usersToNotify = await _userService.GetAllUsersAsync();
@@ -179,6 +172,7 @@ public class AlertTriggerService : IAlertTriggerService
         _logger.LogWarning("Alerta de comportamiento anómalo enviada para la planta {PlantName}", plantName);
     }
 
+    /// <inheritdoc />
     public async Task TriggerMaskCreationAlertAsync(List<string> plantNames)
     {
         if (!plantNames.Any()) return;
@@ -199,14 +193,14 @@ public class AlertTriggerService : IAlertTriggerService
         _logger.LogInformation("Alerta de creación de máscara enviada para {Count} plantas.", plantNames.Count);
     }
 
+    /// <inheritdoc />
     public async Task TriggerStressAlertAsync(int plantId, string plantName, PlantStatus newStatus,
         PlantStatus previousStatus, float cwsiValue)
     {
         var usersToNotify = await _userService.GetAllUsersAsync();
         if (!usersToNotify.Any()) return;
 
-        // Construir la URL una sola vez
-        var baseUrl = _configuration["BaseUrl"]; // Asegúrate de tener "BaseUrl" en appsettings.json
+        var baseUrl = _configuration["BaseUrl"];
         var analysisUrl = $"{baseUrl}/Admin/Analytics/Details/{plantId}";
 
         foreach (var user in usersToNotify)

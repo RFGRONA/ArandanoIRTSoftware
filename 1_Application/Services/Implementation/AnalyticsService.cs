@@ -8,17 +8,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de analíticas.
+///     Se encarga de preparar y procesar los datos para las vistas de monitoreo y análisis.
+/// </summary>
 public class AnalyticsService : IAnalyticsService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<AnalyticsService> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AnalyticsService" />.
+    /// </summary>
     public AnalyticsService(ApplicationDbContext context, ILogger<AnalyticsService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result> SaveThermalMaskAsync(int plantId, string maskCoordinatesJson)
     {
         var plant = await _context.Plants.FindAsync(plantId);
@@ -42,6 +50,7 @@ public class AnalyticsService : IAnalyticsService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<List<CropMonitorViewModel>>> GetCropsForMonitoringAsync()
     {
         var crops = await _context.Crops
@@ -56,17 +65,16 @@ public class AnalyticsService : IAnalyticsService
 
             var controlPlants = crop.Plants.Where(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL).ToList();
 
-            // --- CAMBIO: La lógica de "listo para análisis" ya no depende de la planta de STRESS ---
             cropViewModel.AnalysisReadiness.HasControlGroup = controlPlants.Any();
             cropViewModel.AnalysisReadiness.HasMonitoredGroup =
                 crop.Plants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED);
             cropViewModel.AnalysisReadiness.HasControlWithMask =
                 controlPlants.Any(p => !string.IsNullOrEmpty(p.ThermalMaskData));
 
-            // Marcamos la parte de STRESS como "lista" para no confundir al usuario en la UI
+            // Se marca la parte de STRESS como "lista" para simplificar la lógica en la UI,
+            // ya que el nuevo modelo de cálculo no depende de una planta de estrés.
             cropViewModel.AnalysisReadiness.HasStressGroup = true;
             cropViewModel.AnalysisReadiness.HasStressWithMask = true;
-            // --- FIN DEL CAMBIO ---
 
             foreach (var plant in crop.Plants)
                 cropViewModel.Plants.Add(new PlantMonitorViewModel
@@ -83,19 +91,19 @@ public class AnalyticsService : IAnalyticsService
         return Result.Success(resultList);
     }
 
+    /// <inheritdoc />
     public async Task<Result<AnalysisDetailsViewModel>> GetAnalysisDetailsAsync(int plantId, DateTime? startDate,
         DateTime? endDate)
     {
         var plant = await _context.Plants.Include(p => p.Crop).FirstOrDefaultAsync(p => p.Id == plantId);
         if (plant == null) return Result.Failure<AnalysisDetailsViewModel>("Planta no encontrada.");
 
-        // --- CAMBIO: Simplificamos la validación. Solo necesitamos una planta de control ---
+        // Se simplifica la validación: solo se requiere una planta de control en el cultivo para proceder.
         var hasControlPlant = await _context.Plants.AnyAsync(p =>
             p.CropId == plant.CropId && p.ExperimentalGroup == ExperimentalGroupType.CONTROL);
         if (!hasControlPlant)
             return Result.Failure<AnalysisDetailsViewModel>(
                 "La configuración del cultivo es inválida. Se requiere al menos una planta de tipo 'Control' para realizar análisis.");
-        // --- FIN DEL CAMBIO ---
 
         var displayEndDate = endDate ?? DateTime.Now.Date;
         var displayStartDate = startDate ?? displayEndDate.AddDays(-7);
@@ -109,7 +117,7 @@ public class AnalyticsService : IAnalyticsService
             .OrderBy(ar => ar.RecordedAt)
             .ToListAsync();
 
-        // --- CAMBIO: Eliminamos la lógica de fallback y manejamos el caso "sin datos" de forma limpia ---
+        // Si no se encuentran datos de análisis, se devuelve un modelo de vista vacío pero válido para la UI.
         if (!analysisData.Any())
         {
             _logger.LogWarning("No se encontraron datos de análisis para la planta {PlantId} en el rango solicitado.",
@@ -129,7 +137,6 @@ public class AnalyticsService : IAnalyticsService
             };
             return Result.Success(emptyViewModel);
         }
-        // --- FIN DEL CAMBIO ---
 
         var labels = analysisData.Select(ar => ar.RecordedAt.ToColombiaTime().ToString("dd/MM HH:mm")).ToList();
         var cwsiChartData = new

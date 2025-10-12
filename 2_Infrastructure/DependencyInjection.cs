@@ -19,17 +19,21 @@ using Serilog;
 namespace ArandanoIRT.Web._2_Infrastructure;
 
 /// <summary>
-///     Extension methods for setting up services in the IServiceCollection.
+/// Proporciona métodos de extensión para configurar la inyección de dependencias
+/// y registrar los servicios de la aplicación en el contenedor de IServiceCollection.
 /// </summary>
 public static class DependencyInjection
 {
     /// <summary>
-    ///     Adds infrastructure services to the container.
-    ///     This includes database, application services, and external service clients.
+    /// Registra y configura todos los servicios relacionados con la capa de infraestructura.
+    /// Esto incluye el contexto de la base de datos, la configuración de la aplicación (Settings),
+    /// los clientes HTTP, los servicios de aplicación, los servicios de infraestructura y los trabajos en segundo plano.
     /// </summary>
+    /// <param name="services">La colección de servicios para registrar.</param>
+    /// <param name="configuration">La configuración de la aplicación.</param>
+    /// <returns>La colección de servicios con los nuevos registros.</returns>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Database Context
         var connectionString = configuration.GetConnectionString("PostgresConnection");
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 
@@ -45,7 +49,6 @@ public static class DependencyInjection
             options.UseNpgsql(dataSource, o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
                 .UseSnakeCaseNamingConvention());
 
-        // Configuration Settings
         services.Configure<AdminCredentialsSettings>(configuration.GetSection(AdminCredentialsSettings.SectionName));
         services.Configure<WeatherApiSettings>(configuration.GetSection(WeatherApiSettings.SectionName));
         services.Configure<TokenSettings>(configuration.GetSection(TokenSettings.SectionName));
@@ -61,7 +64,6 @@ public static class DependencyInjection
         services.Configure<TurnstileSettings>(configuration.GetSection(TurnstileSettings.SectionName));
         services.Configure<ModelSettings>(configuration.GetSection(ModelSettings.SectionName));
 
-        // HTTP Client for Weather API
         services.AddHttpClient("WeatherApi", (serviceProvider, client) =>
         {
             var weatherApiSettings = configuration.GetSection(WeatherApiSettings.SectionName).Get<WeatherApiSettings>();
@@ -81,7 +83,6 @@ public static class DependencyInjection
                     )
             );
 
-        // Application Services
         services.AddScoped<IWeatherService, WeatherService>();
         services.AddScoped<IDeviceService, DeviceService>();
         services.AddScoped<IDataSubmissionService, DataSubmissionService>();
@@ -100,21 +101,17 @@ public static class DependencyInjection
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
         services.AddScoped<ITurnstileService, TurnstileService>();
         services.AddScoped<IAnalysisExecutionService, AnalysisExecutionService>();
-        services.AddScoped<IAnalysisExecutionService, AnalysisExecutionService>();
 
-        // Infrastructure Services
         services.AddScoped<IFileStorageService, MinioStorageService>();
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IRazorViewToStringRenderer, RazorViewToStringRenderer>();
         services.AddMemoryCache();
 
-        // Background Jobs
         services.AddHostedService<DeviceInactivityService>();
         services.AddHostedService<WaterStressAnalysisService>();
         services.AddHostedService<DailyTasksService>();
         services.AddHostedService<AdminInactivityService>();
 
-        // Configuración de Hangfire
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
@@ -123,7 +120,6 @@ public static class DependencyInjection
 
         services.AddHangfireServer(options => { options.WorkerCount = 2; });
 
-        // Cargar modelo
         services.AddSingleton<IConditionPredictor>(serviceProvider =>
         {
             var modelSettings = serviceProvider.GetRequiredService<IOptions<ModelSettings>>().Value;
@@ -140,12 +136,15 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    ///     Adds custom authentication and authorization services.
+    /// Configura y registra los servicios de autenticación y autorización personalizados para la aplicación.
+    /// Incluye la configuración de ASP.NET Core Identity, el manejo de cookies de sesión y
+    /// un esquema de autenticación específico para dispositivos.
     /// </summary>
+    /// <param name="services">La colección de servicios para registrar.</param>
+    /// <returns>La colección de servicios con los nuevos registros.</returns>
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services)
     {
-        // 1. AÑADIR IDENTITY PRIMERO
-        // Esto configura el sistema principal de usuarios, roles y contraseñas.
+        // 1. Sistema principal de usuarios, roles y contraseñas.
         services.AddIdentity<User, ApplicationRole>(options =>
             {
                 options.Password.RequireDigit = true;
@@ -164,43 +163,39 @@ public static class DependencyInjection
 
         services.Configure<SecurityStampValidatorOptions>(options => { options.ValidationInterval = TimeSpan.Zero; });
 
-        // 2. CONFIGURAR LA AUTENTICACIÓN Y LA COOKIE DE IDENTITY
+        // 2. Autenticación y Cookies
         services.ConfigureApplicationCookie(options =>
         {
             options.LoginPath = "/Account/Login";
             options.LogoutPath = "/Account/Logout";
             options.AccessDeniedPath = "/Account/AccessDenied";
 
-            // 1. Duración fija de la sesión de 4 horas
+            // Duración fija de la sesión de 4 horas.
             options.ExpireTimeSpan = TimeSpan.FromHours(4);
 
-            // 2. Desactiva la expiración deslizante para que la sesión termine 4 horas después del login, sin importar la actividad.
+            // Desactiva la expiración deslizante para que la sesión termine 4 horas después del login, sin importar la actividad.
             options.SlidingExpiration = false;
 
-            // 3. (MUY IMPORTANTE) Activa la validación del SecurityStamp.
-            // Esto fuerza a la aplicación a verificar en cada petición si la sesión sigue siendo válida (p. ej. si la contraseña cambió).
+            // Activa la validación del SecurityStamp.
+            // Fuerza a la aplicación a verificar en cada petición si la sesión sigue siendo válida (p. ej. si la contraseña cambió).
             options.Events.OnValidatePrincipal = async context =>
             {
                 var principal = context.Principal;
                 if (principal != null)
-                    // Si la cookie pertenece al usuario bootstrap (por nombre o rol), no validar security stamp
-                    // - IsInRole usa las claims actuales (ClaimTypes.Role)
-                    // - Identity name lo pusiste como "ROOT_BOOTSTRAP_USER"
+                    // Si la cookie pertenece al usuario bootstrap (por nombre o rol), no se valida el security stamp.
                     if (principal.IsInRole("BootstrapAdmin") || principal.Identity?.Name == "ROOT_BOOTSTRAP_USER")
-                        // No ejecutamos la validación por security stamp para esta principal
                         return;
 
-                // Para usuarios "normales", dejamos el comportamiento por defecto (validación contra DB)
                 await SecurityStampValidator.ValidatePrincipalAsync(context);
             };
         });
 
-        // Añadimos nuestro esquema personalizado para dispositivos, que es independiente.
+        // Esquema personalizado para dispositivos, es independiente.
         services.AddAuthentication()
             .AddScheme<DeviceAuthenticationOptions, DeviceAuthenticationHandler>(
                 DeviceAuthenticationOptions.DefaultScheme, options => { });
 
-        // 3. CONFIGURAR AUTORIZACIÓN (Se mantiene igual)
+        // 3. Autorización
         services.AddAuthorization(options =>
         {
             options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
@@ -215,8 +210,11 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    ///     Adds presentation layer services like Controllers and Views.
+    /// Registra los servicios necesarios para la capa de presentación (MVC).
+    /// Esto incluye el acceso al HttpContext y la configuración de controladores y vistas.
     /// </summary>
+    /// <param name="services">La colección de servicios para registrar.</param>
+    /// <returns>La colección de servicios con los nuevos registros.</returns>
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
@@ -224,7 +222,6 @@ public static class DependencyInjection
         services.AddControllersWithViews()
             .AddRazorOptions(options =>
             {
-                // Define search locations for area views
                 options.AreaViewLocationFormats.Clear();
                 options.AreaViewLocationFormats.Add("/Views/{2}/{1}/{0}.cshtml");
                 options.AreaViewLocationFormats.Add("/Views/{2}/Shared/{0}.cshtml");

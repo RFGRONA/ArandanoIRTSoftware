@@ -6,39 +6,45 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Data;
 
+/// <summary>
+///     Representa la sesión con la base de datos de la aplicación.
+///     Hereda de IdentityDbContext para integrar el sistema de usuarios y roles de ASP.NET Core Identity.
+/// </summary>
 public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationRole, int>
 {
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="ApplicationDbContext" />.
+    /// </summary>
+    /// <param name="options">Las opciones a ser usadas por el DbContext.</param>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
     public virtual DbSet<Crop> Crops { get; set; }
-
     public virtual DbSet<Device> Devices { get; set; }
-
     public virtual DbSet<DeviceActivation> DeviceActivations { get; set; }
-
     public virtual DbSet<DeviceToken> DeviceTokens { get; set; }
-
     public virtual DbSet<EnvironmentalReading> EnvironmentalReadings { get; set; }
-
     public virtual DbSet<InvitationCode> InvitationCodes { get; set; }
-
     public virtual DbSet<Observation> Observations { get; set; }
-
     public virtual DbSet<Plant> Plants { get; set; }
-
     public virtual DbSet<PlantStatusHistory> PlantStatusHistories { get; set; }
-
     public virtual DbSet<ThermalCapture> ThermalCaptures { get; set; }
-
     public virtual DbSet<AnalysisResult> AnalysisResults { get; set; }
 
+    /// <summary>
+    ///     Configura el modelo de datos para el contexto utilizando el ModelBuilder.
+    ///     Este método es donde se definen las relaciones, índices, claves primarias, nombres de tablas y columnas,
+    ///     y otras configuraciones específicas de la base de datos para cada entidad.
+    /// </summary>
+    /// <param name="modelBuilder">El constructor que se utiliza para construir el modelo para este contexto.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        // --- Configuración de las Tablas de ASP.NET Core Identity ---
+        // Se mapean las entidades de Identity a nombres de tabla en snake_case para consistencia.
         modelBuilder.Entity<User>(entity => { entity.ToTable("users"); });
         modelBuilder.Entity<ApplicationRole>(entity => { entity.ToTable("roles"); });
         modelBuilder.Entity<IdentityUserRole<int>>(entity => { entity.ToTable("user_roles"); });
@@ -47,353 +53,247 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
         modelBuilder.Entity<IdentityRoleClaim<int>>(entity => { entity.ToTable("role_claims"); });
         modelBuilder.Entity<IdentityUserToken<int>>(entity => { entity.ToTable("user_tokens"); });
 
+        // --- Configuración de la Entidad Crop ---
         modelBuilder.Entity<Crop>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("crops_pkey");
-
             entity.ToTable("crops",
-                tb => tb.HasComment("Stores information about crops. Acts as the main grouping entity (tenant)."));
-
+                tb => tb.HasComment(
+                    "Almacena información sobre los cultivos. Actúa como la entidad principal de agrupación (tenant)."));
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.CityName).HasColumnName("city_name");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
             entity.Property(e => e.Name).HasColumnName("name");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("updated_at");
-
-            entity.Property(e => e.CropSettings)
-                .HasColumnType("jsonb")
-                .HasColumnName("crop_settings");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
+            entity.Property(e => e.CropSettings).HasColumnType("jsonb")
+                .HasColumnName("crop_settings"); // Campo JSON para configuraciones.
         });
 
+        // --- Configuración de la Entidad Device ---
         modelBuilder.Entity<Device>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("devices_pkey");
-
-            entity.ToTable("devices", tb => tb.HasComment("Stores physical monitoring hardware devices."));
-
-            entity.HasIndex(e => e.MacAddress, "devices_mac_address_key").IsUnique();
-
+            entity.ToTable("devices",
+                tb => tb.HasComment("Almacena los dispositivos de hardware de monitoreo físico."));
+            entity.HasIndex(e => e.MacAddress, "devices_mac_address_key").IsUnique(); // La MAC Address debe ser única.
             entity.HasIndex(e => e.MacAddress, "idx_devices_mac_address");
-
             entity.HasIndex(e => e.PlantId, "idx_devices_plant_id");
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CropId).HasColumnName("crop_id");
-            entity.Property(e => e.DataCollectionIntervalMinutes)
-                .HasDefaultValue((short)15)
+            entity.Property(e => e.DataCollectionIntervalMinutes).HasDefaultValue((short)15)
                 .HasColumnName("data_collection_interval_minutes");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.MacAddress).HasColumnName("mac_address");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
-            entity.Property(e => e.Status).HasColumnName("status");
-            entity.Property(e => e.RegisteredAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("registered_at");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("updated_at");
+            entity.Property(e => e.Status).HasColumnName("status"); // Mapeo del Enum DeviceStatus
+            entity.Property(e => e.RegisteredAt).HasDefaultValueSql("now()").HasColumnName("registered_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
 
-            entity.HasOne(d => d.Crop).WithMany(p => p.Devices)
-                .HasForeignKey(d => d.CropId)
+            // Relaciones
+            entity.HasOne(d => d.Crop).WithMany(p => p.Devices).HasForeignKey(d => d.CropId)
                 .HasConstraintName("devices_crop_id_fkey");
-
-            entity.HasOne(d => d.Plant).WithMany(p => p.Devices)
-                .HasForeignKey(d => d.PlantId)
-                .OnDelete(DeleteBehavior.SetNull)
+            entity.HasOne(d => d.Plant).WithMany(p => p.Devices).HasForeignKey(d => d.PlantId)
+                .OnDelete(DeleteBehavior
+                    .SetNull) // Si se elimina una planta, el PlantId del dispositivo se establece en NULL.
                 .HasConstraintName("devices_plant_id_fkey");
         });
 
+        // --- Configuración de la Entidad DeviceActivation ---
         modelBuilder.Entity<DeviceActivation>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("device_activations_pkey");
-
             entity.ToTable("device_activations",
-                tb => tb.HasComment("Stores single-use codes to activate new devices."));
-
+                tb => tb.HasComment("Almacena códigos de un solo uso para activar nuevos dispositivos."));
             entity.HasIndex(e => e.ActivationCode, "device_activations_activation_code_key").IsUnique();
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ActivatedAt).HasColumnName("activated_at");
             entity.Property(e => e.ActivationCode).HasColumnName("activation_code");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
             entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
-            entity.Property(e => e.Status).HasColumnName("status");
-            entity.HasOne(d => d.Device).WithMany(p => p.DeviceActivations)
-                .HasForeignKey(d => d.DeviceId)
+            entity.Property(e => e.Status).HasColumnName("status"); // Mapeo del Enum ActivationStatus
+            entity.HasOne(d => d.Device).WithMany(p => p.DeviceActivations).HasForeignKey(d => d.DeviceId)
                 .HasConstraintName("device_activations_device_id_fkey");
         });
 
+        // --- Configuración de la Entidad DeviceToken ---
         modelBuilder.Entity<DeviceToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("device_tokens_pkey");
-
-            entity.ToTable("device_tokens", tb => tb.HasComment("Stores authentication tokens (JWTs) for devices."));
-
+            entity.ToTable("device_tokens",
+                tb => tb.HasComment("Almacena los tokens de autenticación (JWTs) para los dispositivos."));
             entity.HasIndex(e => e.AccessToken, "device_tokens_access_token_key").IsUnique();
-
             entity.HasIndex(e => e.RefreshToken, "device_tokens_refresh_token_key").IsUnique();
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AccessToken).HasColumnName("access_token");
             entity.Property(e => e.AccessTokenExpiresAt).HasColumnName("access_token_expires_at");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
             entity.Property(e => e.RefreshToken).HasColumnName("refresh_token");
             entity.Property(e => e.RefreshTokenExpiresAt).HasColumnName("refresh_token_expires_at");
             entity.Property(e => e.RevokedAt).HasColumnName("revoked_at");
-            entity.Property(e => e.Status).HasColumnName("status");
-            entity.HasOne(d => d.Device).WithMany(p => p.DeviceTokens)
-                .HasForeignKey(d => d.DeviceId)
+            entity.Property(e => e.Status).HasColumnName("status"); // Mapeo del Enum TokenStatus
+            entity.HasOne(d => d.Device).WithMany(p => p.DeviceTokens).HasForeignKey(d => d.DeviceId)
                 .HasConstraintName("device_tokens_device_id_fkey");
         });
 
+        // --- Configuración de la Entidad EnvironmentalReading ---
         modelBuilder.Entity<EnvironmentalReading>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("environmental_readings_pkey");
-
             entity.ToTable("environmental_readings",
-                tb => tb.HasComment("Stores environmental data collected by device sensors."));
-
+                tb => tb.HasComment("Almacena los datos ambientales recolectados por los sensores."));
             entity.HasIndex(e => new { e.DeviceId, e.RecordedAtServer }, "idx_readings_device_id_recorded_at_server")
-                .IsDescending(false, true);
-
+                .IsDescending(false, true); // Índice compuesto para optimizar consultas.
             entity.HasIndex(e => new { e.PlantId, e.RecordedAtServer }, "idx_readings_plant_id_recorded_at_server")
                 .IsDescending(false, true);
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CityHumidity).HasColumnName("city_humidity");
             entity.Property(e => e.CityTemperature).HasColumnName("city_temperature");
             entity.Property(e => e.CityWeatherCondition).HasColumnName("city_weather_condition");
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
-            entity.Property(e => e.ExtraData)
-                .HasColumnType("jsonb")
-                .HasColumnName("extra_data");
+            entity.Property(e => e.ExtraData).HasColumnType("jsonb").HasColumnName("extra_data");
             entity.Property(e => e.Humidity).HasColumnName("humidity");
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
-            entity.Property(e => e.RecordedAtDevice)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("recorded_at_device");
-            entity.Property(e => e.RecordedAtServer)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("recorded_at_server");
+            entity.Property(e => e.RecordedAtDevice).HasDefaultValueSql("now()").HasColumnName("recorded_at_device");
+            entity.Property(e => e.RecordedAtServer).HasDefaultValueSql("now()").HasColumnName("recorded_at_server");
             entity.Property(e => e.Temperature).HasColumnName("temperature");
-
-            entity.HasOne(d => d.Device).WithMany(p => p.EnvironmentalReadings)
-                .HasForeignKey(d => d.DeviceId)
+            entity.HasOne(d => d.Device).WithMany(p => p.EnvironmentalReadings).HasForeignKey(d => d.DeviceId)
                 .HasConstraintName("environmental_readings_device_id_fkey");
-
-            entity.HasOne(d => d.Plant).WithMany(p => p.EnvironmentalReadings)
-                .HasForeignKey(d => d.PlantId)
-                .OnDelete(DeleteBehavior.SetNull)
+            entity.HasOne(d => d.Plant).WithMany(p => p.EnvironmentalReadings).HasForeignKey(d => d.PlantId)
+                .OnDelete(DeleteBehavior.SetNull) // Si se elimina la planta, el PlantId en la lectura se pone en NULL.
                 .HasConstraintName("environmental_readings_plant_id_fkey");
         });
 
+        // --- Configuración de la Entidad InvitationCode ---
         modelBuilder.Entity<InvitationCode>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("invitation_codes_pkey");
-
             entity.ToTable("invitation_codes",
-                tb => tb.HasComment("Stores single-use invitation codes for user registration."));
-
+                tb => tb.HasComment("Almacena códigos de invitación de un solo uso para el registro de usuarios."));
             entity.HasIndex(e => e.CreatedByUserId, "idx_invitation_codes_created_by_user_id");
-
             entity.HasIndex(e => e.Code, "invitation_codes_code_key").IsUnique();
-
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Code)
-                .HasMaxLength(255)
-                .HasColumnName("code");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
+            entity.Property(e => e.Code).HasMaxLength(255).HasColumnName("code");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
             entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
             entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
-            entity.Property(e => e.IsAdmin)
-                .HasDefaultValue(false)
-                .HasColumnName("is_admin");
-            entity.Property(e => e.IsUsed)
-                .HasDefaultValue(false)
-                .HasColumnName("is_used");
-
-            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.InvitationCodes)
-                .HasForeignKey(d => d.CreatedByUserId)
+            entity.Property(e => e.IsAdmin).HasDefaultValue(false).HasColumnName("is_admin");
+            entity.Property(e => e.IsUsed).HasDefaultValue(false).HasColumnName("is_used");
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.InvitationCodes).HasForeignKey(d => d.CreatedByUserId)
                 .HasConstraintName("invitation_codes_created_by_user_id_fkey");
         });
 
+        // --- Configuración de la Entidad Observation ---
         modelBuilder.Entity<Observation>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("observations_pkey");
-
             entity.ToTable("observations",
-                tb => tb.HasComment("Stores manual observations made by an agronomist or expert user."));
-
+                tb => tb.HasComment("Almacena observaciones manuales hechas por un agrónomo o usuario experto."));
             entity.HasIndex(e => e.PlantId, "idx_observations_plant_id");
-
             entity.HasIndex(e => e.UserId, "idx_observations_user_id");
-
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
             entity.Property(e => e.SubjectiveRating).HasColumnName("subjective_rating");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-
-            entity.HasOne(d => d.Plant).WithMany(p => p.Observations)
-                .HasForeignKey(d => d.PlantId)
+            entity.HasOne(d => d.Plant).WithMany(p => p.Observations).HasForeignKey(d => d.PlantId)
                 .HasConstraintName("observations_plant_id_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Observations)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+            entity.HasOne(d => d.User).WithMany(p => p.Observations).HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull) // Evita la eliminación en cascada si se borra un usuario.
                 .HasConstraintName("observations_user_id_fkey");
         });
 
+        // --- Configuración de la Entidad Plant ---
         modelBuilder.Entity<Plant>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("plants_pkey");
-
-            entity.ToTable("plants", tb => tb.HasComment("Stores data for each monitored plant."));
-
+            entity.ToTable("plants", tb => tb.HasComment("Almacena datos para cada planta monitoreada."));
             entity.HasIndex(e => e.CropId, "idx_plants_crop_id");
-
             entity.HasIndex(e => e.Status, "idx_plants_status");
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CropId).HasColumnName("crop_id");
             entity.Property(e => e.Name).HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(PlantStatus.UNKNOWN)
-                .HasColumnName("status");
-            entity.Property(e => e.ExperimentalGroup)
-                .HasColumnName("experimental_group")
-                .HasDefaultValue(ExperimentalGroupType.MONITORED);
-            entity.Property(e => e.RegisteredAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("registered_at");
-            entity.Property(e => e.ThermalMaskData)
-                .HasColumnType("jsonb")
-                .HasColumnName("thermal_mask_data");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.Crop).WithMany(p => p.Plants)
-                .HasForeignKey(d => d.CropId)
+            entity.Property(e => e.Status).HasDefaultValue(PlantStatus.UNKNOWN)
+                .HasColumnName("status"); // Mapeo del Enum PlantStatus
+            entity.Property(e => e.ExperimentalGroup).HasColumnName("experimental_group")
+                .HasDefaultValue(ExperimentalGroupType.MONITORED); // Mapeo del Enum ExperimentalGroupType
+            entity.Property(e => e.RegisteredAt).HasDefaultValueSql("now()").HasColumnName("registered_at");
+            entity.Property(e => e.ThermalMaskData).HasColumnType("jsonb").HasColumnName("thermal_mask_data");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
+            entity.HasOne(d => d.Crop).WithMany(p => p.Plants).HasForeignKey(d => d.CropId)
                 .HasConstraintName("plants_crop_id_fkey");
         });
 
+        // --- Configuración de la Entidad PlantStatusHistory ---
         modelBuilder.Entity<PlantStatusHistory>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("plant_status_histories_pkey");
             entity.ToTable("plant_status_histories",
-                tb => tb.HasComment("Stores the history of status changes for each plant."));
+                tb => tb.HasComment("Almacena el historial de cambios de estado para cada planta."));
             entity.HasIndex(e => e.PlantId, "idx_plant_status_histories_plant_id");
             entity.HasIndex(e => e.ChangedAt, "idx_plant_status_histories_changed_at").IsDescending();
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.Observation).HasColumnName("observation");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.ChangedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("changed_at");
-
-            entity.HasOne(d => d.Plant).WithMany(p => p.PlantStatusHistories)
-                .HasForeignKey(d => d.PlantId)
+            entity.Property(e => e.ChangedAt).HasDefaultValueSql("now()").HasColumnName("changed_at");
+            entity.HasOne(d => d.Plant).WithMany(p => p.PlantStatusHistories).HasForeignKey(d => d.PlantId)
                 .HasConstraintName("plant_status_histories_plant_id_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.PlantStatusHistories)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.SetNull)
+            entity.HasOne(d => d.User).WithMany(p => p.PlantStatusHistories).HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.SetNull) // Si se elimina el usuario, el UserId en el historial se vuelve NULL.
                 .HasConstraintName("plant_status_histories_user_id_fkey");
         });
 
+        // --- Configuración de la Entidad ThermalCapture ---
         modelBuilder.Entity<ThermalCapture>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("thermal_captures_pkey");
-
-            entity.ToTable("thermal_captures",
-                tb => tb.HasComment(
-                    "Stores thermographic captures. Statistics are stored in JSONB, the image path in Object Storage."));
-
+            entity.ToTable("thermal_captures", tb => tb.HasComment("Almacena las capturas termográficas."));
             entity.HasIndex(e => new { e.DeviceId, e.RecordedAtServer }, "idx_captures_device_id_recorded_at_server")
                 .IsDescending(false, true);
-
             entity.HasIndex(e => new { e.PlantId, e.RecordedAtServer }, "idx_captures_plant_id_recorded_at_server")
                 .IsDescending(false, true);
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
-            entity.Property(e => e.RecordedAtDevice)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("recorded_at_device");
-            entity.Property(e => e.RecordedAtServer)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("recorded_at_server");
+            entity.Property(e => e.RecordedAtDevice).HasDefaultValueSql("now()").HasColumnName("recorded_at_device");
+            entity.Property(e => e.RecordedAtServer).HasDefaultValueSql("now()").HasColumnName("recorded_at_server");
             entity.Property(e => e.RgbImagePath).HasColumnName("rgb_image_path");
-            entity.Property(e => e.ThermalDataStats)
-                .HasColumnType("jsonb")
-                .HasColumnName("thermal_data_stats");
-
-            entity.HasOne(d => d.Device).WithMany(p => p.ThermalCaptures)
-                .HasForeignKey(d => d.DeviceId)
+            entity.Property(e => e.ThermalDataStats).HasColumnType("jsonb").HasColumnName("thermal_data_stats");
+            entity.HasOne(d => d.Device).WithMany(p => p.ThermalCaptures).HasForeignKey(d => d.DeviceId)
                 .HasConstraintName("thermal_captures_device_id_fkey");
-
-            entity.HasOne(d => d.Plant).WithMany(p => p.ThermalCaptures)
-                .HasForeignKey(d => d.PlantId)
-                .OnDelete(DeleteBehavior.SetNull)
+            entity.HasOne(d => d.Plant).WithMany(p => p.ThermalCaptures).HasForeignKey(d => d.PlantId)
+                .OnDelete(DeleteBehavior.SetNull) // Si se elimina la planta, el PlantId en la captura se vuelve NULL.
                 .HasConstraintName("thermal_captures_plant_id_fkey");
         });
 
+        // --- Configuración de la Entidad User (campos personalizados) ---
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("users");
-            entity.Property(e => e.FirstName)
-                .HasMaxLength(40)
-                .HasColumnName("first_name");
-            entity.Property(e => e.LastName)
-                .HasMaxLength(40)
-                .HasColumnName("last_name");
-            entity.Property(e => e.AccountSettings)
-                .HasColumnType("jsonb")
-                .HasColumnName("account_settings");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("updated_at");
+            entity.Property(e => e.FirstName).HasMaxLength(40).HasColumnName("first_name");
+            entity.Property(e => e.LastName).HasMaxLength(40).HasColumnName("last_name");
+            entity.Property(e => e.AccountSettings).HasColumnType("jsonb").HasColumnName("account_settings");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
         });
 
-        modelBuilder.Entity<ApplicationRole>(entity => { entity.ToTable("roles"); });
-
+        // --- Configuración de la Entidad AnalysisResult ---
         modelBuilder.Entity<AnalysisResult>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("analysis_results_pkey");
             entity.ToTable("analysis_results",
-                tb => tb.HasComment(
-                    "Stores calculated results from the analysis module for optimal reporting and full auditability."));
-
+                tb => tb.HasComment("Almacena los resultados calculados del módulo de análisis."));
             entity.HasIndex(e => new { e.PlantId, e.RecordedAt }, "idx_analysis_results_plant_id_recorded_at")
                 .IsDescending(false, true);
-            entity.HasIndex(e => new { e.PlantId, e.RecordedAt }).IsUnique();
-
+            entity.HasIndex(e => new { e.PlantId, e.RecordedAt })
+                .IsUnique(); // Evita resultados duplicados para la misma planta en el mismo momento.
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
             entity.Property(e => e.RecordedAt).HasColumnName("recorded_at");
@@ -404,9 +304,7 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
             entity.Property(e => e.Vpd).HasColumnName("vpd");
             entity.Property(e => e.BaselineTwet).HasColumnName("baseline_twet");
             entity.Property(e => e.BaselineTdry).HasColumnName("baseline_tdry");
-
-            entity.HasOne(d => d.Plant).WithMany(p => p.AnalysisResults)
-                .HasForeignKey(d => d.PlantId)
+            entity.HasOne(d => d.Plant).WithMany(p => p.AnalysisResults).HasForeignKey(d => d.PlantId)
                 .HasConstraintName("analysis_results_plant_id_fkey");
         });
 

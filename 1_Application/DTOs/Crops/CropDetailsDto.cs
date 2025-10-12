@@ -3,6 +3,9 @@ using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
+/// <summary>
+/// DTO para mostrar la información detallada de un cultivo en una vista.
+/// </summary>
 public class CropDetailsDto
 {
     public int Id { get; set; }

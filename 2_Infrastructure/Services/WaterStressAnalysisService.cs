@@ -9,12 +9,19 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+///     Un servicio en segundo plano que realiza el análisis de estrés hídrico a intervalos regulares.
+///     Orquesta el proceso de recolección de datos, cálculo de CWSI y actualización del estado de las plantas.
+/// </summary>
 public class WaterStressAnalysisService : BackgroundService
 {
     private readonly ILogger<WaterStressAnalysisService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BackgroundJobSettings _settings;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="WaterStressAnalysisService" />.
+    /// </summary>
     public WaterStressAnalysisService(
         IServiceScopeFactory scopeFactory,
         IOptions<BackgroundJobSettings> settings,
@@ -25,6 +32,12 @@ public class WaterStressAnalysisService : BackgroundService
         _settings = settings.Value;
     }
 
+    /// <summary>
+    ///     Método principal del servicio. Se ejecuta en un bucle periódico según el intervalo configurado.
+    ///     Para cada cultivo, verifica si la hora actual está dentro de la ventana de análisis definida en su configuración
+    ///     antes de iniciar un ciclo de análisis.
+    /// </summary>
+    /// <param name="stoppingToken">Token que indica cuándo se debe detener el servicio.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var interval = TimeSpan.FromMinutes(_settings.AnalysisIntervalMinutes);
@@ -37,7 +50,6 @@ public class WaterStressAnalysisService : BackgroundService
             await using var scope = _scopeFactory.CreateAsyncScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            // Cargamos los cultivos junto con su configuración para acceder a la ventana horaria
             var crops = await dbContext.Crops
                 .AsNoTracking()
                 .ToListAsync(stoppingToken);
@@ -47,10 +59,9 @@ public class WaterStressAnalysisService : BackgroundService
                 var parameters = crop.CropSettings.AnalysisParameters;
                 var nowUtc = DateTime.UtcNow;
 
-                // IMPORTANTE: La validación de la ventana horaria se mantiene, usando la configuración específica del cultivo
                 if (!nowUtc.IsWithinColombiaTimeWindow(parameters.AnalysisWindowStartHour,
                         parameters.AnalysisWindowEndHour))
-                    continue; // No estamos en la ventana de análisis para este cultivo
+                    continue;
 
                 _logger.LogInformation("Ventana de análisis activa para {CropName}. Iniciando ciclo.", crop.Name);
                 await RunAnalysisCycleAsync(scope.ServiceProvider, crop, nowUtc, stoppingToken);
@@ -58,16 +69,18 @@ public class WaterStressAnalysisService : BackgroundService
         }
     }
 
-    // --- MÉTODO DE ANÁLISIS COMPLETAMENTE REFACTORIZADO ---
+    /// <summary>
+    ///     Orquesta un ciclo completo de análisis para un cultivo específico.
+    ///     Este método obtiene las plantas, recolecta sus datos crudos más recientes, delega el cálculo del CWSI
+    ///     al IAnalysisExecutionService, guarda los resultados y finalmente actualiza los estados y dispara las alertas.
+    /// </summary>
     private async Task RunAnalysisCycleAsync(IServiceProvider services, Crop crop, DateTime nowUtc,
         CancellationToken token)
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        // INYECTAMOS NUESTRO NUEVO SERVICIO "CEREBRO"
         var analysisExecutionService = services.GetRequiredService<IAnalysisExecutionService>();
         var alertTriggerService = services.GetRequiredService<IAlertTriggerService>();
 
-        // 1. Obtener plantas de control y monitoreadas
         var controlPlant = await dbContext.Plants.AsNoTracking()
             .FirstOrDefaultAsync(p => p.CropId == crop.Id && p.ExperimentalGroup == ExperimentalGroupType.CONTROL,
                 token);
@@ -85,7 +98,6 @@ public class WaterStressAnalysisService : BackgroundService
 
         if (!monitoredPlants.Any()) return;
 
-        // 2. Obtener los datos crudos más recientes del último intervalo
         var startTime = nowUtc.AddMinutes(-_settings.AnalysisIntervalMinutes);
         var newAnalysisResults = new List<AnalysisResult>();
 
@@ -93,7 +105,7 @@ public class WaterStressAnalysisService : BackgroundService
             .Where(tc => tc.PlantId == controlPlant.Id && tc.RecordedAtServer >= startTime)
             .OrderByDescending(tc => tc.RecordedAtServer).FirstOrDefaultAsync(token);
 
-        if (controlCapture == null) return; // Sin captura de control, no podemos hacer nada
+        if (controlCapture == null) return;
 
         foreach (var plant in monitoredPlants)
         {
@@ -105,9 +117,8 @@ public class WaterStressAnalysisService : BackgroundService
                 .Where(tc => tc.PlantId == plant.Id && tc.RecordedAtServer >= startTime)
                 .OrderByDescending(tc => tc.RecordedAtServer).FirstOrDefaultAsync(token);
 
-            if (reading == null || capture == null) continue; // Faltan datos para esta planta
+            if (reading == null || capture == null) continue;
 
-            // 3. Llamamos a nuestro "cerebro" centralizado para hacer el cálculo
             var input = new IAnalysisExecutionService.CwsiCalculationInput(reading, capture, controlCapture, plant,
                 controlPlant);
             var calculationResult = await analysisExecutionService.CalculateCwsiAsync(input);
@@ -117,11 +128,9 @@ public class WaterStressAnalysisService : BackgroundService
 
         if (!newAnalysisResults.Any()) return;
 
-        // 4. Guardar todos los nuevos resultados en un solo lote
         await dbContext.AnalysisResults.AddRangeAsync(newAnalysisResults, token);
         await dbContext.SaveChangesAsync(token);
 
-        // 5. Lógica de actualización de estado y alertas (después de guardar)
         await UpdateStatusesAndTriggerAlertsAsync(dbContext, alertTriggerService, newAnalysisResults,
             crop.CropSettings.AnalysisParameters, nowUtc);
 
@@ -129,6 +138,10 @@ public class WaterStressAnalysisService : BackgroundService
             crop.Name, newAnalysisResults.Count);
     }
 
+    /// <summary>
+    ///     Procesa los resultados de un ciclo de análisis para actualizar el estado de las plantas y disparar alertas si es
+    ///     necesario.
+    /// </summary>
     private async Task UpdateStatusesAndTriggerAlertsAsync(ApplicationDbContext dbContext,
         IAlertTriggerService alertTriggerService,
         List<AnalysisResult> results, AnalysisParameters parameters, DateTime nowUtc)
@@ -163,6 +176,10 @@ public class WaterStressAnalysisService : BackgroundService
         await dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    ///     Determina el nuevo estado de una planta basado en su valor de CWSI y su estado anterior.
+    ///     Incluye lógica para manejar el estado de "Recuperación".
+    /// </summary>
     private PlantStatus DetermineStatus(double cwsi, AnalysisParameters parameters, PlantStatus previousStatus)
     {
         PlantStatus newStatus;

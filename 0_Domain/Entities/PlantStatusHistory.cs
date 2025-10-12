@@ -3,7 +3,7 @@ using ArandanoIRT.Web._0_Domain.Enums;
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-///     Stores the history of status changes for each plant.
+/// Almacena el historial de los cambios de estado para cada planta, permitiendo una trazabilidad completa.
 /// </summary>
 public class PlantStatusHistory
 {

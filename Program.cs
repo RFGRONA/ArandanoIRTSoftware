@@ -5,7 +5,8 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
 
-// Configure Serilog for bootstrap logging
+// Configuración inicial de Serilog para el arranque de la aplicación.
+// Permite capturar logs incluso antes de que la configuración principal sea leída.
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
@@ -14,11 +15,11 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-    Log.Information("Starting application...");
+    Log.Information("Iniciando la aplicación...");
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Configure Serilog from appsettings.json
+    // Configuración completa de Serilog utilizando el archivo appsettings.json.
     builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     {
         loggerConfiguration
@@ -35,7 +36,7 @@ try
             );
     });
 
-    // 1. Configure Services using Extension Methods
+    // Se registran todos los servicios de la aplicación utilizando los métodos de extensión.
     builder.Services
         .AddInfrastructure(builder.Configuration)
         .AddCustomAuthentication()
@@ -43,7 +44,7 @@ try
 
     var app = builder.Build();
 
-    // 2. Configure HTTP request pipeline
+    // Se configura el pipeline de peticiones HTTP (middleware).
     if (!app.Environment.IsDevelopment())
     {
         app.UseExceptionHandler("/Error");
@@ -64,7 +65,7 @@ try
     app.UseHangfireDashboard();
     app.UseMiddleware<UserAuditingMiddleware>();
 
-    // Configure endpoints
+    // Se configuran las rutas de los controladores.
     app.MapControllerRoute(
         "admin_default",
         "{controller=Dashboard}/{action=Index}/{id?}",
@@ -74,9 +75,10 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Application failed to start.");
+    Log.Fatal(ex, "La aplicación falló al iniciar.");
 }
 finally
 {
+    // Asegura que todos los logs en buffer se escriban antes de cerrar la aplicación.
     Log.CloseAndFlush();
 }

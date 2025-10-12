@@ -3,6 +3,9 @@ using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Reports;
 
+/// <summary>
+///     Modelo que encapsula todos los datos necesarios para generar un informe en PDF para una planta específica.
+/// </summary>
 public class PlantReportModel
 {
     public string PlantName { get; set; }
@@ -25,6 +28,9 @@ public class PlantReportModel
     public List<PlantStatusHistory> StatusHistory { get; set; } = new();
 }
 
+/// <summary>
+///     Representa un punto de datos de análisis para ser usado en gráficos o tablas del informe.
+/// </summary>
 public class AnalysisResultDataPoint
 {
     public DateTime Timestamp { get; set; }
@@ -33,6 +39,9 @@ public class AnalysisResultDataPoint
     public float AmbientTemperature { get; set; }
 }
 
+/// <summary>
+///     Representa un punto de datos de una observación manual para ser usado en el informe.
+/// </summary>
 public class ObservationDataPoint
 {
     public DateTime Timestamp { get; set; }

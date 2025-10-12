@@ -2,6 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
+/// <summary>
+///     Define una interfaz común para los formularios de creación y edición de dispositivos,
+///     garantizando que compartan las propiedades y validaciones fundamentales.
+/// </summary>
 public interface IDeviceFormData
 {
     [Required(ErrorMessage = "El nombre del dispositivo es requerido.")]
@@ -15,12 +19,10 @@ public interface IDeviceFormData
 
     [Required(ErrorMessage = "Debe seleccionar una planta.")]
     [Display(Name = "Planta Asociada")]
-    int PlantId { get; set; } // FK a PlantDataModel
+    int PlantId { get; set; }
 
     [Required(ErrorMessage = "El tiempo de recolección es requerido.")]
     [Range(1, 1440, ErrorMessage = "El tiempo debe estar entre 1 y 1440 minutos.")]
     [Display(Name = "Intervalo de Recolección (minutos)")]
     short DataCollectionIntervalMinutes { get; set; }
-
-
 }

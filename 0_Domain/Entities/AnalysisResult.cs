@@ -3,7 +3,8 @@ using ArandanoIRT.Web._0_Domain.Enums;
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-///     Stores calculated results from the analysis module for optimal reporting and full auditability.
+/// Almacena los resultados calculados del módulo de análisis para una planta específica.
+/// Facilita la generación de informes y la auditoría completa de los datos.
 /// </summary>
 public class AnalysisResult
 {

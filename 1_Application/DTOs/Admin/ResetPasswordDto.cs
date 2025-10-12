@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
+/// <summary>
+/// DTO que contiene los datos necesarios para completar el proceso de restablecimiento de contraseña.
+/// </summary>
 public class ResetPasswordDto
 {
     [Required][EmailAddress] public string Email { get; set; } = string.Empty;

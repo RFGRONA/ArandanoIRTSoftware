@@ -3,10 +3,12 @@ using System.Text.Json.Serialization;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 
+/// <summary>
+///     DTO para recibir los datos de los sensores ambientales (temperatura, humedad, etc.) enviados por un dispositivo.
+/// </summary>
 public class AmbientDataDto
 {
-    [JsonPropertyName("timestamp")]
-    public DateTime? RecordedAtDevice { get; set; }
+    [JsonPropertyName("timestamp")] public DateTime? RecordedAtDevice { get; set; }
 
     [Required(ErrorMessage = "La temperatura es requerida.")]
     [JsonPropertyName("temperature")]
@@ -17,9 +19,7 @@ public class AmbientDataDto
     [JsonPropertyName("humidity")]
     public float Humidity { get; set; }
 
-    [JsonPropertyName("light")]
-    public float? Light { get; set; }
+    [JsonPropertyName("light")] public float? Light { get; set; }
 
-    [JsonPropertyName("pressure")]
-    public float? Pressure { get; set; }
+    [JsonPropertyName("pressure")] public float? Pressure { get; set; }
 }

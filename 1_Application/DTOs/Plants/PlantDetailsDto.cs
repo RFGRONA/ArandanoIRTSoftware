@@ -3,6 +3,9 @@ using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
+/// <summary>
+///     DTO para presentar la información detallada de una planta en una vista.
+/// </summary>
 public class PlantDetailsDto
 {
     public int Id { get; set; }

@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Observations;
 
+/// <summary>
+///     DTO para mostrar la información resumida de una observación en una lista.
+/// </summary>
 public class ObservationListDto
 {
     public int Id { get; set; }

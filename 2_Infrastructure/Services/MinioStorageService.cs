@@ -8,19 +8,25 @@ using Minio.Exceptions;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+/// Implementación del servicio de almacenamiento de archivos que utiliza MinIO, un servidor de almacenamiento de objetos compatible con S3.
+/// </summary>
 public class MinioStorageService : IFileStorageService
 {
     private readonly IMinioClient _minioClient;
     private readonly MinioSettings _settings;
     private readonly ILogger<MinioStorageService> _logger;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="MinioStorageService"/>.
+    /// Configura y construye el cliente de MinIO con las credenciales y el endpoint proporcionados.
+    /// </summary>
     public MinioStorageService(IOptions<MinioSettings> settingsOptions, ILogger<MinioStorageService> logger)
     {
         _settings = settingsOptions.Value;
         _logger = logger;
 
-        _logger.LogInformation("Servicio de MinIO configurado. Endpoint interno: {MinioEndpoint}, URL Pública Base: {PublicUrlBase}",
-            _settings.Endpoint, _settings.PublicUrlBase);
+        _logger.LogInformation("Servicio de MinIO configurado. Endpoint: {MinioEndpoint}", _settings.Endpoint);
 
         _minioClient = new MinioClient()
             .WithEndpoint(_settings.Endpoint)
@@ -29,10 +35,15 @@ public class MinioStorageService : IFileStorageService
             .Build();
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// Esta implementación primero verifica si el contenedor (bucket) de destino existe.
+    /// Si no existe, lo crea y le aplica una política de acceso de solo lectura pública para que los archivos puedan ser accedidos a través de una URL.
+    /// Luego, sube el archivo al bucket y construye la URL pública correspondiente.
+    /// </remarks>
     public async Task<Result<string>> UploadFileAsync(IFormFile file, string containerName, string fileName)
     {
-        // AHORA: El DeviceId (si existe en el contexto) se registrará automáticamente en todos los logs de este método.
-        _logger.LogInformation("Iniciando subida de archivo {FileName} a bucket {BucketName}.", fileName, containerName);
+        _logger.LogInformation("Iniciando subida de archivo {FileName} al bucket {BucketName}.", fileName, containerName);
         try
         {
             var bucketExistsArgs = new BucketExistsArgs().WithBucket(containerName);

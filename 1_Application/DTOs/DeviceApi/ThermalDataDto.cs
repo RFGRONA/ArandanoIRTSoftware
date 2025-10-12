@@ -1,9 +1,12 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 
+/// <summary>
+///     DTO para recibir los datos de la cámara térmica enviados por un dispositivo.
+///     Incluye estadísticas clave y, opcionalmente, la matriz completa de temperaturas.
+/// </summary>
 public class ThermalDataDto
 {
     [Required(ErrorMessage = "La temperatura máxima es requerida.")]
@@ -17,8 +20,7 @@ public class ThermalDataDto
 
     public List<float?>? Temperatures { get; set; }
 
-    [JsonPropertyName("timestamp")]
-    public DateTime? RecordedAtDevice { get; set; }
+    [JsonPropertyName("timestamp")] public DateTime? RecordedAtDevice { get; set; }
 
     public string? RgbImagePath { get; set; }
 }

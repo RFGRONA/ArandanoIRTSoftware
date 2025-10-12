@@ -8,16 +8,22 @@ using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using JsonException = Newtonsoft.Json.JsonException;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+/// Un servicio en segundo plano que ejecuta un conjunto de tareas diarias programadas,
+/// como la detección de anomalías y la verificación de la configuración del sistema.
+/// </summary>
 public class DailyTasksService : BackgroundService
 {
     private readonly AnomalyParametersSettings _anomalySettings;
     private readonly ILogger<DailyTasksService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="DailyTasksService"/>.
+    /// </summary>
     public DailyTasksService(
         IServiceScopeFactory scopeFactory,
         IOptions<AnomalyParametersSettings> anomalySettings,
@@ -28,15 +34,19 @@ public class DailyTasksService : BackgroundService
         _anomalySettings = anomalySettings.Value;
     }
 
+    /// <summary>
+    /// Método principal del servicio. Utiliza un temporizador periódico para ejecutar las tareas
+    /// una vez al día, aproximadamente a las 6:00 AM hora de Colombia.
+    /// </summary>
+    /// <param name="stoppingToken">Token que indica cuándo se debe detener el servicio.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // El timer se ejecutará cada hora, pero la lógica interna solo correrá a las 6 AM.
         using var timer = new PeriodicTimer(TimeSpan.FromHours(1));
         _logger.LogInformation("Servicio de Tareas Diarias iniciado.");
 
         while (await timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
         {
-            if (DateTime.UtcNow.ToColombiaTime().Hour != 6) continue; // Solo ejecutar a las 6:00 AM hora de Colombia
+            if (DateTime.UtcNow.ToColombiaTime().Hour != 6) continue;
 
             _logger.LogInformation("Ejecutando ciclo de tareas diarias...");
 
@@ -49,6 +59,13 @@ public class DailyTasksService : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Ejecuta la lógica de detección de anomalías nocturnas.
+    /// Analiza los datos de la noche anterior (20:00 a 06:00 UTC) y si detecta una diferencia de temperatura anómala
+    /// y sostenida entre la canopia y el ambiente, actualiza el estado de la planta a 'UNKNOWN' y envía una alerta.
+    /// </summary>
+    /// <param name="services">El proveedor de servicios del ámbito para resolver dependencias.</param>
+    /// <param name="token">El token de cancelación.</param>
     private async Task RunAnomalyDetectionAsync(IServiceProvider services, CancellationToken token)
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
@@ -56,9 +73,8 @@ public class DailyTasksService : BackgroundService
 
         var yesterday = DateTime.UtcNow.AddDays(-1);
         var startTime = new DateTime(yesterday.Year, yesterday.Month, yesterday.Day, 20, 0, 0, DateTimeKind.Utc);
-        var endTime = startTime.AddHours(10); // Desde las 8 PM hasta las 6 AM del día siguiente
+        var endTime = startTime.AddHours(10);
 
-        // Incluimos tanto lecturas ambientales como capturas térmicas
         var plantsData = await dbContext.Plants
             .Where(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED)
             .Include(p => p.EnvironmentalReadings
@@ -73,21 +89,18 @@ public class DailyTasksService : BackgroundService
         {
             var consecutiveAnomalies = 0;
 
-            // No podemos analizar si no hay datos de ambos tipos
             if (!plant.EnvironmentalReadings.Any() || !plant.ThermalCaptures.Any()) continue;
 
-            // Iteramos sobre las lecturas ambientales y buscamos la captura térmica más cercana
             foreach (var reading in plant.EnvironmentalReadings)
             {
                 var closestCapture = plant.ThermalCaptures
                     .OrderBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalSeconds))
                     .FirstOrDefault();
 
-                // Si no hay captura térmica cercana (ej. a menos de 5 min), no podemos comparar
                 if (closestCapture == null ||
                     Math.Abs((closestCapture.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) > 5)
                 {
-                    consecutiveAnomalies = 0; // Rompemos la racha si no hay datos
+                    consecutiveAnomalies = 0;
                     continue;
                 }
 
@@ -108,7 +121,6 @@ public class DailyTasksService : BackgroundService
 
                 if (consecutiveAnomalies >= 4)
                 {
-                    // Solo actualizamos y alertamos si el estado actual no es ya 'UNKNOWN'
                     if (plant.Status != PlantStatus.UNKNOWN)
                     {
                         _logger.LogWarning("Anomalía detectada para la planta {PlantName}", plant.Name);
@@ -129,28 +141,16 @@ public class DailyTasksService : BackgroundService
                         await alertTriggerService.TriggerAnomalyAlertAsync(plant.Id, plant.Name);
                     }
 
-                    break; // Pasamos a la siguiente planta
+                    break;
                 }
             }
         }
     }
 
-    // Necesitamos este método auxiliar dentro de DailyTasksService
-    private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson)
-    {
-        if (string.IsNullOrEmpty(thermalDataJson)) return null;
-        try
-        {
-            return JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "No se pudo deserializar ThermalDataStats en DailyTasksService.");
-            return null;
-        }
-    }
-
+    /// <summary>
+    /// Verifica si existen plantas monitoreadas que no tengan una máscara térmica configurada.
+    /// Si encuentra alguna, dispara una alerta para notificar a los usuarios.
+    /// </summary>
     private async Task RunMaskCreationCheckAsync(IServiceProvider services, CancellationToken token)
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
@@ -161,6 +161,27 @@ public class DailyTasksService : BackgroundService
             .Select(p => p.Name)
             .ToListAsync(token);
 
-        if (plantsNeedingMask.Any()) await alertTriggerService.TriggerMaskCreationAlertAsync(plantsNeedingMask);
+        if (plantsNeedingMask.Any())
+        {
+            await alertTriggerService.TriggerMaskCreationAlertAsync(plantsNeedingMask);
+        }
+    }
+
+    /// <summary>
+    /// Deserializa de forma segura una cadena JSON que contiene estadísticas térmicas.
+    /// </summary>
+    private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson)
+    {
+        if (string.IsNullOrEmpty(thermalDataJson)) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _logger.LogWarning(ex, "No se pudo deserializar ThermalDataStats en DailyTasksService.");
+            return null;
+        }
     }
 }

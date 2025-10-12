@@ -7,6 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador que gestiona todas las vistas y acciones relacionadas con el análisis de datos.
+///     Incluye el dashboard de monitoreo, los detalles de análisis por planta, la creación de máscaras y la generación de
+///     reportes.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class AnalyticsController : BaseAdminController
@@ -18,6 +23,9 @@ public class AnalyticsController : BaseAdminController
     private readonly IPdfGeneratorService _pdfGeneratorService;
     private readonly IPlantService _plantService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AnalyticsController" />.
+    /// </summary>
     public AnalyticsController(IPlantService plantService, IDataQueryService dataQueryService,
         IAnalyticsService analyticsService, IPdfGeneratorService pdfGeneratorService, IAlertService alertService,
         IBackgroundJobClient backgroundJobClient)
@@ -30,29 +38,31 @@ public class AnalyticsController : BaseAdminController
         _backgroundJobClient = backgroundJobClient;
     }
 
+    /// <summary>
+    ///     Muestra el dashboard principal de monitoreo con el estado de todos los cultivos y sus plantas.
+    /// </summary>
     public async Task<IActionResult> Index()
     {
         var result = await _analyticsService.GetCropsForMonitoringAsync();
-
-        if (result.IsFailure) return View(new List<CropMonitorViewModel>());
+        if (result.IsFailure)
+        {
+            TempData[ErrorMessageKey] = result.ErrorMessage;
+            return View(new List<CropMonitorViewModel>());
+        }
 
         return View(result.Value);
     }
 
-    [HttpGet]
+    /// <summary>
+    ///     Muestra la página de detalles de análisis para una planta específica en un rango de fechas.
+    /// </summary>
+    /// <param name="id">El ID de la planta a analizar.</param>
+    /// <param name="startDate">La fecha de inicio del período de análisis.</param>
+    /// <param name="endDate">La fecha de fin del período de análisis.</param>
     [HttpGet]
     public async Task<IActionResult> Details(int id, DateTime? startDate, DateTime? endDate)
     {
-        var originalStartDate = startDate?.Date;
-        var originalEndDate = endDate?.Date;
-
-        var requestedEndDate = (endDate ?? DateTime.Now).Date;
-        var requestedStartDate = (startDate ?? requestedEndDate.AddDays(-7)).Date;
-
-        if (requestedStartDate > requestedEndDate)
-            (requestedStartDate, requestedEndDate) = (requestedEndDate, requestedStartDate);
-
-        var result = await _analyticsService.GetAnalysisDetailsAsync(id, requestedStartDate, requestedEndDate);
+        var result = await _analyticsService.GetAnalysisDetailsAsync(id, startDate, endDate);
 
         if (result.IsFailure)
         {
@@ -60,28 +70,23 @@ public class AnalyticsController : BaseAdminController
             return RedirectToAction(nameof(Index));
         }
 
-        if ((originalStartDate.HasValue && result.Value.StartDate.Date != originalStartDate.Value)
-            || (originalEndDate.HasValue && result.Value.EndDate.Date != originalEndDate.Value))
-            return RedirectToAction(nameof(Details), new
-            {
-                id,
-                startDate = result.Value.StartDate.ToString("yyyy-MM-dd"),
-                endDate = result.Value.EndDate.ToString("yyyy-MM-dd")
-            });
-
         return View(result.Value);
     }
 
-
+    /// <summary>
+    ///     Genera y descarga un informe en PDF del estado hídrico de una planta para un rango de fechas.
+    /// </summary>
+    /// <param name="plantId">El ID de la planta.</param>
+    /// <param name="startDate">La fecha de inicio del reporte.</param>
+    /// <param name="endDate">La fecha de fin del reporte.</param>
+    /// <returns>Un `FileResult` que inicia la descarga del PDF.</returns>
     [HttpGet]
     public async Task<IActionResult> GenerateReport(int plantId, DateTime startDate, DateTime endDate)
     {
         if (startDate > endDate) (startDate, endDate) = (endDate, startDate);
 
-        // 1. Llamar al servicio que hemos creado para generar el array de bytes del PDF
         var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, startDate, endDate);
 
-        // 2. Comprobar si el servicio devolvió un archivo válido
         if (pdfBytes.Length == 0)
         {
             TempData["ErrorMessage"] =
@@ -89,11 +94,14 @@ public class AnalyticsController : BaseAdminController
             return RedirectToAction("Details", new { id = plantId, startDate, endDate });
         }
 
-        // 3. Devolver el archivo al navegador para su descarga
         var fileName = $"Reporte_Estado_Hidrico_Planta_{plantId}_{DateTime.UtcNow.ToColombiaTime():yyyyMMdd}.pdf";
         return File(pdfBytes, "application/pdf", fileName);
     }
 
+    /// <summary>
+    ///     Muestra la página interactiva para crear o editar una máscara térmica para una planta.
+    /// </summary>
+    /// <param name="id">El ID de la planta.</param>
     [HttpGet]
     public async Task<IActionResult> CreateMask(int id)
     {
@@ -128,6 +136,11 @@ public class AnalyticsController : BaseAdminController
         return View(viewModel);
     }
 
+    /// <summary>
+    ///     Guarda las coordenadas de la máscara térmica enviadas desde el editor.
+    /// </summary>
+    /// <param name="id">El ID de la planta.</param>
+    /// <param name="coordinates">La cadena JSON con las coordenadas de la máscara.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveMask(int id, string coordinates)
@@ -144,6 +157,9 @@ public class AnalyticsController : BaseAdminController
         return RedirectToAction("CreateMask", new { id });
     }
 
+    /// <summary>
+    ///     Genera un reporte en PDF y lo envía por correo electrónico al destinatario especificado.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendReportByEmail(int plantId, DateTime startDate, DateTime endDate,
@@ -158,10 +174,7 @@ public class AnalyticsController : BaseAdminController
 
         if (startDate > endDate) (startDate, endDate) = (endDate, startDate);
 
-        var utcStartDate = startDate.ToSafeUniversalTime();
-        var utcEndDate = endDate.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
-
-        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, utcStartDate, utcEndDate);
+        var pdfBytes = await _pdfGeneratorService.GeneratePlantReportAsync(plantId, startDate, endDate);
         if (pdfBytes.Length == 0)
         {
             TempData["ErrorMessage"] = "No se pudo generar el reporte para enviar.";
@@ -174,18 +187,21 @@ public class AnalyticsController : BaseAdminController
         return RedirectToAction("Details", new { id = plantId, startDate, endDate });
     }
 
+    /// <summary>
+    ///     Inicia un trabajo en segundo plano (usando Hangfire) para re-analizar todo el historial de datos de una planta.
+    /// </summary>
+    /// <param name="plantId">El ID de la planta a re-analizar.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult StartCatchUpAnalysis(int plantId)
     {
-        // Esta es la magia: encolamos el trabajo y nos olvidamos. Hangfire se encarga del resto.
+        // Se encola el trabajo de análisis en Hangfire para que se ejecute de forma asíncrona.
         _backgroundJobClient.Enqueue<IAnalysisExecutionService>(service =>
             service.ExecuteCatchUpForPlantAsync(plantId));
 
         TempData["SuccessMessage"] =
             "Se ha iniciado el análisis del historial. Los datos aparecerán en esta página en unos minutos.";
 
-        // Redirigimos de vuelta a la página de detalles.
         return RedirectToAction(nameof(Details), new { id = plantId });
     }
 }

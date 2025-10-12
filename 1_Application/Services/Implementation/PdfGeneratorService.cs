@@ -11,11 +11,21 @@ using QuestPDF.Infrastructure;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de generación de PDFs.
+///     Utiliza la librería QuestPDF para crear documentos a partir de los datos de la aplicación.
+/// </summary>
 public class PdfGeneratorService : IPdfGeneratorService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PdfGeneratorService> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="PdfGeneratorService" />.
+    /// </summary>
+    /// <remarks>
+    ///     En el constructor se configura el tipo de licencia de QuestPDF para la aplicación.
+    /// </remarks>
     public PdfGeneratorService(ApplicationDbContext context, ILogger<PdfGeneratorService> logger)
     {
         _context = context;
@@ -23,6 +33,7 @@ public class PdfGeneratorService : IPdfGeneratorService
         Settings.License = LicenseType.Community;
     }
 
+    /// <inheritdoc />
     public async Task<byte[]> GeneratePlantReportAsync(int plantId, DateTime startDate, DateTime endDate)
     {
         var queryStartDate = startDate.Date.ToSafeUniversalTime();
@@ -52,7 +63,6 @@ public class PdfGeneratorService : IPdfGeneratorService
             })
             .ToListAsync();
 
-        // --- INICIO DE LA CORRECCIÓN: OBTENER TODOS LOS DATOS ---
         var observationData = await _context.Observations
             .AsNoTracking()
             .Include(o => o.User)
@@ -68,9 +78,8 @@ public class PdfGeneratorService : IPdfGeneratorService
 
         var statusHistory = await _context.PlantStatusHistories
             .Where(h => h.PlantId == plantId && h.ChangedAt >= queryStartDate && h.ChangedAt < queryEndDate)
-            .OrderBy(h => h.ChangedAt) // Ordenar para la tabla de eventos
+            .OrderBy(h => h.ChangedAt)
             .ToListAsync();
-        // --- FIN DE LA CORRECCIÓN ---
 
         var mildStressAlerts = statusHistory.Count(h => h.Status == PlantStatus.MILD_STRESS);
         var severeStressAlerts = statusHistory.Count(h => h.Status == PlantStatus.SEVERE_STRESS);
@@ -95,7 +104,7 @@ public class PdfGeneratorService : IPdfGeneratorService
 
         _logger.LogInformation("Generando reporte en PDF para la planta {PlantName}", plant.Name);
         var document = new PlantReportDocument(reportModel);
-        byte[] pdfBytes = document.GeneratePdf();
+        var pdfBytes = document.GeneratePdf();
 
         return pdfBytes;
     }
