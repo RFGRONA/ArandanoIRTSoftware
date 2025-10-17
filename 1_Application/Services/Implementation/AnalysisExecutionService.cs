@@ -138,31 +138,50 @@ public class AnalysisExecutionService : IAnalysisExecutionService
             return;
         }
 
-        var dateRangeStart = environmentalData.First().RecordedAtServer;
-        var dateRangeEnd = environmentalData.Last().RecordedAtServer;
+        var dateRangeStart = environmentalData.First().RecordedAtServer.AddMinutes(-5); // Ampliar rango de búsqueda
+        var dateRangeEnd = environmentalData.Last().RecordedAtServer.AddMinutes(5); // Ampliar rango de búsqueda
 
         var monitoredThermals = await _context.ThermalCaptures
             .Where(tc =>
                 tc.PlantId == plantId && tc.RecordedAtServer >= dateRangeStart && tc.RecordedAtServer <= dateRangeEnd)
-            .ToDictionaryAsync(tc => tc.RecordedAtServer, tc => tc);
+            .OrderBy(tc => tc.RecordedAtServer)
+            .ToListAsync();
 
         var controlThermals = await _context.ThermalCaptures
             .Where(tc => tc.PlantId == controlPlant.Id && tc.RecordedAtServer >= dateRangeStart &&
                          tc.RecordedAtServer <= dateRangeEnd)
-            .ToDictionaryAsync(tc => tc.RecordedAtServer, tc => tc);
+            .OrderBy(tc => tc.RecordedAtServer)
+            .ToListAsync();
 
         var newAnalysisResults = new List<AnalysisResult>();
         foreach (var reading in environmentalData)
         {
-            if (!monitoredThermals.TryGetValue(reading.RecordedAtServer, out var monitoredCapture) ||
-                !controlThermals.TryGetValue(reading.RecordedAtServer, out var controlCapture))
+            // Buscar la captura térmica más cercana para la planta monitoreada
+            var monitoredCapture = monitoredThermals
+                .Where(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) <= 5)
+                .MinBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes));
+
+            // Buscar la captura térmica más cercana para la planta de control
+            var controlCapture = controlThermals
+                .Where(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) <= 5)
+                .MinBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes));
+
+            if (monitoredCapture == null || controlCapture == null)
+            {
+                _logger.LogWarning(
+                    "No se encontraron capturas térmicas cercanas para la lectura ambiental en {RecordedAtServer} de la planta {PlantId}",
+                    reading.RecordedAtServer, plantId);
                 continue;
+            }
 
             var input = new CwsiCalculationInput(reading, monitoredCapture, controlCapture, monitoredPlant,
                 controlPlant);
             var calculationResult = await CalculateCwsiAsync(input);
 
             if (calculationResult.IsSuccess) newAnalysisResults.Add(calculationResult.Value);
+            else
+                _logger.LogWarning("Fallo el calculo de CWSI para la lectura ambiental en {RecordedAtServer}: {Error}",
+                    reading.RecordedAtServer, calculationResult.ErrorMessage);
         }
 
         if (newAnalysisResults.Any())
@@ -172,6 +191,10 @@ public class AnalysisExecutionService : IAnalysisExecutionService
             _logger.LogInformation(
                 "Catch-up completado. Se generaron {Count} nuevos registros para la planta {PlantId}",
                 newAnalysisResults.Count, plantId);
+        }
+        else
+        {
+            _logger.LogInformation("No se generaron nuevos resultados de análisis para la planta {PlantId}", plantId);
         }
     }
 

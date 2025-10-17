@@ -100,7 +100,7 @@ public static class DependencyInjection
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
         services.AddScoped<ITurnstileService, TurnstileService>();
-        services.AddScoped<IAnalysisExecutionService, AnalysisExecutionService>();
+        services.AddTransient<IAnalysisExecutionService, AnalysisExecutionService>();
 
         services.AddScoped<IFileStorageService, MinioStorageService>();
         services.AddScoped<IEmailService, BrevoEmailService>();

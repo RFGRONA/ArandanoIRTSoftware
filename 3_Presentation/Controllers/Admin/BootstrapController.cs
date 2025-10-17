@@ -75,7 +75,7 @@ public class BootstrapController : Controller
         {
             var claims = new List<Claim>
             {
-                new(ClaimTypes.Name, "ROOT_BOOTSTRAP_USER"),
+                new(ClaimTypes.Name, "Bootstrap User"),
                 new(ClaimTypes.Role, "BootstrapAdmin")
             };
 
