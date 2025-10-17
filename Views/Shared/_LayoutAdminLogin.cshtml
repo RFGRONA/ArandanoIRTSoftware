@@ -1,16 +1,30 @@
+@*
+    Layout simple, probablemente para las páginas de autenticación y públicas (`_LayoutAdminLogin.cshtml`).
+    Este layout proporciona una estructura HTML básica sin la barra de navegación lateral del
+    área de administración. Es ideal para vistas independientes como Login, Registro,
+    Recuperar Contraseña, etc., que requieren una interfaz limpia y centrada.
+    Incluye globalmente el script de Cloudflare Turnstile, ya que se espera que
+    muchas de estas páginas contengan formularios que necesiten protección.
+*@
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Arandano IRT</title>
+    
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @* Carga el script de Cloudflare Turnstile para protección contra bots en los formularios. *@
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <div class="container mt-5">
     <main role="main" class="pb-3">
+        @*
+            Este es el marcador de posición donde se inyectará el contenido específico
+            de cada vista que utilice este layout (ej. el formulario de Login).
+        *@
         @RenderBody()
     </main>
 </div>  
@@ -23,6 +37,11 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
+@*
+    Marcador de posición para que las vistas individuales puedan inyectar
+    sus propios scripts personalizados si es necesario. `required: false` significa
+    que las vistas no están obligadas a definir una sección "Scripts".
+*@
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

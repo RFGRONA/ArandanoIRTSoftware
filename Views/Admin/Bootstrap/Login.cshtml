@@ -1,6 +1,13 @@
+@*
+    Página de "Login de Arranque" (Bootstrap Login).
+    Esta vista se utiliza para un escenario de configuración inicial: el inicio de
+    sesión del primer superadministrador cuando la base de datos está vacía o
+    no existen otros usuarios administradores. Permite la creación y autenticación
+    inicial para configurar el sistema por primera vez.
+*@
 @model ArandanoIRT.Web._1_Application.DTOs.Admin.AdminLoginDto
 @{
-    Layout = null; // No usamos el layout principal
+    Layout = null; @* Página de autenticación independiente que no utiliza un layout principal. *@
     ViewData["Title"] = "Bootstrap Login";
 }
 
@@ -18,6 +25,7 @@
                 <div class="card-body">
                     <h3 class="card-title text-center">Acceso de Arranque</h3>
                     <form asp-action="Login" method="post">
+                        @* Muestra errores de validación que no están asociados a un campo específico del modelo. *@
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                         <div class="mb-3">
                             <label asp-for="Username" class="form-label"></label>

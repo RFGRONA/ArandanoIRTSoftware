@@ -1,3 +1,12 @@
+@*
+    Página de "Gestionar Perfil" para el usuario autenticado.
+    Esta vista está dividida en dos secciones principales:
+    1.  Un formulario para actualizar la información personal (nombre, apellido) y
+        las preferencias de notificación por correo electrónico.
+    2.  Un formulario separado para cambiar la contraseña.
+
+    Algunas preferencias de notificación solo son visibles para usuarios con el rol "Admin".
+*@
 @model ArandanoIRT.Web._3_Presentation.ViewModels.Admin.ManageProfileViewModel
 @{
     ViewData["Title"] = "Gestionar Perfil";
@@ -6,7 +15,7 @@
 
 @section Styles {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="~/css/data-tables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/data-tables.css" asp-append-version="true"/>
     <style>
         /* Estilos para hacer los interruptores un poco más grandes*/
         .form-switch .form-check-input {
@@ -14,6 +23,7 @@
             height: 1.6em;
             cursor: pointer;
         }
+
         .form-check-label {
             padding-left: 0.5em;
         }
@@ -24,6 +34,7 @@
     <h1>@ViewData["Title"]</h1>
 </div>
 
+@* Muestra mensajes de éxito o error después de una acción, usando TempData para persistir tras la redirección. *@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success">@TempData["SuccessMessage"]</div>
@@ -34,12 +45,13 @@
 }
 
 <div class="row">
+    @* Columna para la información del perfil y las preferencias. *@
     <div class="col-lg-6 mb-4">
         <div class="card table-card h-100">
             <div class="card-body p-4">
                 <h5 class="card-title mb-3" style="color: var(--primary-color); font-weight: 600;">Información del Perfil</h5>
                 <hr class="filter-divider mt-0 mb-4">
-                
+
                 <form asp-action="UpdateProfile" method="post">
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
                     <div class="mb-3">
@@ -50,7 +62,7 @@
                         <label asp-for="ProfileInfo.LastName" class="form-label fw-bold"></label>
                         <input asp-for="ProfileInfo.LastName" class="form-control"/>
                     </div>
-                    
+
                     <h5 class="card-title mt-4 mb-3" style="color: var(--primary-color); font-weight: 600;">Preferencias de Notificación</h5>
                     <hr class="filter-divider mt-0 mb-4">
 
@@ -59,6 +71,10 @@
                         <label asp-for="ProfileInfo.AccountSettings.EmailOnMildStressAlert" class="form-check-label">Recibir alertas de estrés hídrico inicial.</label>
                     </div>
 
+                    @*
+                        Renderizado condicional: estas opciones de notificación solo están disponibles
+                        para los usuarios que tienen el rol de "Admin".
+                    *@
                     @if (User.IsInRole("Admin"))
                     {
                         <div class="form-check form-switch mb-3">
@@ -83,12 +99,13 @@
             </div>
         </div>
     </div>
+    @* Columna para el cambio de contraseña. *@
     <div class="col-lg-6 mb-4">
         <div class="card table-card h-100">
             <div class="card-body p-4">
                 <h5 class="card-title mb-3" style="color: var(--primary-color); font-weight: 600;">Cambiar Contraseña</h5>
                 <hr class="filter-divider mt-0 mb-4">
-                
+
                 <form asp-action="ChangePassword" method="post">
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
                     <div class="mb-3">

@@ -1,6 +1,11 @@
+@*
+    Plantilla de correo electrónico para notificar a un usuario que su cuenta ha sido eliminada.
+    Este template se renderiza como el cuerpo de un correo electrónico y se envía al
+    usuario afectado después de que un administrador ha eliminado su cuenta del sistema.
+*@
 @model ArandanoIRT.Web._3_Presentation.ViewModels.Emails.AccountDeletedViewModel
 @{
-    Layout = "_EmailLayout.cshtml";
+    Layout = "_EmailLayout.cshtml"; // Define el layout base para correos electrónicos.
     ViewData["Title"] = "Confirmación de Cierre de Cuenta";
 }
 

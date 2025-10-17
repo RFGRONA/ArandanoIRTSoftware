@@ -1,3 +1,9 @@
+@*
+    Página de índice para la gestión de dispositivos.
+    Muestra una tabla con un listado de todos los dispositivos registrados,
+    su estado operativo y de activación, y las plantas/cultivos a los que están
+    asociados. Proporciona las acciones CRUD estándar (Editar, Detalles, Eliminar).
+*@
 @using ArandanoIRT.Web._0_Domain.Common
 @using ArandanoIRT.Web._0_Domain.Enums
 @model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Device.DeviceSummaryDto>
@@ -7,7 +13,7 @@
 }
 
 @section Styles {
-     <link rel="stylesheet" href="~/css/devices.css" asp-append-version="true" /> 
+    <link rel="stylesheet" href="~/css/devices.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
@@ -20,6 +26,7 @@
     </div>
 </div>
 
+@* Muestra notificaciones de éxito o error después de una acción (crear, editar, etc.). *@
 @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
 @if (ViewData["ErrorMessage"] != null) { <div class="alert alert-danger">@ViewData["ErrorMessage"]</div> }
 
@@ -44,9 +51,14 @@
                 {
                     <tr>
                         <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                        <td>@(item.PlantName ?? "No asignada")</td> 
+                        <td>@(item.PlantName ?? "No asignada")</td>
                         <td>@(item.CropName ?? "No asignado")</td>
                         <td>
+                            @*
+                                Lógica para asignar una clase CSS a la insignia de estado del dispositivo.
+                                Cada estado (Activo, Inactivo, etc.) se mapea a una clase que define
+                                su color para una rápida identificación visual.
+                            *@
                             @{
                                 var statusClass = "";
                                 switch (item.DeviceStatus)
@@ -68,7 +80,8 @@
                             <span class="status-badge @statusClass">@item.DeviceStatus.GetDisplayName()</span>
                         </td>
                         <td>
-                             @{
+                            @* Lógica similar para mostrar el estado del proceso de activación del dispositivo. *@
+                            @{
                                 var activationClass = "";
                                 switch (item.ActivationStatus)
                                 {
@@ -89,13 +102,13 @@
                         <td>
                             <div class="action-buttons">
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action edit" title="Editar">
-                                    <i class="fas fa-pencil-alt"></i> 
+                                    <i class="fas fa-pencil-alt"></i>
                                 </a>
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn-action details" title="Detalles">
-                                    <i class="fas fa-info-circle"></i> 
+                                    <i class="fas fa-info-circle"></i>
                                 </a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action delete" title="Eliminar">
-                                    <i class="fas fa-trash-alt"></i> 
+                                    <i class="fas fa-trash-alt"></i>
                                 </a>
                             </div>
                         </td>
@@ -104,8 +117,9 @@
             }
             else
             {
+                @* Mensaje que se muestra si no hay dispositivos registrados en el sistema. *@
                 <tr>
-                    <td colspan="7" class="text-center py-4">No hay dispositivos registrados.</td> 
+                    <td colspan="7" class="text-center py-4">No hay dispositivos registrados.</td>
                 </tr>
             }
             </tbody>

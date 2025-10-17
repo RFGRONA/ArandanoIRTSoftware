@@ -1,10 +1,22 @@
+@*
+    Plantilla de correo electrónico para alertas genéricas del sistema.
+    Este es un template reutilizable diseñado para enviar notificaciones de
+    diversos eventos (ej. fallos de la aplicación, inactividad de dispositivos).
+    El contenido, incluyendo el título, mensaje y nivel de severidad, es
+    completamente dinámico. El estilo visual del correo cambia
+    (ej. de amarillo a rojo) según la severidad de la alerta.
+*@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._3_Presentation.ViewModels.Alerts.GenericAlertViewModel
 @{
-    Layout = "_EmailLayout.cshtml";
+    Layout = "_EmailLayout.cshtml"; // Define el layout base para correos electrónicos.
     ViewData["Title"] = Model.Title;
 
-    // Lógica para determinar el estilo de la alerta según la severidad
+    @*
+        Lógica para determinar el estilo de la alerta según la severidad.
+        Esto permite que las alertas críticas se muestren con un color rojo
+        distintivo, mientras que las advertencias usan un color amarillo.
+    *@
     var alertStyle = "border-left: 4px solid #ffc107; background-color: #fff3cd;"; // Warning (amarillo) por defecto
     var iconClass = "⚠️"; // Emoji de advertencia por defecto
     var textColor = "#664d03";
@@ -21,12 +33,17 @@
 
 <p>Se ha detectado la siguiente alerta en el sistema:</p>
 
+@*
+    Contenedor de alerta cuyo estilo (color de fondo, borde) se establece
+    dinámicamente basado en la variable 'alertStyle' definida arriba.
+*@
 <div style="@alertStyle padding: 16px; margin: 24px 0; border-radius: 8px;">
     <p style="color: @textColor; font-weight: bold; margin: 0;">
         @Model.Message
     </p>
 </div>
 
+@* Muestra la fecha de la alerta, convirtiéndola a la zona horaria local y manejando el caso de que sea nula. *@
 <p><strong>Fecha y Hora
         (UTC):</strong> @(Model.AlertTime.HasValue ? Model.AlertTime.Value.ToColombiaTime().ToString("F") : "No especificada")
 </p>

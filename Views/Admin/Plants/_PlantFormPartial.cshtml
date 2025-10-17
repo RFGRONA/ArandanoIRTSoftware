@@ -1,8 +1,20 @@
+@*
+    Formulario parcial (_PlantFormPartial) para los campos comunes de creación y edición de una planta.
+    Este enfoque reutilizable asegura consistencia entre las vistas de "Crear" y "Editar".
+    Maneja la lógica condicional para mostrar campos que solo son relevantes durante la creación,
+    como el estado inicial de la planta.
+*@
 @using ArandanoIRT.Web._0_Domain.Enums
 @using ArandanoIRT.Web._1_Application.DTOs.Plants
 @model ArandanoIRT.Web._1_Application.DTOs.Plants.IPlantFormData
 
 @{
+    @*
+        Se realiza un casting del modelo a 'dynamic' para poder acceder a propiedades
+        (como 'AvailableCrops') que existen en los DTOs concretos (Create/Edit)
+        sin forzar a la interfaz IPlantFormData a contenerlas.
+        El casting a 'PlantCreateDto' se usa para la lógica condicional de abajo.
+    *@
     var concreteModel = Model as dynamic;
     var createDto = Model as PlantCreateDto;
 }
@@ -10,17 +22,6 @@
 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
 <h5 class="form-section-title">Información general de la planta</h5>
-
-
-<style>
-    .tooltip-icon:focus::after,
-    .tooltip-icon:focus::before,
-    .tooltip-icon:active::after,
-    .tooltip-icon:active::before {
-        opacity: 1;
-        visibility: visible;
-    }
-</style>
 
 <div class="form-group-container">
     <div class="mb-3">
@@ -32,7 +33,7 @@
                 tabindex="0"
             >?</span>
         </label>
-        <input asp-for="Name" class="form-control" placeholder="Ej.: Planta-001" />
+        <input asp-for="Name" class="form-control" placeholder="Ej.: Planta-001"/>
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
 
@@ -51,6 +52,13 @@
         <span asp-validation-for="CropId" class="text-danger"></span>
     </div>
 
+    @*
+        Renderizado condicional para el estado de la planta:
+        - Si es la vista de 'Crear' (createDto no es nulo), se muestra un selector
+          para establecer el estado inicial.
+        - Si es la vista de 'Editar', se muestra un mensaje informativo, ya que el estado
+          se debe gestionar desde otra sección para mantener un historial de cambios.
+    *@
     @if (createDto != null)
     {
         <div class="mb-3">
@@ -59,7 +67,6 @@
                 <span
                     class="tooltip-icon"
                     data-tooltip="Estado con el que se registrará la planta (ej.: 'Sano', 'En observación', 'Enfermo'). Se puede cambiar luego desde la página de detalles."
-                    
                     tabindex="0"
                 >?</span>
             </label>

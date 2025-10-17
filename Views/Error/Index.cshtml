@@ -1,17 +1,24 @@
+@*
+    Página de error genérica para toda la aplicación.
+    Se muestra al usuario cuando ocurre una excepción no controlada o un error
+    inesperado en el servidor. Utiliza un diseño aislado (sin layout principal)
+    para asegurar que se pueda renderizar incluso si el layout compartido tiene problemas.
+    Opcionalmente, puede mostrar un ID de solicitud para facilitar la depuración.
+*@
 @model ArandanoIRT.Web._3_Presentation.ViewModels.ErrorViewModel
 @{
     ViewData["Title"] = "Error";
-    Layout = null; // Se usa un layout nulo para tener control total del diseño
+    Layout = null; @* Se usa un layout nulo para tener control total del diseño y evitar fallos en cascada. *@
 }
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - Arandano IRT</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/error-page.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/error-page.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -25,6 +32,11 @@
             Lo sentimos, pero hemos encontrado un problema inesperado.
         </p>
 
+        @*
+            Muestra el ID de la solicitud (RequestId) solo si la configuración de la aplicación
+            lo permite. Esto es típicamente habilitado solo en el entorno de desarrollo
+            para ayudar a los desarrolladores a rastrear el error específico en los logs.
+        *@
         @if (Model?.ShowRequestId ?? false)
         {
             <div class="request-id">
@@ -32,6 +44,7 @@
             </div>
         }
 
+        @* Proporciona acciones claras para que el usuario pueda navegar fuera de la página de error. *@
         <div class="error-actions">
             <a asp-controller="Dashboard" asp-action="Index" asp-area="Admin" class="btn btn-primary">
                 <i class="fas fa-home me-2"></i>Volver al Inicio

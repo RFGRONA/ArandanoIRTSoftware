@@ -1,3 +1,11 @@
+@*
+    Formulario parcial (_CropFormPartial) que contiene los campos comunes
+    para la creación y edición de un cultivo. Se divide en:
+    1. Información general (nombre, dirección).
+    2. Selectores de ubicación anidados (departamento, ciudad).
+    3. Parámetros de configuración específicos del cultivo (umbrales, etc.),
+       que solo se muestran si el modelo los incluye (ej. en la vista de edición).
+*@
 @model ArandanoIRT.Web._1_Application.DTOs.Crops.ICropFormData
 
 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
@@ -8,7 +16,7 @@
         Nombre del Cultivo
         <span class="tooltip-icon" data-tooltip="Nombre identificativo para el cultivo (ej. 'Finca La Esperanza - Lote 1').">?</span>
     </label>
-    <input asp-for="Name" class="form-control" />
+    <input asp-for="Name" class="form-control"/>
     <span asp-validation-for="Name" class="text-danger"></span>
 </div>
 <div class="mb-3">
@@ -16,11 +24,17 @@
         Dirección
         <span class="tooltip-icon" data-tooltip="Dirección física donde se encuentra el cultivo.">?</span>
     </label>
-    <input asp-for="Address" class="form-control" />
+    <input asp-for="Address" class="form-control"/>
     <span asp-validation-for="Address" class="text-danger"></span>
 </div>
-<input type="hidden" asp-for="CityName" />
 
+@*
+    Campo oculto para almacenar el nombre de la ciudad seleccionada.
+    Su valor es gestionado por JavaScript a partir de la selección en los dropdowns.
+*@
+<input type="hidden" asp-for="CityName"/>
+
+@* Lógica de selectores anidados para la ubicación geográfica. *@
 <div class="row">
     <div class="col-md-4 mb-3">
         <label for="country-select" class="form-label">País</label>
@@ -30,6 +44,7 @@
     </div>
     <div class="col-md-4 mb-3">
         <label for="department-select" class="form-label">Departamento</label>
+        @* Este selector se poblará dinámicamente con JavaScript. *@
         <select id="department-select" class="form-select">
             <option value="">Seleccione un departamento...</option>
         </select>
@@ -39,6 +54,7 @@
             Ciudad / Municipio
             <span class="tooltip-icon" data-tooltip="Selecciona el departamento primero para habilitar esta lista.">?</span>
         </label>
+        @* Este selector se habilita y puebla después de seleccionar un departamento. *@
         <select id="city-select" class="form-select" disabled>
             <option value="">Seleccione una ciudad...</option>
         </select>
@@ -46,12 +62,17 @@
 </div>
 <span asp-validation-for="CityName" class="text-danger"></span>
 
+@*
+    Sección de configuración avanzada. Solo se renderiza si el modelo
+    contiene el objeto CropSettings (típicamente en la vista de edición).
+*@
 @if (Model.CropSettings != null)
 {
     <hr class="my-4"/>
     <h5 class="form-section-title">Parámetros y Umbrales del Cultivo</h5>
 
     <div class="form-group-container">
+        @* Configuración para el cálculo del Índice de Estrés Hídrico (CWSI). *@
         <fieldset class="border p-3">
             <legend class="w-auto px-2 fs-6">Análisis (CWSI)</legend>
             <div class="row">
@@ -60,7 +81,7 @@
                         Umbral de Estrés Incipiente
                         <span class="tooltip-icon" data-tooltip="Valor CWSI (0.0 - 1.0) a partir del cual se considera estrés leve.">?</span>
                     </label>
-                    <input type="number" step="0.01" min="0" max="1" asp-for="CropSettings.AnalysisParameters.CwsiThresholdIncipient" class="form-control" />
+                    <input type="number" step="0.01" min="0" max="1" asp-for="CropSettings.AnalysisParameters.CwsiThresholdIncipient" class="form-control"/>
                     <span asp-validation-for="CropSettings.AnalysisParameters.CwsiThresholdIncipient" class="text-danger"></span>
                 </div>
                 <div class="col-12 mb-3">
@@ -68,7 +89,7 @@
                         Umbral de Estrés Crítico
                         <span class="tooltip-icon" data-tooltip="Valor CWSI (0.0 - 1.0) a partir del cual se considera estrés severo.">?</span>
                     </label>
-                    <input type="number" step="0.01" min="0" max="1" asp-for="CropSettings.AnalysisParameters.CwsiThresholdCritical" class="form-control" />
+                    <input type="number" step="0.01" min="0" max="1" asp-for="CropSettings.AnalysisParameters.CwsiThresholdCritical" class="form-control"/>
                     <span asp-validation-for="CropSettings.AnalysisParameters.CwsiThresholdCritical" class="text-danger"></span>
                 </div>
                 <div class="col-12 mb-3">
@@ -76,7 +97,7 @@
                         Hora de Inicio (24h)
                         <span class="tooltip-icon" data-tooltip="Hora del día (0-23) a partir de la cual se considerarán los datos para el análisis.">?</span>
                     </label>
-                    <input type="number" min="0" max="23" asp-for="CropSettings.AnalysisParameters.AnalysisWindowStartHour" class="form-control" />
+                    <input type="number" min="0" max="23" asp-for="CropSettings.AnalysisParameters.AnalysisWindowStartHour" class="form-control"/>
                     <span asp-validation-for="CropSettings.AnalysisParameters.AnalysisWindowStartHour" class="text-danger"></span>
                 </div>
                 <div class="col-12 mb-3">
@@ -84,7 +105,7 @@
                         Hora de Fin (24h)
                         <span class="tooltip-icon" data-tooltip="Hora del día (0-23) hasta la cual se considerarán los datos para el análisis.">?</span>
                     </label>
-                    <input type="number" min="0" max="23" asp-for="CropSettings.AnalysisParameters.AnalysisWindowEndHour" class="form-control" />
+                    <input type="number" min="0" max="23" asp-for="CropSettings.AnalysisParameters.AnalysisWindowEndHour" class="form-control"/>
                     <span asp-validation-for="CropSettings.AnalysisParameters.AnalysisWindowEndHour" class="text-danger"></span>
                 </div>
                 <div class="col-12 mb-3">
@@ -92,12 +113,13 @@
                         Umbral de Luz (lux)
                         <span class="tooltip-icon" data-tooltip="Valor mínimo de intensidad de luz (en lux) para que los datos térmicos sean considerados válidos.">?</span>
                     </label>
-                    <input type="number" min="0" max="60000" asp-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="form-control" />
+                    <input type="number" min="0" max="60000" asp-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="form-control"/>
                     <span asp-validation-for="CropSettings.AnalysisParameters.LightIntensityThreshold" class="text-danger"></span>
                 </div>
             </div>
         </fieldset>
 
+        @* Parámetros para la detección de anomalías de temperatura durante la noche. *@
         <fieldset class="border p-3">
             <legend class="w-auto px-2 fs-6">Anomalías Nocturnas</legend>
             <div class="row">
@@ -106,7 +128,7 @@
                         Umbral Delta T (°C)
                         <span class="tooltip-icon" data-tooltip="Diferencia de temperatura mínima entre la planta y el ambiente para ser considerada una anomalía.">?</span>
                     </label>
-                    <input type="number" step="0.1" max="7" min="0.1" asp-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="form-control" />
+                    <input type="number" step="0.1" max="7" min="0.1" asp-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="form-control"/>
                     <span asp-validation-for="CropSettings.AnomalyParameters.DeltaTThreshold" class="text-danger"></span>
                 </div>
                 <div class="col-12 mb-3">
@@ -114,12 +136,13 @@
                         Duración Mínima (min)
                         <span class="tooltip-icon" data-tooltip="Tiempo mínimo en minutos que una anomalía debe persistir para ser considerada una alerta. No puede ser negativo.">?</span>
                     </label>
-                    <input type="number" min="1" max="480" asp-for="CropSettings.AnomalyParameters.DurationMinutes" class="form-control" />
+                    <input type="number" min="1" max="480" asp-for="CropSettings.AnomalyParameters.DurationMinutes" class="form-control"/>
                     <span asp-validation-for="CropSettings.AnomalyParameters.DurationMinutes" class="text-danger"></span>
                 </div>
             </div>
         </fieldset>
 
+        @* Configuración para los recordatorios de calibración de sensores. *@
         <fieldset class="border p-3">
             <legend class="w-auto px-2 fs-6">Calibración</legend>
             <div class="row">
@@ -128,7 +151,7 @@
                         Intervalo de Recordatorio (meses)
                         <span class="tooltip-icon" data-tooltip="Cada cuántos meses se enviará un recordatorio para calibrar los dispositivos asociados a este cultivo.">?</span>
                     </label>
-                    <input type="number" min="1" max="12" asp-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="form-control" />
+                    <input type="number" min="1" max="12" asp-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="form-control"/>
                     <span asp-validation-for="CropSettings.CalibrationReminder.ReminderIntervalMonths" class="text-danger"></span>
                 </div>
             </div>

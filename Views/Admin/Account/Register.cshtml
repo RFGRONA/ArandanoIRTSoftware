@@ -1,8 +1,17 @@
+@*
+    Página de registro para nuevos usuarios administradores.
+    El formulario requiere un código de invitación para validar el registro,
+    además de los datos personales y credenciales del usuario.
+    También utiliza Cloudflare Turnstile para prevenir registros automatizados.
+*@
+
 @model ArandanoIRT.Web._1_Application.DTOs.Admin.RegisterDto
+@* Inyección de las configuraciones de Turnstile desde appsettings.json. *@
 @inject Microsoft.Extensions.Options.IOptions<ArandanoIRT.Web._2_Infrastructure.Settings.TurnstileSettings> TurnstileSettings
-@inject IWebHostEnvironment Env 
+@* Inyección del entorno para mostrar contenido condicionalmente (ej. scripts). *@
+@inject IWebHostEnvironment Env
 @{
-    Layout = null;
+    Layout = null; @* Página de registro independiente sin layout principal. *@
     ViewData["Title"] = "Registro de Nuevo Usuario";
 }
 
@@ -13,8 +22,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - Arandano IRT</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="~/css/register.css" asp-append-version="true"/> 
-    @if (!Env.IsDevelopment()) 
+    <link rel="stylesheet" href="~/css/register.css" asp-append-version="true"/>
+    @* Carga el script de Cloudflare Turnstile solo en entornos productivos. *@
+    @if (!Env.IsDevelopment())
     {
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     }
@@ -31,6 +41,7 @@
     </div>
 
     <form asp-action="Register" method="post">
+        @* Contenedor para mostrar todos los errores de validación del modelo. *@
         <div asp-validation-summary="All" class="text-danger" role="alert"></div>
 
         <div class="form-group mb-3">
@@ -69,8 +80,9 @@
             <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirma tu contraseña"/>
             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
         </div>
-        
+
         <div class="d-flex justify-content-center">
+            @* Contenedor donde se renderiza el widget de Cloudflare Turnstile. *@
             <div class="cf-turnstile mb-3" data-sitekey="@TurnstileSettings.Value.SiteKey"></div>
         </div>
 

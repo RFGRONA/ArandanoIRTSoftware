@@ -1,12 +1,19 @@
+@*
+    Página de "Gestión de Usuarios".
+    Muestra una tabla con todos los usuarios del sistema. Las acciones disponibles
+    varían según el rol del usuario y si es la cuenta del administrador actual.
+    Implementa características de seguridad como la confirmación mediante contraseña
+    para eliminar a otros administradores y modales para confirmar acciones críticas.
+*@
 @using System.Security.Claims
 @model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Admin.UserDto>
 
 @{
     ViewData["Title"] = "Gestión de Usuarios";
     Layout = "_AdminLayout";
+    @* Obtiene el ID del administrador que está viendo la página. Se usa para deshabilitar acciones sobre su propia cuenta. *@
     var currentAdminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 }
-
 
 @section Styles {
     <link rel="stylesheet" href="~/css/management.css" asp-append-version="true"/>
@@ -54,34 +61,40 @@
                         <td>@user.FullName</td>
                         <td>@user.Email</td>
                         <td>
+                            @* Muestra una insignia con un ícono y color diferente según el rol del usuario. *@
                             <span class="role-badge @(user.Role == "Administrador" ? "role-admin" : "role-user")">
                                 <i class="fas @(user.Role == "Administrador" ? "fa-user-shield" : "fa-user")"></i> @user.Role
                             </span>
                         </td>
                         <td>@Html.DisplayFor(modelItem => user.RegisteredDate)</td>
                         <td>
+                            @* Lógica condicional para mostrar las acciones apropiadas. *@
                             @if (user.Role == "Usuario Estándar")
                             {
                                 <div class="action-buttons">
+                                    @* Botón para ascender a un usuario estándar, que abre un modal de confirmación. *@
                                     <button type="button" class="btn-action promote" title="Ascender a Administrador"
                                             data-bs-toggle="modal" data-bs-target="#promoteUserModal"
                                             data-userid="@user.Id" data-username="@user.FullName">
                                         <i class="fas fa-user-shield"></i>
                                     </button>
+                                    @* Enlace directo para eliminar a un usuario estándar. *@
                                     <a asp-action="Delete" asp-route-id="@user.Id" class="btn-action delete"
                                        title="Eliminar Usuario">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
                                 </div>
                             }
-                            else
+                            else @* Lógica para usuarios que son Administradores. *@
                             {
                                 @if (user.Id == currentAdminId)
                                 {
+                                    @* No se pueden realizar acciones sobre la propia cuenta. *@
                                     <span class="text-muted fst-italic">(Tu Cuenta)</span>
                                 }
                                 else
                                 {
+                                    @* Caso especial para eliminar administradores inactivos sin confirmación extra. *@
                                     @if (user.IsDeletableByInactivity)
                                     {
                                         <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-warning btn-sm" title="Eliminar por Inactividad">
@@ -90,6 +103,7 @@
                                     }
                                     else
                                     {
+                                        @* Botón para iniciar el flujo de eliminación segura de otro administrador, que requiere contraseña. *@
                                         <button type="button" class="btn btn-danger btn-sm" title="Iniciar Eliminación Segura"
                                                 data-bs-toggle="modal" data-bs-target="#deleteAdminModal"
                                                 data-userid="@user.Id" data-username="@user.FullName">
@@ -113,7 +127,7 @@
     </div>
 </div>
 
-<!-- Modal de Confirmación para Ascender Usuario -->
+@* Modal de confirmación para ascender a un usuario a rol de administrador. *@
 <div class="modal fade" id="promoteUserModal" tabindex="-1" aria-labelledby="promoteUserModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -140,6 +154,7 @@
     </div>
 </div>
 
+@* Modal de confirmación para la eliminación segura de un administrador. Requiere la contraseña del admin actual. *@
 <div class="modal fade" id="deleteAdminModal" tabindex="-1" aria-labelledby="deleteAdminModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -152,7 +167,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Esta a punto de eliminar la cuenta del administrador <strong id="adminNameToDelete"></strong>.
+                    <p>Está a punto de eliminar la cuenta del administrador <strong id="adminNameToDelete"></strong>.
                     </p>
                     <div class="alert alert-danger mt-3">
                         <strong>Atención:</strong> Esta es una acción de alto riesgo y es irreversible. Para continuar,
@@ -175,21 +190,29 @@
 
 @section Scripts {
     <script>
+        @*
+            Este script maneja la inicialización de los modales, pasando datos dinámicos
+            desde el botón que los activó (usando data-attributes) a los elementos del modal.
+            Esto permite que un mismo modal funcione para cualquier usuario de la lista.
+        *@
         document.addEventListener('DOMContentLoaded', function () {
+            // Lógica para el modal de ascender usuario.
             var promoteUserModal = document.getElementById('promoteUserModal');
             promoteUserModal.addEventListener('show.bs.modal', function (event) {
                 var button = event.relatedTarget;
                 var userId = button.getAttribute('data-userid');
                 var userName = button.getAttribute('data-username');
 
+                // Inserta el nombre del usuario en el cuerpo del modal.
                 var modalBody = promoteUserModal.querySelector('.modal-body #userNameToPromote');
                 modalBody.textContent = userName;
 
+                // Actualiza dinámicamente la URL del formulario para que incluya el ID del usuario.
                 var form = promoteUserModal.querySelector('#promoteForm');
-                // Asegúrate que la URL base sea la correcta para tu enrutamiento
                 form.action = '@Url.Action("PromoteToAdmin", "UserManagement")/' + userId;
             });
 
+            // Lógica para el modal de eliminar administrador.
             var deleteAdminModal = document.getElementById('deleteAdminModal');
             if (deleteAdminModal) {
                 deleteAdminModal.addEventListener('show.bs.modal', function (event) {
@@ -197,14 +220,14 @@
                     var userId = button.getAttribute('data-userid');
                     var userName = button.getAttribute('data-username');
 
-                    // Poblar el nombre del admin a eliminar y el ID en el campo oculto
+                    // Inserta el nombre del admin a eliminar y su ID en el campo oculto.
                     deleteAdminModal.querySelector('.modal-body #adminNameToDelete').textContent = userName;
                     deleteAdminModal.querySelector('input#adminToDeleteId').value = userId;
 
-                    // Limpiar y enfocar el campo de contraseña al abrir
+                    // Limpia y enfoca el campo de contraseña para una mejor experiencia de usuario.
                     var passwordInput = deleteAdminModal.querySelector('#currentAdminPassword');
                     passwordInput.value = '';
-                    setTimeout(() => passwordInput.focus(), 500);
+                    setTimeout(() => passwordInput.focus(), 500); // Pequeño retraso para asegurar que el modal es visible.
                 });
             }
         });

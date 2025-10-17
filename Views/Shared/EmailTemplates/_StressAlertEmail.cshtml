@@ -1,17 +1,36 @@
+@*
+    Plantilla de correo electrónico para notificar sobre una alerta de cambio de estado hídrico.
+    Este correo se envía automáticamente cuando el análisis del sistema detecta que una
+    planta ha cruzado un umbral de estrés (ej. de 'Óptimo' a 'Estrés Leve').
+    Informa al usuario sobre el cambio y proporciona un enlace para ver el análisis detallado.
+*@
 @model ArandanoIRT.Web._3_Presentation.ViewModels.Analysis.StressAlertViewModel
 
 <!DOCTYPE html>
 <html>
 <body>
+@* NOTA: Esta plantilla no parece utilizar el layout de correo electrónico principal (_EmailLayout.cshtml),
+    por lo que su estilo visual podría ser diferente al de otros correos del sistema. *@
+
 <h2>Alerta de Cambio de Estado Hídrico</h2>
 <p>Hola @Model.UserName,</p>
 <p>La planta <strong>@Model.PlantName</strong> ha cambiado su estado hídrico.</p>
+
+@*
+    Lista que resume los detalles clave del cambio de estado para una rápida comprensión:
+    - El estado en el que se encontraba la planta.
+    - El nuevo estado detectado.
+    - El valor del índice CWSI que provocó el cambio.
+*@
 <ul>
     <li><strong>Estado Anterior:</strong> @Model.PreviousStatus</li>
     <li><strong>Nuevo Estado:</strong> @Model.NewStatus</li>
     <li><strong>Valor CWSI Registrado:</strong> @Model.CwsiValue.ToString("F2")</li>
 </ul>
+
 <p>Puedes ver el historial completo y los gráficos de análisis en el panel.</p>
+
+@* Botón de llamada a la acción (Call to Action) que dirige al usuario a la página de análisis de la planta afectada. *@
 <a href="@Model.CtaButtonUrl" style="padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
     Ver Análisis Detallado
 </a>

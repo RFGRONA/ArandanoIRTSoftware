@@ -1,3 +1,10 @@
+@*
+    Página de "Detalles" para una planta específica.
+    Muestra en modo de solo lectura toda la información relevante de la planta,
+    como su estado actual, el cultivo y grupo experimental al que pertenece,
+    y las fechas de registro. Actúa como un centro de operaciones, proporcionando
+    enlaces a acciones clave como editar, cambiar estado o gestionar la máscara térmica.
+*@
 @using ArandanoIRT.Web._0_Domain.Common
 @using ArandanoIRT.Web._0_Domain.Enums
 @model ArandanoIRT.Web._1_Application.DTOs.Plants.PlantDetailsDto
@@ -7,10 +14,11 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/plantDetails.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/plantDetails.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
+@* Muestra notificaciones de éxito o error enviadas desde otras acciones (ej. después de editar). *@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success">@TempData["SuccessMessage"]</div>
@@ -20,6 +28,7 @@
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 
+@* Maneja el caso en que la planta con el ID solicitado no se encuentre en la base de datos. *@
 @if (Model == null)
 {
     <div class="alert alert-warning">Planta no encontrada.</div>
@@ -32,13 +41,13 @@ else
             <h1>@ViewData["Title"]</h1>
             <h4>@Model.Name</h4>
         </div>
-        
+
         <div class="card-body">
             @if (TempData["ErrorMessage"] != null)
             {
                 <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
             }
-            
+
             <dl class="details-list">
                 <div class="row detail-item">
                     <dt class="col-sm-4 col-md-3">@Html.DisplayNameFor(model => model.Name)</dt>
@@ -48,6 +57,11 @@ else
                 <div class="row detail-item">
                     <dt class="col-sm-4 col-md-3">Estado Actual</dt>
                     <dd class="col-sm-8 col-md-9">
+                        @*
+                            Utiliza una expresión switch para asignar dinámicamente una clase CSS
+                            a la insignia de estado, permitiendo una representación visual
+                            (colores) de la condición actual de la planta.
+                        *@
                         @{
                             var statusClass = Model.Status switch
                             {
@@ -89,6 +103,7 @@ else
             </dl>
         </div>
 
+        @* Barra de acciones que proporciona acceso a las operaciones relacionadas con esta planta. *@
         <div class="card-footer actions-bar">
             <a asp-action="Edit" asp-route-id="@Model.Id" class="action-btn btn-edit">
                 <i class="fas fa-pencil-alt"></i> Editar
@@ -100,7 +115,7 @@ else
                 <i class="fas fa-draw-polygon"></i> Máscara Térmica
             </a>
             <a asp-action="Index" class="action-btn btn-back ms-md-auto">
-                 Volver al Listado
+                Volver al Listado
             </a>
         </div>
     </div>

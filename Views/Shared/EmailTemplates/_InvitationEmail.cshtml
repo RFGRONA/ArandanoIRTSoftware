@@ -1,12 +1,24 @@
+@*
+    Plantilla de correo electrónico para invitar a un nuevo usuario a registrarse.
+    Este correo se envía cuando un administrador genera una invitación. Contiene un
+    código de registro de un solo uso, su fecha de expiración y un botón de
+    llamada a la acción (Call to Action) que lleva al usuario directamente a la
+    página de registro con el código pre-llenado en la URL.
+*@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._0_Domain.Entities.InvitationCode
 @{
-
-    Layout = "_EmailLayout.cshtml";
-    ViewData["Title"] = "Invitación para unirte a Arandano IRT";
+// NOTA: Aunque se especifica un Layout, esta vista contiene su propia estructura
+// completa de HTML y estilos, lo que la hace funcionar como una plantilla autónoma.
+Layout = "_EmailLayout.cshtml";
+ViewData["Title"] = "Invitación para unirte a Arandano IRT";
 }
 
 <style>
+    /*
+        Estilos específicos para esta plantilla de invitación. Se incluyen directamente
+        aquí para asegurar la máxima compatibilidad con diferentes clientes de correo.
+    */
     body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
         line-height: 1.6;
@@ -51,7 +63,7 @@
     }
     .button {
         background-color: #3498db;
-        color: #ffffff !important; 
+        color: #ffffff !important;
         padding: 15px 30px;
         text-decoration: none;
         border-radius: 8px;
@@ -79,6 +91,7 @@
 
     <p>Has recibido una invitación para crear una cuenta en la plataforma de monitoreo Arandano IRT. Para completar tu registro, utiliza el siguiente código de un solo uso:</p>
 
+    @* Contenedor que resalta el código de invitación para el usuario. *@
     <div class="code-box">
         @Model.Code
     </div>
@@ -86,19 +99,18 @@
     <p>Este código expirará el <strong>@Model.ExpiresAt.ToColombiaTime().ToString("F")</strong>.</p>
 
     <p>Para registrarte, haz clic en el botón de abajo y proporciona este código cuando se te solicite.</p>
-    
+
     <div class="button-container">
         @*
-          Este botón genera el enlace de registro directamente en la vista.
-          1. Usa Url.Action() para crear un enlace al método "Register" en "AccountController".
-          2. Pasa el código de invitación como parámetro en la URL.
-          3. 'protocol: Context.Request.Scheme' asegura que se genere una URL absoluta (https://...)
+          Este botón genera un enlace absoluto a la página de registro.
+          - Url.Action() crea el enlace a la acción "Register" del "AccountController".
+          - 'new { code = Model.Code }' añade el código de invitación como un parámetro en la URL.
+          - 'protocol: Context.Request.Scheme' asegura que se genere una URL completa (https://...)
              para que funcione correctamente desde el cliente de correo del usuario.
         *@
         <a href="@Url.Action("Register", "Account", new { code = Model.Code }, protocol: Context.Request.Scheme)" class="button">Crear mi Cuenta</a>
     </div>
 
-    <!-- Pie de página -->
     <div class="footer">
         <p>Si no esperabas esta invitación, puedes ignorar este correo de forma segura.</p>
         <p>Gracias,<br>El equipo de Arandano IRT</p>

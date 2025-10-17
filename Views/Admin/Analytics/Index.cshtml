@@ -1,3 +1,8 @@
+@*
+    Página principal que actúa como un dashboard para monitorear el estado de todos los cultivos.
+    Muestra una lista de cultivos, y para cada uno, una tabla con sus plantas, el estado de salud
+    detectado, y los requisitos necesarios para poder realizar análisis detallados.
+*@
 @model List<ArandanoIRT.Web._3_Presentation.ViewModels.Analysis.CropMonitorViewModel>
 @using ArandanoIRT.Web._0_Domain.Common
 @using ArandanoIRT.Web._0_Domain.Enums
@@ -5,6 +10,11 @@
 @{
     ViewData["Title"] = "Monitor de Cultivo y Analíticas";
     Layout = "_AdminLayout";
+
+    @*
+        Función auxiliar para mapear un enum PlantStatus a una clase CSS específica.
+        Esto permite colorear las insignias de estado según la condición de la planta.
+    *@
     string GetStatusClass(PlantStatus status) => status switch
     {
         PlantStatus.OPTIMAL => "status-optimal",
@@ -45,11 +55,16 @@
             <h3 class="mb-0">Cultivo: @crop.Name</h3>
         </div>
         <div class="card-body p-4">
-            
+
             <h6 class="text-muted text-uppercase small mb-3">Requisitos para el Análisis</h6>
+            @*
+                Muestra una lista de verificación de los requisitos previos para que el análisis
+                de un cultivo sea viable. Si no se cumplen, el botón "Analizar" se deshabilita.
+            *@
             <div class="readiness-container">
                 @{
                     var readiness = crop.AnalysisReadiness;
+                    @* Función local para renderizar un item de la lista de requisitos de forma consistente. *@
                     void RenderRequirement(bool isValid, string text)
                     {
                         <div class="readiness-item">
@@ -65,17 +80,17 @@
                     RenderRequirement(readiness.HasStressWithMask, "Máscara en 'Estrés'");
                 }
             </div>
-            
+
             @if (crop.Plants.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr class="text-center text-no-wrap">
-                                <th >Planta (Grupo)</th>
-                                <th >Estado Actual</th>
-                                <th >Máscara Térmica</th>
-                                <th >Acciones</th>
+                                <th>Planta (Grupo)</th>
+                                <th>Estado Actual</th>
+                                <th>Máscara Térmica</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,11 +102,13 @@
                                         <small class="d-block fw-normal text-muted">@plant.ExperimentalGroup.GetDisplayName()</small>
                                     </td>
                                     <td class="text-center">
+                                        @* La clase CSS (y por tanto el color) se asigna dinámicamente según el estado. *@
                                         <span class="status-badge @GetStatusClass(plant.Status)">
                                             @plant.Status.GetDisplayName()
                                         </span>
                                     </td>
                                     <td class="text-center">
+                                        @* Muestra un ícono de éxito o error si la planta tiene una máscara térmica definida. *@
                                         @if (plant.HasMask)
                                         {
                                             <i class="fas fa-check-circle text-success fs-5" title="Definida"></i>
@@ -100,8 +117,14 @@
                                         {
                                             <i class="fas fa-times-circle text-danger fs-5" title="No Definida"></i>
                                         }
-
+                                    </td>
                                     <td class="text-center">
+                                        @*
+                                            El botón "Analizar" se deshabilita condicionalmente si:
+                                            1. La planta no pertenece al grupo de monitoreo.
+                                            2. El cultivo no cumple todos los requisitos de análisis (ej. faltan grupos o máscaras).
+                                            3. Esta planta específica no tiene una máscara definida.
+                                        *@
                                         <a asp-action="Details" asp-route-id="@plant.Id"
                                            class="btn btn-primary btn-sm @(plant.ExperimentalGroup != ExperimentalGroupType.MONITORED || !crop.AnalysisReadiness.IsReady || !plant.HasMask ? "disabled" : "")"
                                            title="Analizar">

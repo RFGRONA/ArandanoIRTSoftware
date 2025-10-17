@@ -1,6 +1,12 @@
+@*
+    Plantilla de correo electrónico para el proceso de "eliminación segura" de un administrador.
+    Este correo se envía a otro administrador para solicitar una segunda aprobación (segunda firma)
+    cuando se intenta eliminar una cuenta de administrador. Contiene un enlace de confirmación
+    de un solo uso y con tiempo de expiración para completar la acción de forma segura.
+*@
 @model ArandanoIRT.Web._3_Presentation.ViewModels.Emails.AdminDeletionRequestViewModel
 @{
-    Layout = "_EmailLayout.cshtml";
+    Layout = "_EmailLayout.cshtml"; // Define el layout base para correos electrónicos.
     ViewData["Title"] = "Solicitud de Eliminación de Administrador";
 }
 
@@ -19,6 +25,7 @@
     Si estás de acuerdo con esta acción, por favor, haz clic en el siguiente enlace para confirmar la eliminación.
 </p>
 
+@* Mensaje de advertencia que informa al usuario sobre la naturaleza temporal y de un solo uso del enlace. *@
 <div class="alert alert-warning"
      style="margin: 24px 0; padding: 16px; border-left: 4px solid #ffc107; background-color: #fff3cd;">
     <strong>Atención:</strong> Este enlace es de un solo uso y expirará en 15 minutos.
@@ -27,6 +34,7 @@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
     <tr>
         <td align="center">
+            @* El enlace de este botón es generado dinámicamente y contiene el token de confirmación. *@
             <a href="@Model.ConfirmationLink" class="button" style="color: #ffffff !important; background-color: #c82333; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
                 Confirmar Eliminación
             </a>

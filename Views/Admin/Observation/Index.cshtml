@@ -1,3 +1,9 @@
+@*
+    Página de índice para la "Bitácora de Observaciones".
+    Muestra un historial paginado de todas las observaciones de campo que
+    los usuarios han registrado. Las observaciones se presentan en una tabla
+    y son de solo lectura, reflejando su naturaleza inmutable.
+*@
 @using ArandanoIRT.Web._1_Application.DTOs.Observations
 @model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.Observations.ObservationListDto>
 @{
@@ -7,7 +13,7 @@
 }
 
 @section Styles {
-     <link rel="stylesheet" href="~/css/observation.css" asp-append-version="true" /> 
+    <link rel="stylesheet" href="~/css/observation.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
@@ -39,6 +45,7 @@
                 </tr>
             </thead>
             <tbody>
+                @* Maneja el caso en que no hay ninguna observación en la base de datos. *@
                 @if (Model == null || !Model.Items.Any())
                 {
                     <tr>
@@ -55,6 +62,10 @@
                             <td>@Html.DisplayFor(modelItem => item.UserName)</td>
                             <td>@Html.DisplayFor(modelItem => item.Description)</td>
                             <td>
+                                @*
+                                    Lógica para mostrar la calificación subjetiva con un texto y color distintivo.
+                                    Se mapea el valor numérico (1, 2, 3) a una clase CSS y un texto legible.
+                                *@
                                 @{
                                     var ratingText = "N/A";
                                     var ratingClass = "rating-default";
@@ -86,6 +97,7 @@
         </table>
     </div>
 
+    @* El control de paginación solo se muestra si hay más de una página de resultados. *@
     @if (Model != null && Model.TotalPages > 1)
     {
         <div class="card-footer">

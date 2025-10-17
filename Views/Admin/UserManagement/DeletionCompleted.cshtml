@@ -1,12 +1,18 @@
+@*
+    Página de confirmación de éxito genérica.
+    Se muestra al usuario después de que una operación crítica, como la
+    eliminación de un administrador, se ha completado satisfactoriamente.
+    Su propósito es proporcionar una retroalimentación visual clara de que
+    la acción fue exitosa y ofrecer un enlace para volver a la página de gestión principal.
+*@
 @{
     ViewData["Title"] = "Operación Completada";
     Layout = "_AdminLayout";
 }
 
 @section Styles {
- <link rel="stylesheet" href="~/css/deletionCompleted.css" asp-append-version="true" /> 
+    <link rel="stylesheet" href="~/css/deletionCompleted.css" asp-append-version="true"/>
 }
-
 
 <div class="confirmation-container">
     <div class="confirmation-card">

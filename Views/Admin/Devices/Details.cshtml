@@ -1,3 +1,10 @@
+@*
+    Página de "Detalles" para un dispositivo específico.
+    Muestra en modo de solo lectura toda la información relevante del dispositivo,
+    incluyendo sus datos de identificación, la planta y cultivo asociados,
+    su estado operativo y, crucialmente, los detalles de su activación
+    (código, estado y fechas relevantes).
+*@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._1_Application.DTOs.Device.DeviceDetailsDto
 @{
@@ -6,11 +13,11 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
 }
 
+@* Maneja el caso en que el dispositivo con el ID solicitado no se encuentre. *@
 @if (Model == null)
 {
     <div class="alert alert-warning">Dispositivo no encontrado.</div>
@@ -28,6 +35,7 @@ else
 
     <div class="card details-card">
         <div class="card-body">
+            @* Sección principal con los detalles del dispositivo. *@
             <dl class="details-list">
                 <div class="row detail-item">
                     <dt class="col-sm-3">ID para Firmware</dt>
@@ -62,6 +70,7 @@ else
                 <div class="row detail-item">
                     <dt class="col-sm-3">Estado del Dispositivo</dt>
                     <dd class="col-sm-9">
+                        @* Lógica para asignar una clase CSS a la insignia de estado según su valor. *@
                         @{
                             var statusClass = "status-inactive";
                             if (string.Equals(Model.Status.ToString(), "Activo", StringComparison.OrdinalIgnoreCase)) { statusClass = "status-active"; }
@@ -73,6 +82,7 @@ else
             </dl>
 
             <h5 class="section-title mt-4">Información de Activación</h5>
+            @* Esta sección solo se muestra si el dispositivo tiene datos de activación asociados. *@
             @if (Model.ActivationDevices != null && Model.ActivationDevices.ActivationId.HasValue)
             {
                 <dl class="details-list">
@@ -83,6 +93,7 @@ else
                     <div class="row detail-item">
                         <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ActivationDevices.ActivationStatus)</dt>
                         <dd class="col-sm-9">
+                            @* Lógica similar a la anterior para mostrar el estado de activación con un color distintivo. *@
                             @{
                                 var activationClass = "status-inactive";
                                 if (string.Equals(Model.ActivationDevices.ActivationStatus.ToString(), "Activado", StringComparison.OrdinalIgnoreCase)) { activationClass = "status-active"; }

@@ -1,42 +1,56 @@
+@*
+    Página para listar, filtrar y paginar todas las capturas térmicas y RGB.
+    Muestra un resumen de cada captura en una tabla y proporciona enlaces para
+    ver los detalles completos. Incluye un panel de filtros y la capacidad de
+    descargar los datos filtrados en formato CSV.
+*@
 @using ArandanoIRT.Web._1_Application.Services.Contracts
 @model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.SensorData.ThermalCaptureSummaryDto>
 @{
-    ViewData["Title"] = "Capturas Térmicas y RGB";
-    Layout = "_AdminLayout";
-    var currentFilters = ViewBag.CurrentFilters as DataQueryFilters ?? new DataQueryFilters();
-    var routeData = new RouteValueDictionary();
-    foreach (var key in Context.Request.Query.Keys)
-    {
-        if (!key.Equals("PageNumber", StringComparison.OrdinalIgnoreCase))
-        {
-            routeData[key] = Context.Request.Query[key];
-        }
-    }
+ViewData["Title"] = "Capturas Térmicas y RGB";
+Layout = "_AdminLayout";
+@* Recupera los filtros activos para mantener el estado del formulario. *@
+var currentFilters = ViewBag.CurrentFilters as DataQueryFilters ?? new DataQueryFilters();
+@*
+        Construye un diccionario con los parámetros de la URL actual (filtros)
+        para que los enlaces de paginación los conserven. Se ignora 'PageNumber'
+        ya que cada enlace de paginación lo define explícitamente.
+    *@
+var routeData = new RouteValueDictionary();
+foreach (var key in Context.Request.Query.Keys)
+{
+if (!key.Equals("PageNumber", StringComparison.OrdinalIgnoreCase))
+{
+routeData[key] = Context.Request.Query[key];
+}
+}
 
-    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
+var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="~/css/data-tables.css" asp-append-version="true"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="~/css/data-tables.css" asp-append-version="true"/>
 }
 
+@* Bloques para mostrar notificaciones de éxito o error provenientes del controlador. *@
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success" role="alert">@TempData["SuccessMessage"]</div>
+<div class="alert alert-success" role="alert">@TempData["SuccessMessage"]</div>
 }
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
+<div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
 }
 @if (ViewData["ErrorMessage"] != null && TempData["ErrorMessage"] == null)
 {
-    <div class="alert alert-danger" role="alert">@ViewData["ErrorMessage"]</div>
+<div class="alert alert-danger" role="alert">@ViewData["ErrorMessage"]</div>
 }
 
 <div class="page-header">
     <h1>@ViewData["Title"]</h1>
     <div class="header-actions">
+        @* El enlace de descarga se actualiza dinámicamente con JS para incluir los filtros. *@
         <a id="download-csv-btn" href="#" class="btn btn-outline-secondary">
             <i class="fas fa-download"></i> Descargar
         </a>
@@ -50,6 +64,7 @@
 <div class="collapse show" id="filterCollapse">
     <div class="card filter-card mb-4">
         <form asp-action="Index" method="get">
+            @* Al aplicar filtros, siempre se regresa a la página 1. *@
             <input type="hidden" name="PageNumber" value="1"/>
             <div class="row g-3">
                 <div class="col-md-3">
@@ -68,6 +83,7 @@
                 </div>
                 <div class="col-md-3">
                     <label for="PageSizeForm" class="form-label">Resultados por Página</label>
+                    @* onchange="this.form.submit()" envía el formulario automáticamente al cambiar el tamaño de página. *@
                     <select name="PageSize" id="PageSizeForm" class="form-select" onchange="this.form.submit()">
                         <option value="10" selected="@(currentFilters.PageSize == 10)">10</option>
                         <option value="20" selected="@(currentFilters.PageSize == 20)">20</option>
@@ -98,139 +114,148 @@
 
 @if (Model == null || !Model.Items.Any())
 {
-    <div class="alert alert-info text-center">
-        No se encontraron capturas con los filtros aplicados.
-    </div>
+<div class="alert alert-info text-center">
+    No se encontraron capturas con los filtros aplicados.
+</div>
 }
 else
 {
-    <div class="card table-card">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Dispositivo</th>
-                    <th>Planta</th>
-                    <th>Temp. Máx</th>
-                    <th>Temp. Mín</th>
-                    <th>Temp. Prom</th>
-                    <th>Img. RGB</th>
-                    <th>Fecha Registro</th>
-                    <th class="text-end">Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (var item in Model.Items)
-                {
-                    <tr>
-                        <td>@item.Id</td>
-                        <td>@Html.DisplayFor(modelItem => item.DeviceName)</td>
-                        <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
-                        <td>@item.MaxTemp?.ToString("0.0")°C</td>
-                        <td>@item.MinTemp?.ToString("0.0")°C</td>
-                        <td>@item.AvgTemp?.ToString("0.0")°C</td>
-                        <td>
-                            @if (!string.IsNullOrEmpty(item.RgbImagePath))
-                            {
-                                <span class="badge bg-success">Sí</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">No</span>
-                            }
-                        </td>
-                        <td>@Html.DisplayFor(modelItem => item.RecordedAt)</td>
-                        <td class="text-end">
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" title="Ver Detalles">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer">
-            <nav class="pagination-container" aria-label="Paginación de capturas">
-                <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
-                <ul class="pagination">
-                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index"
-                           asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
-                           asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
-                    </li>
-
-                    @if (Model.PageNumber > 3)
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Dispositivo</th>
+                <th>Planta</th>
+                <th>Temp. Máx</th>
+                <th>Temp. Mín</th>
+                <th>Temp. Prom</th>
+                <th>Img. RGB</th>
+                <th>Fecha Registro</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+            <tr>
+                <td>@item.Id</td>
+                <td>@Html.DisplayFor(modelItem => item.DeviceName)</td>
+                <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
+                <td>@item.MaxTemp?.ToString("0.0")°C</td>
+                <td>@item.MinTemp?.ToString("0.0")°C</td>
+                <td>@item.AvgTemp?.ToString("0.0")°C</td>
+                <td>
+                    @* Muestra una insignia indicando si la captura tiene una imagen RGB asociada. *@
+                    @if (!string.IsNullOrEmpty(item.RgbImagePath))
                     {
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index"
-                               asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
-                               asp-route-pageNumber="1">1</a>
-                        </li>
-                        @if (Model.PageNumber > 4)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
+                    <span class="badge bg-success">Sí</span>
                     }
-
-                    @for (var i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                    else
                     {
-                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                            <a class="page-link" asp-action="Index"
-                               asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
-                               asp-route-pageNumber="@i">@i</a>
-                        </li>
+                    <span class="badge bg-secondary">No</span>
                     }
-
-                    @if (Model.PageNumber + 2 < Model.TotalPages)
-                    {
-                        @if (Model.PageNumber + 3 < Model.TotalPages)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
-
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index"
-                               asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
-                               asp-route-pageNumber="@Model.TotalPages">@Model.TotalPages</a>
-                        </li>
-                    }
-
-                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index"
-                           asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
-                           asp-route-pageNumber="@(Model.PageNumber + 1)">Siguiente</a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
+                </td>
+                <td>@Html.DisplayFor(modelItem => item.RecordedAt)</td>
+                <td class="text-end">
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn-action" title="Ver Detalles">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+            }
+            </tbody>
+        </table>
     </div>
+    <div class="card-footer">
+        @*
+                El control de paginación utiliza `asp-all-route-data` para pasar el diccionario `routeData`.
+                Esto asegura que todos los filtros aplicados se mantengan al cambiar de página.
+            *@
+        <nav class="pagination-container" aria-label="Paginación de capturas">
+            <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
+            <ul class="pagination">
+                <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index"
+                       asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
+                       asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                </li>
+
+                @if (Model.PageNumber > 3)
+                {
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index"
+                       asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
+                       asp-route-pageNumber="1">1</a>
+                </li>
+                @if (Model.PageNumber > 4)
+                {
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+                }
+
+                @for (var i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
+                       asp-route-pageNumber="@i">@i</a>
+                </li>
+                }
+
+                @if (Model.PageNumber + 2 < Model.TotalPages)
+                {
+                @if (Model.PageNumber + 3 < Model.TotalPages)
+                {
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+
+                <li class="page-item">
+                    <a class="page-link" asp-action="Index"
+                       asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
+                       asp-route-pageNumber="@Model.TotalPages">@Model.TotalPages</a>
+                </li>
+                }
+
+                <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index"
+                       asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
+                       asp-route-pageNumber="@(Model.PageNumber + 1)">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
 }
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const downloadBtn = document.getElementById('download-csv-btn');
-            const filterForm = document.querySelector('.filter-card form');
-            const baseDownloadUrl = '@Url.Action("DownloadCsv", "Captures", new { area = "Admin" })';
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+<script>
+    @*
+            Este script asegura que el enlace de "Descargar CSV" siempre incluya los
+            filtros que están actualmente seleccionados en el formulario, para que
+            la exportación coincida con los datos visibles en la tabla.
+        *@
+    document.addEventListener('DOMContentLoaded', function () {
+        const downloadBtn = document.getElementById('download-csv-btn');
+        const filterForm = document.querySelector('.filter-card form');
+        const baseDownloadUrl = '@Url.Action("DownloadCsv", "Captures", new { area = "Admin" })';
 
-            function updateDownloadUrl() {
-                if (!filterForm || !downloadBtn) return;
-                const formData = new FormData(filterForm);
-                const params = new URLSearchParams(formData).toString();
+        function updateDownloadUrl() {
+            if (!filterForm || !downloadBtn) return;
+            const formData = new FormData(filterForm);
+            const params = new URLSearchParams(formData).toString();
 
-                // Asegúrate de que la URL apunte a la acción correcta
-                const downloadUrl = `${baseDownloadUrl}?${params}`;
-                downloadBtn.setAttribute('href', downloadUrl);
-            }
+            const downloadUrl = `${baseDownloadUrl}?${params}`;
+            downloadBtn.setAttribute('href', downloadUrl);
+        }
 
-            // Actualiza la URL cada vez que un filtro cambie
-            filterForm.addEventListener('change', updateDownloadUrl);
+        // Actualiza la URL cuando cambia un filtro.
+        filterForm.addEventListener('change', updateDownloadUrl);
 
-            // Actualiza la URL al cargar la página
-            updateDownloadUrl();
-        });
-    </script>
+        // Actualiza la URL al cargar la página.
+        updateDownloadUrl();
+    });
+</script>
 }

@@ -1,3 +1,10 @@
+@*
+    Página de "Historial de Estados de Plantas".
+    Actúa como una bitácora o registro de auditoría, mostrando todos los cambios
+    de estado que han sufrido las plantas a lo largo del tiempo. Incluye un panel
+    de filtros para que el usuario pueda acotar la búsqueda por planta y/o
+    rango de fechas.
+*@
 @using ArandanoIRT.Web._0_Domain.Common
 @using ArandanoIRT.Web._0_Domain.Enums
 @model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Plants.PlantStatusHistoryDto>
@@ -20,6 +27,7 @@
 </div>
 <p class="lead mb-4">Consulta todos los cambios de estado que han ocurrido en las plantas.</p>
 
+@* Panel de filtros para acotar los resultados del historial. *@
 <div class="filter-card">
     <form asp-action="History" method="get">
         <div class="row g-3 align-items-end">
@@ -67,6 +75,11 @@
                         <td>@Html.DisplayFor(modelItem => item.ChangedAt)</td>
                         <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
                         <td>
+                            @*
+                                Asigna una clase CSS a la insignia de estado según el valor del enum.
+                                Esto permite una representación visual clara del estado de la planta
+                                a través de colores.
+                            *@
                             @{
                                 var statusClass = item.Status switch
                                 {
@@ -86,6 +99,7 @@
             }
             else
             {
+                @* Mensaje que se muestra si no se encuentran registros con los filtros aplicados. *@
                 <tr>
                     <td colspan="5" class="text-center py-4">No hay registros en el historial que coincidan con los
                         filtros.

@@ -1,8 +1,16 @@
+@*
+    Página de inicio de sesión para el área de administración.
+    Permite a los usuarios autenticarse usando su correo y contraseña.
+    También incluye protección contra bots mediante Cloudflare Turnstile.
+*@
+
+@* Inyección de las configuraciones de Turnstile para obtener la SiteKey. *@
 @inject Microsoft.Extensions.Options.IOptions<ArandanoIRT.Web._2_Infrastructure.Settings.TurnstileSettings> TurnstileSettings
 @model ArandanoIRT.Web._1_Application.DTOs.Admin.LoginDto
-@inject IWebHostEnvironment Env 
+@* Inyección del entorno para renderizado condicional. *@
+@inject IWebHostEnvironment Env
 @{
-    Layout = null;
+    Layout = null; @* Página de autenticación independiente sin el layout principal. *@
 }
 
 <!DOCTYPE html>
@@ -14,7 +22,8 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/css/login.css" asp-append-version="true"/>
-    @if (!Env.IsDevelopment()) 
+    @* Carga el script de Cloudflare Turnstile solo en entornos de no-desarrollo. *@
+    @if (!Env.IsDevelopment())
     {
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     }
@@ -30,6 +39,7 @@
     </div>
 
     <form method="post">
+        @* Muestra un resumen de todos los errores de validación (ej. credenciales incorrectas). *@
         <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
 
         <div class="form-group mb-3">
@@ -45,6 +55,7 @@
         </div>
 
         <div class="d-flex justify-content-center">
+            @* Contenedor para el widget de Cloudflare Turnstile. *@
             <div class="cf-turnstile mb-3" data-sitekey="@TurnstileSettings.Value.SiteKey"></div>
         </div>
 

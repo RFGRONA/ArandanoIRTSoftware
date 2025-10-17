@@ -1,16 +1,23 @@
-@model ArandanoIRT.Web._1_Application.DTOs.Crops.CropDetailsDto 
+@*
+    Página de confirmación para la eliminación de un cultivo.
+    Su propósito es presentar al usuario una advertencia clara y un resumen
+    de los datos del cultivo que se va a eliminar, para prevenir
+    borrados accidentales. El envío de este formulario ejecuta la
+    eliminación permanente del registro.
+*@
+@model ArandanoIRT.Web._1_Application.DTOs.Crops.CropDetailsDto
 @{
     ViewData["Title"] = "Eliminar Cultivo";
     Layout = "_AdminLayout";
 }
 
 @section Styles {
-    @* Este archivo ahora contendrá todos los estilos para tus formularios y vistas de detalles/eliminación. *@
-    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
 
+@* Maneja el caso en que el cultivo con el ID proporcionado no existe. *@
 @if (Model == null)
 {
     <div class="alert alert-warning">Cultivo no encontrado.</div>
@@ -22,6 +29,7 @@ else
         <h1>@ViewData["Title"]</h1>
     </div>
 
+    @* Muestra mensajes de error enviados desde el controlador (ej. "no se puede eliminar un cultivo con plantas asociadas"). *@
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
@@ -30,14 +38,15 @@ else
     <div class="row justify-content-center">
         <div class="col-lg-7">
             <form asp-action="Delete">
-                <input type="hidden" asp-for="Id" />
+                @* Campo oculto crucial que envía el ID del cultivo al controlador para su eliminación. *@
+                <input type="hidden" asp-for="Id"/>
                 <div class="card delete-confirmation-card">
                     <div class="card-body">
                         <div class="delete-warning">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <h3>¿Esta seguro?</h3>
+                            <h3>¿Está seguro?</h3>
                             <p class="lead">
-                                Esta a punto de eliminar permanentemente el cultivo:
+                                Está a punto de eliminar permanentemente el cultivo:
                                 <strong class="item-to-delete">@Model.Name</strong>
                             </p>
                             <p class="text-muted">Esta acción no se puede deshacer.</p>
@@ -46,6 +55,7 @@ else
                         <hr class="my-4"/>
 
                         <h5 class="details-title">Se eliminará la siguiente información:</h5>
+                        @* Lista de detalles para que el usuario verifique que está eliminando el item correcto. *@
                         <dl class="row details-list mt-3">
                             <dt class="col-sm-4">Nombre del Cultivo</dt>
                             <dd class="col-sm-8">@Model.Name</dd>

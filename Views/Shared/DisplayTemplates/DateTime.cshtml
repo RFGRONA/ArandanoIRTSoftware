@@ -1,15 +1,24 @@
-@using ArandanoIRT.Web._0_Domain.Common
+@*
+    Plantilla de Visualización (DisplayTemplate) para el tipo de dato DateTime? (nullable).
+    Este archivo se invoca automáticamente en toda la aplicación cada vez que se
+    utiliza la directiva `@Html.DisplayFor()` en una propiedad del modelo que es
+    un DateTime opcional.
+
+    Su propósito es centralizar y estandarizar la forma en que se muestran las fechas:
+    1.  Verifica si la fecha tiene un valor para evitar errores con nulos.
+    2.  Convierte la fecha (que se asume está en UTC) a la zona horaria de Colombia.
+    3.  Formatea la fecha y hora resultantes en un formato consistente y legible.
+*@
+@using ArandanoIRT.Web._0_Domain.Common @* Importa el namespace que contiene el método de extensión 'ToColombiaTime'. *@
 @model DateTime?
 
-@*
-    Este DisplayTemplate intercepta automáticamente cualquier llamada a @Html.DisplayFor()
-    para propiedades de tipo DateTime o DateTime? (nullable).
-
-    Convierte la fecha, que ahora llega consistentemente en UTC desde el backend,
-    a la hora local de Colombia y le da un formato estándar.
-*@
-
+@* Solo se ejecuta el código si el modelo (la fecha) no es nulo. Si es nulo, no se renderiza nada. *@
 @if (Model.HasValue)
 {
+    @*
+        - Model.Value: Accede al valor DateTime no nulo.
+        - .ToColombiaTime(): Aplica el método de extensión para la conversión de zona horaria.
+        - .ToString(...): Formatea la fecha y hora convertida al formato deseado.
+    *@
     @Model.Value.ToColombiaTime().ToString("dd/MM/yyyy HH:mm")
 }
