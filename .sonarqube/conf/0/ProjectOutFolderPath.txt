@@ -1,0 +1,1 @@
+/home/gabe/Documentos/GitHub/ArandanoIRTSoftware/.sonarqube/out/0
