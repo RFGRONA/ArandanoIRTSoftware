@@ -1,8 +1,5 @@
 namespace ArandanoIRT.Web._3_Presentation.ViewModels.Analysis;
 
-/// <summary>
-///     ViewModel para la plantilla de correo electrónico que notifica sobre una detección de anomalía.
-/// </summary>
 public class AnomalyAlertViewModel
 {
     public string UserName { get; set; }

@@ -7,19 +7,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
-/// <summary>
-///     Implementación del servicio de gestión de invitaciones.
-///     Se encarga de la creación, validación segura mediante hashes y anulación de códigos de invitación.
-/// </summary>
 public class InvitationService : IInvitationService
 {
     private readonly IAlertService _alertService;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<InvitationService> _logger;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="InvitationService" />.
-    /// </summary>
     public InvitationService(ApplicationDbContext context, IAlertService alertService,
         ILogger<InvitationService> logger)
     {
@@ -28,29 +21,28 @@ public class InvitationService : IInvitationService
         _logger = logger;
     }
 
-    /// <inheritdoc />
     public async Task<Result<InvitationCode>> CreateInvitationAsync(string email, bool isAdmin, int? createdByUserId)
     {
         var isFirstInvitation = !await _context.InvitationCodes.AnyAsync();
 
+        // Si es la primera invitación y no está marcada como "Admin", devolvemos un error.
         if (isFirstInvitation && !isAdmin)
         {
             _logger.LogWarning("Intento de crear la primera invitación sin privilegios de administrador.");
-            return Result.Failure<InvitationCode>(
-                "La primera invitación del sistema debe ser para un rol de Administrador.");
+            return Result.Failure<InvitationCode>("La primera invitación del sistema debe ser obligatoriamente para un rol de Administrador.");
         }
 
         try
         {
-            // 1. Generar un código público, corto y legible para el correo.
+            // 1. Generar un código público, más corto y legible
             var publicCode = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
 
-            // 2. Generar el hash seguro que se guardará en la base de datos.
+            // 2. Generar el hash seguro que se guardará en la base de datos
             var hashedCode = SecurityHelper.GenerateInvitationHash(publicCode, email);
 
             var newInvitation = new InvitationCode
             {
-                Code = hashedCode, // Se guarda el HASH en la BD.
+                Code = hashedCode, // Guardamos el HASH en la BD
                 ExpiresAt = DateTime.UtcNow.AddDays(7),
                 IsAdmin = isAdmin,
                 CreatedByUserId = createdByUserId,
@@ -60,7 +52,7 @@ public class InvitationService : IInvitationService
             _context.InvitationCodes.Add(newInvitation);
             await _context.SaveChangesAsync();
 
-            // 3. Enviar el código PÚBLICO por correo al usuario, nunca el hash.
+            // 3. Enviar el código PÚBLICO por correo, no el hash
             newInvitation.Code = publicCode;
             await _alertService.SendInvitationEmailAsync(email, "Nuevo Usuario", newInvitation);
 
@@ -73,16 +65,15 @@ public class InvitationService : IInvitationService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<InvitationCode>> ValidateCodeAsync(string code, string email)
     {
         if (string.IsNullOrWhiteSpace(code))
             return Result.Failure<InvitationCode>("El código de invitación no puede estar vacío.");
 
-        // 1. Recrear el hash a partir de los datos proporcionados por el usuario.
+        // 1. Recrear el hash a partir de los datos proporcionados por el usuario
         var hashedCodeToValidate = SecurityHelper.GenerateInvitationHash(code, email);
 
-        // 2. Buscar el hash en la base de datos para encontrar la invitación correspondiente.
+        // 2. Buscar el hash en la base de datos
         var invitation = await _context.InvitationCodes
             .FirstOrDefaultAsync(c => c.Code == hashedCodeToValidate);
 
@@ -96,14 +87,13 @@ public class InvitationService : IInvitationService
         return Result.Success(invitation);
     }
 
-    /// <inheritdoc />
     public async Task<Result> MarkCodeAsUsedAsync(int invitationId)
     {
         var invitation = await _context.InvitationCodes.FindAsync(invitationId);
         if (invitation == null) return Result.Failure("No se encontró la invitación para marcarla como usada.");
 
         invitation.IsUsed = true;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(); // Añadimos el guardado aquí
 
         return Result.Success();
     }

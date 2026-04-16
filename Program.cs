@@ -1,12 +1,9 @@
 using ArandanoIRT.Web._2_Infrastructure;
 using ArandanoIRT.Web._2_Infrastructure.Middleware;
-using Hangfire;
 using Serilog;
-using Serilog.Events;
 using Serilog.Formatting.Json;
 
-// Configuración inicial de Serilog para el arranque de la aplicación.
-// Permite capturar logs incluso antes de que la configuración principal sea leída.
+// Configure Serilog for bootstrap logging
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
@@ -15,28 +12,28 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-    Log.Information("Iniciando la aplicación...");
+    Log.Information("Starting application...");
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Configuración completa de Serilog utilizando el archivo appsettings.json.
+    // Configure Serilog from appsettings.json
     builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     {
         loggerConfiguration
             .ReadFrom.Configuration(context.Configuration)
             .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-            .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .WriteTo.Console(
-                new JsonFormatter(),
-                LogEventLevel.Information
+                formatter: new JsonFormatter(),
+                restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information
             );
     });
 
-    // Se registran todos los servicios de la aplicación utilizando los métodos de extensión.
+    // 1. Configure Services using Extension Methods
     builder.Services
         .AddInfrastructure(builder.Configuration)
         .AddCustomAuthentication()
@@ -44,7 +41,7 @@ try
 
     var app = builder.Build();
 
-    // Se configura el pipeline de peticiones HTTP (middleware).
+    // 2. Configure HTTP request pipeline
     if (!app.Environment.IsDevelopment())
     {
         app.UseExceptionHandler("/Error");
@@ -62,23 +59,21 @@ try
     app.UseSerilogRequestLogging();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.UseHangfireDashboard();
     app.UseMiddleware<UserAuditingMiddleware>();
 
-    // Se configuran las rutas de los controladores.
+    // Configure endpoints
     app.MapControllerRoute(
-        "admin_default",
-        "{controller=Dashboard}/{action=Index}/{id?}",
-        new { area = "Admin" });
+        name: "admin_default",
+        pattern: "{controller=Dashboard}/{action=Index}/{id?}",
+        defaults: new { area = "Admin" });
 
     app.Run();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "La aplicación falló al iniciar.");
+    Log.Fatal(ex, "Application failed to start.");
 }
 finally
 {
-    // Asegura que todos los logs en buffer se escriban antes de cerrar la aplicación.
     Log.CloseAndFlush();
 }

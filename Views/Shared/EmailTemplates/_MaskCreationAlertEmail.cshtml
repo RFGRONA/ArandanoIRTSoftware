@@ -1,12 +1,6 @@
-@*
-    Plantilla de correo electrónico para notificar al usuario que se requiere una acción:
-    la creación de máscaras térmicas para una o más plantas. Este correo se envía para
-    asegurar que los análisis de estrés hídrico sean precisos, ya que las máscaras
-    son un requisito previo fundamental.
-*@
 @model (string UserName, List<string> PlantNames, string CtaButtonUrl)
 @{
-    Layout = "_EmailLayout.cshtml"; // Define el layout base para correos electrónicos.
+    Layout = "_EmailLayout.cshtml";
     ViewData["Title"] = "Acción Requerida: Crear Máscaras Térmicas";
 }
 
@@ -16,10 +10,6 @@
 
 <p>Para mejorar la precisión de los análisis de estrés hídrico, las siguientes plantas requieren que se defina su máscara térmica:</p>
 
-@*
-    Sección que itera sobre la lista de nombres de plantas proporcionada en el modelo
-    y las muestra como una lista con viñetas para una fácil lectura por parte del usuario.
-*@
 <div style="background-color: #f4f5f7; border-radius: 8px; padding: 20px; margin: 24px 0;">
     <ul style="margin: 0; padding-left: 20px;">
         @foreach (var name in Model.PlantNames)
@@ -31,11 +21,6 @@
 
 <p>Puedes crear las máscaras desde el panel de cada planta. Haz clic en el siguiente botón para ir al listado de plantas y comenzar.</p>
 
-@*
-    Botón de llamada a la acción (Call to Action) que dirige al usuario a una página relevante
-    (probablemente el listado de plantas) para que pueda realizar la acción requerida.
-    La URL es dinámica y se pasa a través del modelo.
-*@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
     <tr>
         <td align="center">

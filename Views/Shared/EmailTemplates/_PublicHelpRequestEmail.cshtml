@@ -1,12 +1,6 @@
-@*
-    Plantilla de correo electrónico para notificar a los administradores sobre una nueva
-    solicitud de ayuda enviada desde el formulario público (por un visitante no autenticado).
-    Este correo resume toda la información proporcionada por el visitante para que
-    el equipo de soporte pueda darle seguimiento y contactarlo.
-*@
 @model ArandanoIRT.Web._1_Application.DTOs.Admin.PublicHelpRequestDto
 @{
-    Layout = "_EmailLayout.cshtml"; // Define el layout base para correos electrónicos.
+    Layout = "_EmailLayout.cshtml";
     ViewData["Title"] = "Nueva Solicitud de Ayuda (Pública)";
 }
 
@@ -14,10 +8,6 @@
 
 <p>Se ha recibido una nueva solicitud de ayuda de un visitante no autenticado con la siguiente información:</p>
 
-@*
-    Tabla que formatea y presenta de manera clara los detalles de la solicitud,
-    incluyendo el asunto, el nombre, el correo de contacto y el mensaje del visitante.
-*@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0; background-color: #f4f5f7; border-radius: 8px; padding: 20px;">
     <tr>
         <td>

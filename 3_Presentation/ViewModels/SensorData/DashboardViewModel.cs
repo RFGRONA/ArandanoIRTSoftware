@@ -1,11 +1,11 @@
 using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
+// Asegúrate de tener este using para List<>
+
 namespace ArandanoIRT.Web._3_Presentation.ViewModels.SensorData;
 
-/// <summary>
-///     DTO que encapsula los datos y la configuración para renderizar un gráfico de series temporales con Chart.js.
-/// </summary>
+// Para los datos de gráficos de series temporales
 public class TimeSeriesChartDataDto
 {
     public List<string> Labels { get; set; } = new();
@@ -16,12 +16,10 @@ public class TimeSeriesChartDataDto
     public float? Tension { get; set; }
     public int? PointRadius { get; set; }
     public int? PointHoverRadius { get; set; }
-    public ChartYAxisOptions YAxisOptions { get; set; } = new();
+    public ChartYAxisOptions YAxisOptions { get; set; } = new ChartYAxisOptions();
 }
 
-/// <summary>
-///     DTO que contiene un resumen de las estadísticas térmicas para mostrar en el dashboard.
-/// </summary>
+// Para las estadísticas térmicas
 public class ThermalStatsDto
 {
     public float? AverageMaxTemp24h { get; set; }
@@ -33,10 +31,6 @@ public class ThermalStatsDto
     public DateTime? LatestThermalReadingTimestamp { get; set; }
 }
 
-/// <summary>
-///     ViewModel principal y completo para la página del Dashboard.
-///     Contiene todos los datos necesarios: filtros, datos para gráficos, KPIs y estadísticas.
-/// </summary>
 public class DashboardViewModel
 {
     // Filtros
@@ -44,7 +38,7 @@ public class DashboardViewModel
     public int? SelectedPlantId { get; set; }
     public int? SelectedDeviceId { get; set; }
 
-    // Listas para poblar los dropdowns de filtros
+    // Listas para filtros
     public List<SelectListItem> AvailableCrops { get; set; } = new();
     public List<SelectListItem> AvailablePlants { get; set; } = new();
 
@@ -53,12 +47,14 @@ public class DashboardViewModel
     public TimeSeriesChartDataDto? HumidityChartData { get; set; }
     public TimeSeriesChartDataDto? LightChartData { get; set; }
 
+    // Estadísticas Térmicas
     public ThermalStatsDto? ThermalStatistics { get; set; }
 
-    // KPIs (Key Performance Indicators)
+    // KPIs
     public int ActiveDevicesCount { get; set; }
     public int PlantsMonitoredCount { get; set; }
 
+    // Datos ambientales (promedios y última lectura)
     public SensorDataDisplayDto? LatestAmbientData { get; set; }
     public float? AverageAmbientTemperature24h { get; set; }
     public float? MaxAmbientTemperature24h { get; set; }
@@ -70,15 +66,10 @@ public class DashboardViewModel
     public float? MaxAmbientLight24h { get; set; }
     public float? MinAmbientLight24h { get; set; }
 
-    /// <summary>
-    ///     Lista de las capturas térmicas más recientes para mostrar en el dashboard.
-    /// </summary>
     public List<ThermalCaptureSummaryDto> RecentCaptures { get; set; } = new();
+    // ======================================================================
 }
 
-/// <summary>
-///     DTO para configurar las opciones del eje Y de un gráfico en Chart.js.
-/// </summary>
 public class ChartYAxisOptions
 {
     public string Label { get; set; }

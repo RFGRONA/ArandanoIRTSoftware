@@ -9,10 +9,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
-/// <summary>
-///     Controlador para la gestión y visualización de las capturas térmicas y RGB históricas.
-///     Requiere autorización y pertenece al área de Administración.
-/// </summary>
 [Area("Admin")]
 [Authorize]
 public class CapturesController : Controller
@@ -23,9 +19,6 @@ public class CapturesController : Controller
     private readonly ILogger<CapturesController> _logger;
     private readonly IPlantService _plantService;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="CapturesController" />.
-    /// </summary>
     public CapturesController(
         IDataQueryService dataQueryService,
         IDeviceAdminService deviceAdminService,
@@ -40,11 +33,7 @@ public class CapturesController : Controller
         _logger = logger;
     }
 
-    /// <summary>
-    ///     Muestra la vista principal con una tabla paginada y filtrable de las capturas térmicas.
-    /// </summary>
-    /// <param name="filters">Objeto que contiene los parámetros de filtrado y paginación desde la URL.</param>
-    /// <returns>La vista `Index` con los datos paginados y las listas para los filtros.</returns>
+    // GET: Admin/Captures
     public async Task<IActionResult> Index([FromQuery] DataQueryFilters filters)
     {
         _logger.LogInformation("Accediendo al listado de capturas térmicas/RGB con filtros: {FiltersJson}",
@@ -56,8 +45,10 @@ public class CapturesController : Controller
             filters.StartDate = filters.EndDate.Value.AddDays(-7);
         }
 
-        if (filters.StartDate > filters.EndDate)
+        if (filters.StartDate.HasValue && filters.EndDate.HasValue && filters.StartDate > filters.EndDate)
             (filters.StartDate, filters.EndDate) = (filters.EndDate, filters.StartDate);
+
+        ViewBag.CurrentFilters = filters;
 
         filters.PageNumber = filters.PageNumber <= 0 ? 1 : filters.PageNumber;
         filters.PageSize = filters.PageSize switch
@@ -82,7 +73,7 @@ public class CapturesController : Controller
 
         var devicesResult = await _deviceAdminService.GetAllDevicesAsync();
         var availableDevices = new List<SelectListItem>();
-        if (devicesResult.IsSuccess && devicesResult.Value != null)
+        if (devicesResult.IsSuccess)
             availableDevices = devicesResult.Value.Select(d => new SelectListItem
             { Value = d.Id.ToString(), Text = d.Name, Selected = d.Id == filters.DeviceId })
                 .OrderBy(t => t.Text)
@@ -93,7 +84,7 @@ public class CapturesController : Controller
 
         var plantsResult = await _plantService.GetAllPlantsAsync();
         var availablePlants = new List<SelectListItem>();
-        if (plantsResult.IsSuccess && plantsResult.Value != null)
+        if (plantsResult.IsSuccess)
             availablePlants = plantsResult.Value.Select(p => new SelectListItem
             { Value = p.Id.ToString(), Text = $"{p.Name} ({p.CropName})", Selected = p.Id == filters.PlantId })
                 .OrderBy(t => t.Text).ToList();
@@ -103,7 +94,7 @@ public class CapturesController : Controller
 
         var cropsResult = await _cropService.GetAllCropsAsync();
         var availableCrops = new List<SelectListItem>();
-        if (cropsResult.IsSuccess && cropsResult.Value != null)
+        if (cropsResult.IsSuccess)
             availableCrops = cropsResult.Value.Select(c => new SelectListItem
             { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == filters.CropId }).OrderBy(t => t.Text)
                 .ToList();
@@ -113,7 +104,7 @@ public class CapturesController : Controller
 
         ViewBag.CurrentFilters = filters;
 
-        if (result.IsSuccess && result.Value != null) return View(result.Value);
+        if (result.IsSuccess) return View(result.Value);
 
         _logger.LogWarning("Error al obtener capturas: {ErrorMessage}", result.ErrorMessage);
         ViewData["ErrorMessage"] = result.ErrorMessage;
@@ -128,11 +119,7 @@ public class CapturesController : Controller
         return View(emptyResult);
     }
 
-    /// <summary>
-    ///     Muestra la vista de detalles para una única captura térmica, incluyendo el mapa de calor.
-    /// </summary>
-    /// <param name="id">El ID de la captura a visualizar.</param>
-    /// <returns>La vista `Details` con el modelo de datos de la captura, o una redirección si no se encuentra.</returns>
+    // GET: Admin/Captures/Details/5
     public async Task<IActionResult> Details(long? id)
     {
         if (id == null)
@@ -163,11 +150,6 @@ public class CapturesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>
-    ///     Genera y devuelve un archivo CSV con los datos de las capturas térmicas según los filtros aplicados.
-    /// </summary>
-    /// <param name="filters">Los filtros de la consulta para la exportación.</param>
-    /// <returns>Un `FileResult` que inicia la descarga del archivo CSV en el navegador.</returns>
     public async Task<IActionResult> DownloadCsv([FromQuery] DataQueryFilters filters)
     {
         _logger.LogInformation("Iniciando descarga CSV de capturas térmicas con filtros: {FiltersJson}",

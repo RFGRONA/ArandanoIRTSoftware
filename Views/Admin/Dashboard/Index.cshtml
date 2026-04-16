@@ -1,14 +1,7 @@
-@*
-    Página principal del dashboard.
-    Muestra un resumen visual del estado actual del sistema, incluyendo los
-    datos ambientales más recientes, estadísticas de las últimas 24 horas,
-    gráficos de series de tiempo y las últimas capturas térmicas.
-    Permite filtrar los datos por cultivo y planta.
-*@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._3_Presentation.ViewModels.SensorData.DashboardViewModel
 @{
-    ViewData["Title"] = "Resumen Diario";
+    ViewData["Title"] = "Dashboard Principal";
     Layout = "_AdminLayout";
 }
 
@@ -20,7 +13,6 @@
 <div class="page-header">
     <h1>@ViewData["Title"]</h1>
     <div class="header-actions">
-        @* Botón para mostrar/ocultar el panel de filtros. *@
         <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse"
                 aria-expanded="false" aria-controls="filterCollapse">
             <i class="fas fa-filter"></i> Filtros
@@ -28,19 +20,16 @@
     </div>
 </div>
 
-@* Panel de filtros colapsable para acotar los datos del dashboard. *@
 <div class="collapse" id="filterCollapse">
     <div class="card card-body filter-card mb-4">
         <form asp-action="Index" asp-controller="Dashboard" asp-area="Admin" method="get">
             <div class="row g-3 align-items-end">
                 <div class="col-md-5">
                     <label asp-for="SelectedCropId" class="form-label">Filtrar por Cultivo:</label>
-                    @* El 'onchange' envía el formulario para recargar la página y poblar el selector de plantas. *@
                     <select asp-for="SelectedCropId" asp-items="Model.AvailableCrops" class="form-select"
                             onchange="this.form.submit()">
                     </select>
                 </div>
-                @* El selector de plantas solo se muestra si se ha seleccionado un cultivo. *@
                 @if (Model.SelectedCropId.HasValue)
                 {
                     <div class="col-md-5">
@@ -59,21 +48,22 @@
     </div>
 </div>
 
-@* Fila de tarjetas KPI (Key Performance Indicator) que muestran el estado más reciente y estadísticas de las últimas 24 horas. *@
+@* --- Fila de Tarjetas de Resumen Rediseñadas --- *@
 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-4 mb-4">
     <div class="col">
         <div class="kpi-card summary-card">
             <div class="d-flex align-items-center">
                 <div class="kpi-icon icon-temp"><i class="fas fa-thermometer-half"></i></div>
                 <div class="kpi-content ms-3">
-                    <span class="kpi-title" data-bs-toggle="tooltip" title="Temperatura Ambiental">Temperatura Amb.</span>
-                    @* El operador '?? "-"' muestra un guion si el valor es nulo. *@
+                    <span class="kpi-title" data-bs-toggle="tooltip"
+                          title="Temperatura Ambiental">Temperatura Amb.</span>
                     <span class="kpi-value">@(Model.LatestAmbientData?.Temperature.ToString("0.0") ?? "-")°C</span>
                 </div>
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label" data-bs-toggle="tooltip" title="Máximo en las últimas 24 horas">Máx. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip"
+                          title="Máximo en las últimas 24 horas">Máx. 24h</span>
                     <span class="detail-value">@(Model.MaxAmbientTemperature24h?.ToString("0.0") ?? "-")°C</span>
                 </div>
                 <div class="detail-row">
@@ -81,7 +71,8 @@
                     <span class="detail-value">@(Model.AverageAmbientTemperature24h?.ToString("0.0") ?? "-")°C</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label" data-bs-toggle="tooltip" title="Mínimo en las últimas 24 horas">Mín. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip"
+                          title="Mínimo en las últimas 24 horas">Mín. 24h</span>
                     <span class="detail-value">@(Model.MinAmbientTemperature24h?.ToString("0.0") ?? "-")°C</span>
                 </div>
             </div>
@@ -99,7 +90,8 @@
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label" data-bs-toggle="tooltip" title="Máximo en las últimas 24 horas">Máx. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip"
+                          title="Máximo en las últimas 24 horas">Máx. 24h</span>
                     <span class="detail-value">@(Model.MaxAmbientHumidity24h?.ToString("0") ?? "-")%</span>
                 </div>
                 <div class="detail-row">
@@ -107,7 +99,8 @@
                     <span class="detail-value">@(Model.AverageAmbientHumidity24h?.ToString("0") ?? "-")%</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label" data-bs-toggle="tooltip" title="Mínimo en las últimas 24 horas">Mín. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip"
+                          title="Mínimo en las últimas 24 horas">Mín. 24h</span>
                     <span class="detail-value">@(Model.MinAmbientHumidity24h?.ToString("0") ?? "-")%</span>
                 </div>
             </div>
@@ -125,7 +118,8 @@
             </div>
             <div class="summary-details">
                 <div class="detail-row">
-                    <span class="detail-label" data-bs-toggle="tooltip" title="Máximo en las últimas 24 horas">Máx. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip"
+                          title="Máximo en las últimas 24 horas">Máx. 24h</span>
                     <span class="detail-value">@(Model.MaxAmbientLight24h?.ToString("N0") ?? "-") lx</span>
                 </div>
                 <div class="detail-row">
@@ -133,7 +127,8 @@
                     <span class="detail-value">@(Model.AverageAmbientLight24h?.ToString("N0") ?? "-") lx</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label" data-bs-toggle="tooltip" title="Mínimo en las últimas 24 horas">Mín. 24h</span>
+                    <span class="detail-label" data-bs-toggle="tooltip"
+                          title="Mínimo en las últimas 24 horas">Mín. 24h</span>
                     <span class="detail-value">@(Model.MinAmbientLight24h?.ToString("N0") ?? "-") lx</span>
                 </div>
             </div>
@@ -145,22 +140,26 @@
             <div class="d-flex align-items-center">
                 <div class="kpi-icon icon-thermal"><i class="fas fa-fire"></i></div>
                 <div class="kpi-content ms-3">
-                    <span class="kpi-title" data-bs-toggle="tooltip" title="Temperatura Térmica Promedio">Temp. Térmica</span>
+                    <span class="kpi-title" data-bs-toggle="tooltip"
+                          title="Temperatura Térmica Promedio">Temp. Térmica</span>
                     <span class="kpi-value">@(Model.ThermalStatistics?.LatestAvgTemp?.ToString("0.0") ?? "-")°C</span>
                 </div>
             </div>
             <div class="summary-details">
                 <div class="detail-row">
                     <span class="detail-label" data-bs-toggle="tooltip" title="Última temperatura térmica más alta">Máx. (última)</span>
-                    <span class="detail-value">@(Model.ThermalStatistics?.LatestMaxTemp?.ToString("0.0") ?? "-")°C</span>
+                    <span class="detail-value">@(Model.ThermalStatistics?.LatestMaxTemp?.ToString("0.0") ??
+                                                   "-")°C</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label" data-bs-toggle="tooltip" title="Última temperatura térmica más baja">Mín. (última)</span>
-                    <span class="detail-value">@(Model.ThermalStatistics?.LatestMinTemp?.ToString("0.0") ?? "-")°C</span>
+                    <span class="detail-value">@(Model.ThermalStatistics?.LatestMinTemp?.ToString("0.0") ??
+                                                   "-")°C</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Hora Captura</span>
-                    <span class="detail-value">@(Model.ThermalStatistics?.LatestThermalReadingTimestamp?.ToColombiaTime().ToString("HH:mm") ?? "-")</span>
+                    <span
+                        class="detail-value">@(Model.ThermalStatistics?.LatestThermalReadingTimestamp?.ToColombiaTime().ToString("HH:mm") ?? "-")</span>
                 </div>
             </div>
         </div>
@@ -178,24 +177,29 @@
             <div class="summary-details">
                 <div class="detail-row">
                     <span class="detail-label" data-bs-toggle="tooltip" title="Última Lectura Ambiental">Última Lect. Amb.</span>
-                    <span class="detail-value">@(Model.LatestAmbientData?.RecordedAt.ToColombiaTime().ToString("HH:mm") ?? "-")</span>
+                    <span
+                        class="detail-value">@(Model.LatestAmbientData?.RecordedAt.ToColombiaTime().ToString("HH:mm") ?? "-")</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label" data-bs-toggle="tooltip" title="Temperatura en la Ciudad">Temp. Ciudad</span>
-                    <span class="detail-value">@(Model.LatestAmbientData?.CityTemperature?.ToString("0.0") ?? "-")°C</span>
+                    <span class="detail-label" data-bs-toggle="tooltip"
+                          title="Temperatura en la Ciudad">Temp. Ciudad</span>
+                    <span class="detail-value">@(Model.LatestAmbientData?.CityTemperature?.ToString("0.0") ??
+                                                   "-")°C</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Clima</span>
                     @{
                         var weatherCondition = Model.LatestAmbientData?.CityWeatherCondition;
                         var displayWeather = "-";
-                        @* Lógica para truncar descripciones de clima muy largas y mostrarlas completas en un tooltip. *@
+
                         if (!string.IsNullOrEmpty(weatherCondition))
+
                             displayWeather = weatherCondition.Length > 30
                                 ? weatherCondition.Substring(0, 30) + "..."
                                 : weatherCondition;
                     }
-                    <span class="detail-value" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@weatherCondition">
+                    <span class="detail-value" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                          title="@weatherCondition">
                         @displayWeather
                     </span>
                 </div>
@@ -205,7 +209,7 @@
 </div>
 
 
-@* Fila que contiene los contenedores para los gráficos de series de tiempo de las últimas 24 horas. *@
+@* Fila de Gráficos (con corrección de altura) *@
 <div class="row">
     <div class="col-lg-4 mb-4">
         <div class="card chart-card">
@@ -256,7 +260,6 @@
                         </tr>
                         </thead>
                         <tbody>
-                        @* Maneja el caso en que no hay capturas recientes, mostrando un mensaje informativo. *@
                         @if (Model.RecentCaptures.Any())
                         {
                             @foreach (var capture in Model.RecentCaptures)
@@ -288,10 +291,6 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script>
-        @*
-            Función reutilizable para crear los gráficos de series de tiempo.
-            Toma el ID del canvas, los datos en formato JSON y una etiqueta para el eje Y.
-        *@
         function createTimeSeriesChart(canvasId, chartDataJson, yAxisLabel) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
@@ -300,15 +299,11 @@
 
             const noData = !chartData || !chartData.Values || chartData.Values.every(v => v === null);
 
-            @*
-                Maneja de forma elegante el caso en que no hay datos, dibujando un mensaje
-                directamente en el canvas en lugar de mostrar un gráfico vacío.
-            *@
             if (noData) {
                 const context = ctx.getContext('2d');
                 context.clearRect(0, 0, ctx.width, ctx.height);
                 context.textAlign = 'center';
-                context.font = '16px "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif';
+                context.font = '20px';
                 context.fillStyle = '#6c757d';
                 context.fillText('No hay datos disponibles.', ctx.width / 2, ctx.height / 2);
                 return;
@@ -334,20 +329,17 @@
                     plugins: {legend: {display: false}},
                     scales: {
                         x: {title: {display: false}},
-                        y: {title: {display: true, text: yAxisLabel}, beginAtZero: true}
+                        y: {title: {display: true, text: yAxisLabel}, beginAtZero: true, min: 0}
                     }
                 }
             });
         }
 
-        @* Punto de entrada del script. Se ejecuta una vez que el DOM está completamente cargado. *@
+
         document.addEventListener('DOMContentLoaded', function () {
-            // Inicializa los tres gráficos con los datos pasados desde el controlador a través del ViewBag.
-            createTimeSeriesChart('temperatureChart', '@Html.Raw(ViewBag.TempDataJson)', '°C');
-            createTimeSeriesChart('humidityChart', '@Html.Raw(ViewBag.HumDataJson)', '%');
-            createTimeSeriesChart('lightChart', '@Html.Raw(ViewBag.LightDataJson)', 'lx');
-            
-            // Inicializa todos los tooltips de Bootstrap en la página.
+            createTimeSeriesChart('temperatureChart', '@Html.Raw(ViewBag.TempDataJson)');
+            createTimeSeriesChart('humidityChart', '@Html.Raw(ViewBag.HumDataJson)');
+            createTimeSeriesChart('lightChart', '@Html.Raw(ViewBag.LightDataJson)');
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)

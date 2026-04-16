@@ -7,22 +7,12 @@ using Microsoft.AspNetCore.Identity;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
-/// <summary>
-///     Implementación del servicio de soporte técnico.
-///     Procesa las solicitudes de ayuda y coordina el envío de notificaciones a los administradores correspondientes.
-/// </summary>
 public class SupportService : ISupportService
 {
     private readonly IAlertService _alertService;
     private readonly UserManager<User> _userManager;
     private readonly IUserService _userService;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="SupportService" />.
-    /// </summary>
-    /// <param name="alertService">Servicio para enviar las notificaciones por correo.</param>
-    /// <param name="userManager">Servicio para la gestión de usuarios de ASP.NET Core Identity.</param>
-    /// <param name="userService">Servicio para consultar información de usuarios de la aplicación.</param>
     public SupportService(IAlertService alertService, UserManager<User> userManager, IUserService userService)
     {
         _alertService = alertService;
@@ -30,7 +20,6 @@ public class SupportService : ISupportService
         _userService = userService;
     }
 
-    /// <inheritdoc />
     public async Task<Result> ProcessPublicHelpRequestAsync(PublicHelpRequestDto model)
     {
         var adminsToNotify = await _userService.GetAdminsToNotifyAsync(s => s.EmailOnHelpRequest);
@@ -38,7 +27,6 @@ public class SupportService : ISupportService
         return Result.Success();
     }
 
-    /// <inheritdoc />
     public async Task<Result> ProcessAuthenticatedHelpRequestAsync(AuthenticatedHelpRequestDto model,
         ClaimsPrincipal userPrincipal)
     {

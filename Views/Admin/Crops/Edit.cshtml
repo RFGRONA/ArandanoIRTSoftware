@@ -1,10 +1,3 @@
-@*
-    Página para la edición de un cultivo existente.
-    Al igual que la vista de creación, esta actúa como un contenedor para
-    el formulario parcial reutilizable _CropFormPartial. La diferencia clave
-    es que el modelo ya viene poblado con los datos del cultivo, y se envía
-    el ID del mismo para la actualización.
-*@
 @model ArandanoIRT.Web._1_Application.DTOs.Crops.CropEditDto
 @{
     ViewData["Title"] = "Editar Cultivo";
@@ -12,8 +5,9 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" /> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 }
 
 <div class="page-header">
@@ -24,12 +18,11 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <form asp-action="Edit">
-            @* Campo oculto que envía el ID del cultivo al controlador para saber qué registro actualizar. *@
-            <input type="hidden" asp-for="Id"/>
+            <input type="hidden" asp-for="Id" />
             <div class="card form-card">
                 <div class="card-body">
-                    @* Se reutiliza el mismo formulario parcial de la vista de creación. *@
-                    <partial name="_CropFormPartial" model="Model"/>
+                    @* La vista parcial contendrá todos los campos del formulario. *@
+                    <partial name="_CropFormPartial" model="Model" />
                 </div>
                 <div class="card-footer">
                     <a asp-action="Index" class="btn btn-secondary-outline">Cancelar</a>
@@ -43,7 +36,6 @@
 </div>
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
-    @* Carga el script necesario para el funcionamiento de los selectores de ubicación en el formulario parcial. *@
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script src="~/js/location-selector.js" asp-append-version="true"></script>
 }

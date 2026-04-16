@@ -3,61 +3,49 @@ using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._2_Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
+// NUEVO
 
-/// <summary>
-///     Controlador de propósito especial utilizado únicamente para la configuración inicial de la aplicación.
-///     Permite un inicio de sesión temporal con credenciales pre-configuradas para crear el primer administrador.
-///     Sus endpoints se desactivan (devuelven 404) tan pronto como existe al menos un usuario con el rol "Admin".
-/// </summary>
 [Area("Admin")]
 public class BootstrapController : Controller
 {
-    private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly RoleManager<ApplicationRole> _roleManager; // NUEVO
     private readonly AdminCredentialsSettings _rootCredentials;
-    private readonly UserManager<User> _userManager;
+    private readonly UserManager<User> _userManager; // NUEVO
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="BootstrapController" />.
-    /// </summary>
     public BootstrapController(
         IOptions<AdminCredentialsSettings> adminCredentialsOptions,
-        UserManager<User> userManager,
-        RoleManager<ApplicationRole> roleManager)
+        UserManager<User> userManager, // NUEVO
+        RoleManager<ApplicationRole> roleManager) // NUEVO
     {
         _rootCredentials = adminCredentialsOptions.Value;
-        _userManager = userManager;
-        _roleManager = roleManager;
+        _userManager = userManager; // NUEVO
+        _roleManager = roleManager; // NUEVO
     }
 
-    /// <summary>
-    ///     Muestra la página de inicio de sesión de arranque, solo si no existen administradores en el sistema.
-    /// </summary>
-    /// <returns>La vista de login o un `NotFound (404)` si la configuración inicial ya se completó.</returns>
+    // GET: /Admin/Bootstrap/Login
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> Login()
     {
-        if (await AdminUserExistsAsync()) return NotFound();
+        // VERIFICACIÓN: Si ya existe un admin, este endpoint se desactiva.
+        if (await AdminUserExistsAsync())
+            return NotFound(); // Devolvemos un 404 para que parezca que la página no existe.
         return View();
     }
 
-    /// <summary>
-    ///     Procesa la solicitud de inicio de sesión de arranque. Si las credenciales son válidas,
-    ///     inicia una sesión temporal con un rol especial 'BootstrapAdmin' para permitir la creación de la primera invitación.
-    /// </summary>
-    /// <param name="model">Las credenciales de inicio de sesión de arranque.</param>
-    /// <returns>Una redirección al controlador de invitaciones en caso de éxito, o la vista con un error en caso de fallo.</returns>
+    // POST: /Admin/Bootstrap/Login
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(AdminLoginDto model)
     {
+        // VERIFICACIÓN: Doble chequeo en el POST por seguridad.
         if (await AdminUserExistsAsync()) return NotFound();
 
         if (!ModelState.IsValid) return View(model);
@@ -90,14 +78,15 @@ public class BootstrapController : Controller
     }
 
     /// <summary>
-    ///     Comprueba si ya existe al menos un usuario con el rol de "Admin" en la base de datos.
+    ///     Verifica si ya existe al menos un usuario con el rol de "Admin" en la base de datos.
     /// </summary>
-    /// <returns>True si existe al menos un administrador, de lo contrario, False.</returns>
     private async Task<bool> AdminUserExistsAsync()
     {
-        if (!await _roleManager.RoleExistsAsync("Admin")) return false;
+        // Primero, comprobamos si el rol "Admin" siquiera existe.
+        if (!await _roleManager.RoleExistsAsync("Admin")) return false; // Si no hay rol, no puede haber usuarios en él.
 
+        // Si el rol existe, vemos si hay usuarios asignados a él.
         var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
-        return adminUsers.Any();
+        return adminUsers.Any(); // Devuelve true si la lista tiene al menos un usuario.
     }
 }

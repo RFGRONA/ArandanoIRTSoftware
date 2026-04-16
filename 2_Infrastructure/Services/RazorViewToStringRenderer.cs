@@ -9,11 +9,6 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
-/// <summary>
-/// Implementación de un servicio que renderiza vistas Razor (.cshtml) a una cadena de texto HTML.
-/// Esta clase es fundamental para generar el cuerpo de los correos electrónicos a partir de plantillas,
-/// ya que permite hacerlo fuera del contexto de un controlador MVC (por ejemplo, desde un servicio en segundo plano).
-/// </summary>
 public class RazorViewToStringRenderer : IRazorViewToStringRenderer
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -21,9 +16,6 @@ public class RazorViewToStringRenderer : IRazorViewToStringRenderer
     private readonly ITempDataProvider _tempDataProvider;
     private readonly IRazorViewEngine _viewEngine;
 
-    /// <summary>
-    /// Inicializa una nueva instancia de la clase <see cref="RazorViewToStringRenderer"/>.
-    /// </summary>
     public RazorViewToStringRenderer(
         IRazorViewEngine viewEngine,
         ITempDataProvider tempDataProvider,
@@ -36,7 +28,6 @@ public class RazorViewToStringRenderer : IRazorViewToStringRenderer
         _httpContextAccessor = httpContextAccessor;
     }
 
-    /// <inheritdoc />
     public async Task<string> RenderViewToStringAsync<TModel>(string viewName, TModel model)
     {
         var actionContext = GetActionContext();
@@ -63,13 +54,6 @@ public class RazorViewToStringRenderer : IRazorViewToStringRenderer
         return output.ToString();
     }
 
-    /// <summary>
-    /// Busca una vista Razor por su nombre o ruta.
-    /// </summary>
-    /// <param name="actionContext">El contexto de la acción actual.</param>
-    /// <param name="viewName">El nombre o ruta de la vista a encontrar.</param>
-    /// <returns>La instancia de IView encontrada.</returns>
-    /// <exception cref="InvalidOperationException">Se lanza si la vista no se encuentra en ninguna de las ubicaciones buscadas.</exception>
     private IView FindView(ActionContext actionContext, string viewName)
     {
         var getViewResult = _viewEngine.GetView(null, viewName, true);
@@ -87,12 +71,6 @@ public class RazorViewToStringRenderer : IRazorViewToStringRenderer
         throw new InvalidOperationException(errorMessage);
     }
 
-    /// <summary>
-    /// Obtiene un ActionContext válido para el motor de vistas.
-    /// Si existe un HttpContext actual (porque se ejecuta en una petición web), lo utiliza.
-    /// Si no, crea un HttpContext falso para permitir la renderización desde un proceso en segundo plano.
-    /// </summary>
-    /// <returns>Una instancia de ActionContext.</returns>
     private ActionContext GetActionContext()
     {
         var httpContext = _httpContextAccessor.HttpContext;

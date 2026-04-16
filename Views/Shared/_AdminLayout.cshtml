@@ -1,52 +1,32 @@
-@*
-    Este es el layout principal (`_AdminLayout.cshtml`) para toda la sección autenticada de la aplicación.
-    Define la estructura común de la interfaz de usuario, incluyendo la barra lateral de navegación (sidebar),
-    la cabecera superior, el área de contenido principal y elementos globales como el modal de expiración de sesión.
-    Todas las demás vistas dentro del área de administración se renderizan dentro de @RenderBody().
-*@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Arandano IRT</title>
-
+    
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-
-    @* Marcador de posición para que las vistas individuales puedan inyectar sus propios estilos CSS. *@
+    
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-@* La barra lateral de navegación principal de la aplicación. *@
-<aside class="sidebar">
-    <div class="sidebar-header">
-        <a class="sidebar-brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
-            <span>🫐</span> Arandano IRT
-        </a>
-    </div>
-    <nav class="sidebar-nav">
-        @*
-            Si el usuario actual NO es el usuario de arranque temporal,
-            se muestra el menú de navegación completo.
-        *@
-        @if (!User.IsInRole("BootstrapAdmin"))
-        {
-            @* Navegación principal, organizada por secciones. *@
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a class="sidebar-brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                <span>🫐</span> Arandano IRT
+            </a>
+        </div>
+        <nav class="sidebar-nav">
             <ul>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="fas fa-tachometer-alt fa-fw"></i><span>Dashboard</span></a></li>
-
+                
                 <li class="nav-title">Gestión</li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Crops" asp-action="Index"><i class="fas fa-leaf fa-fw"></i><span>Cultivos</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Plants" asp-action="Index"><i class="fas fa-seedling fa-fw"></i><span>Plantas</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="PlantStatus" asp-action="History"><i class="fas fa-history fa-fw"></i><span>Historial de Estados</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Observation" asp-action="Index"><i class="fas fa-book-open fa-fw"></i><span>Bitácora</span></a></li>
-                @*
-                        Renderizado condicional: estos enlaces solo son visibles para usuarios
-                        que tienen el rol de "Admin", añadiendo una capa de seguridad en la UI.
-                    *@
                 @if (User.IsInRole("Admin"))
                 {
                     <li><a class="nav-link" asp-area="Admin" asp-controller="Devices" asp-action="Index"><i class="fas fa-server fa-fw"></i><span>Dispositivos</span></a></li>
@@ -56,130 +36,112 @@
                 <li class="nav-title">Visualizar Datos</li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="AmbientData" asp-action="Index"><i class="fas fa-cloud-sun fa-fw"></i><span>Datos Ambientales</span></a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Captures" asp-action="Index"><i class="fas fa-camera fa-fw"></i><span>Capturas</span></a></li>
-
+                
                 <li class="nav-title">Análisis</li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Analytics" asp-action="Index"><i class="fas fa-chart-bar fa-fw"></i><span>Analíticas y Reportes</span></a></li>
             </ul>
-        }
-    </nav>
-    <div class="sidebar-footer">
-        <div class="dropdown">
-            @*
-                    Invoca un ViewComponent para renderizar el panel de información del usuario.
-                    Esto encapsula la lógica para obtener y mostrar los datos del usuario actual.
-                *@
-            @await Component.InvokeAsync("UserInfo")
+        </nav>
+        <div class="sidebar-footer">
+            <div class="dropdown">
+                @await Component.InvokeAsync("UserInfo")
+                
+                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="userInfoDropdown">
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Manage" asp-action="Index"><i class="fas fa-user-edit fa-fw"></i> Mi Perfil</a></li>
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Support" asp-action="Index"><i class="fas fa-question-circle fa-fw"></i> Solicitar Ayuda</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt fa-fw"></i> Cerrar Sesión</button>
+                        </form>
+                    </li>
+                </ul>
 
-            @* Menú desplegable con acciones para el usuario: perfil, ayuda y cierre de sesión. *@
-            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="userInfoDropdown">
-                <li><a class="dropdown-item" asp-area="Admin" asp-controller="Manage" asp-action="Index"><i class="fas fa-user-edit fa-fw"></i> Mi Perfil</a></li>
-                <li><a class="dropdown-item" asp-area="Admin" asp-controller="Support" asp-action="Index"><i class="fas fa-question-circle fa-fw"></i> Solicitar Ayuda</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    @* El cierre de sesión se implementa como un formulario POST por seguridad, para prevenir CSRF. *@
-                    <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                        <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt fa-fw"></i> Cerrar Sesión</button>
-                    </form>
-                </li>
-            </ul>
+            </div>
 
         </div>
+    </aside>
 
+    <div class="main-content">
+        <header class="main-header">
+            <button class="btn" id="sidebar-toggler" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+        
+        <main class="content-fluid">
+            @RenderBody()
+        </main>
     </div>
-</aside>
 
-<div class="main-content">
-    <header class="main-header">
-        @* Botón para mostrar/ocultar la barra lateral en dispositivos móviles (manejado por JS). *@
-        <button class="btn" id="sidebar-toggler" aria-label="Toggle sidebar">
-            <i class="fas fa-bars"></i>
-        </button>
-    </header>
-
-    <main class="content-fluid">
-        @* Este es el marcador de posición principal donde se inyectará el contenido de las vistas individuales. *@
-        @RenderBody()
-    </main>
-</div>
-
-@*
-        Modal global para advertir al usuario que su sesión está a punto de expirar.
-        `data-bs-backdrop="static"` y `data-bs-keyboard="false"` impiden que el modal
-        se cierre accidentalmente, asegurando que el usuario vea el mensaje.
-    *@
-<div class="modal fade" id="session-expiring-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="staticBackdropLabel"><i class="fas fa-exclamation-triangle text-warning"></i> Tu sesión está a punto de expirar</h5>
-            </div>
-            <div class="modal-body">
-                <p>Su sesión se cerrará automáticamente en <strong id="session-countdown">2</strong> minutos por motivos de seguridad.</p>
-                <p>Por favor, guarde cualquier trabajo no guardado y vuelva a iniciar sesión para continuar.</p>
-            </div>
-            <div class="modal-footer">
-                <a asp-area="Admin" asp-controller="Account" asp-action="Login" class="btn btn-primary">Volver a Iniciar Sesión</a>
+    
+    <div class="modal fade" id="session-expiring-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel"><i class="fas fa-exclamation-triangle text-warning"></i> Tu sesión está a punto de expirar</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Su sesión se cerrará automáticamente en <strong id="session-countdown">2</strong> minutos por motivos de seguridad.</p>
+                    <p>Por favor, guarde cualquier trabajo no guardado y vuelva a iniciar sesión para continuar.</p>
+                </div>
+                <div class="modal-footer">
+                    <a asp-area="Admin" asp-controller="Account" asp-action="Login" class="btn btn-primary">Volver a Iniciar Sesión</a>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
+    
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-@* Marcador de posición para que las vistas individuales puedan inyectar sus propios scripts. *@
 @await RenderSectionAsync("Scripts", required: false)
 <script>
-    @*
-            Script para la gestión de la expiración de sesión del lado del cliente.
-            Está envuelto en una IIFE (Immediately Invoked Function Expression) para
-            evitar contaminar el scope global.
-        *@
-    (function () {
-        // --- Lógica para la Alerta de Expiración de Sesión ---
+        (function () {
+            // --- Lógica para la Alerta de Expiración de Sesión ---
 
-        // 1. Duración de la sesión en milisegundos (ej. 4 horas).
-        const sessionDuration = 4 * 60 * 60 * 1000;
-        // 2. Tiempo de antelación para mostrar el aviso (ej. 2 minutos).
-        const warningTime = 2 * 60 * 1000;
+            // 1. Definimos la duración de la sesión en milisegundos (4 horas)
+            const sessionDuration = 4 * 60 * 60 * 1000;
+            // 2. Definimos con cuánta antelación queremos mostrar el aviso (2 minutos)
+            const warningTime = 2 * 60 * 1000;
 
-        const modalElement = document.getElementById('session-expiring-modal');
-        if (!modalElement) return;
+            const modalElement = document.getElementById('session-expiring-modal');
+            if (!modalElement) return;
 
-        const sessionModal = new bootstrap.Modal(modalElement);
-        const countdownElement = document.getElementById('session-countdown');
+            const sessionModal = new bootstrap.Modal(modalElement);
+            const countdownElement = document.getElementById('session-countdown');
 
-        // 3. Calcula el tiempo de espera antes de mostrar el modal.
-        const showWarningTimeout = sessionDuration - warningTime;
+            // 3. Calculamos cuándo mostrar el aviso
+            const showWarningTimeout = sessionDuration - warningTime;
 
-        // 4. Temporizador para mostrar el modal de advertencia.
-        const warningTimer = setTimeout(function () {
-            sessionModal.show();
-            startCountdown();
-        }, showWarningTimeout);
+            // 4. Creamos el temporizador para mostrar el modal
+            const warningTimer = setTimeout(function () {
+                sessionModal.show();
+                startCountdown();
+            }, showWarningTimeout);
+            
+            // 5. Creamos un temporizador para forzar el refresco de página cuando la sesión realmente expira
+            //    Esto asegura que si el usuario ignora el modal, sea redirigido.
+            const forceRedirectTimer = setTimeout(function() {
+                // Redirigir a la página de login con un mensaje.
+                window.location.href = '/Account/Login?sessionExpired=true';
+            }, sessionDuration);
 
-        // 5. Temporizador de seguridad (failsafe) para forzar la redirección
-        //    cuando la sesión realmente expira, incluso si el usuario ignora el modal.
-        const forceRedirectTimer = setTimeout(function() {
-            window.location.href = '/Admin/Account/Login?sessionExpired=true';
-        }, sessionDuration);
+            // Función para el contador regresivo en el modal
+            function startCountdown() {
+                let timeLeft = warningTime / 1000; // en segundos
+                countdownElement.textContent = Math.ceil(timeLeft / 60);
 
-        // Función para iniciar y actualizar el contador regresivo en el modal.
-        function startCountdown() {
-            let timeLeft = warningTime / 1000; // en segundos
-            countdownElement.textContent = Math.ceil(timeLeft / 60);
-
-            const interval = setInterval(function () {
-                timeLeft--;
-                const minutesLeft = Math.ceil(timeLeft / 60);
-                countdownElement.textContent = minutesLeft > 1 ? `${minutesLeft}` : "menos de 1";
-
-                if (timeLeft <= 0) {
-                    clearInterval(interval);
-                }
-            }, 1000);
-        }
-    })();
-</script>
-</body>
+                const interval = setInterval(function () {
+                    timeLeft--;
+                    const minutesLeft = Math.ceil(timeLeft / 60);
+                    countdownElement.textContent = minutesLeft > 1 ? `${minutesLeft}` : "menos de 1";
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(interval);
+                    }
+                }, 1000);
+            }
+        })();
+    </script>
+    </body>
 </html>

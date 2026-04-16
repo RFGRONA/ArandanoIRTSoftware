@@ -4,68 +4,53 @@ using Microsoft.AspNetCore.Mvc;
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
 /// <summary>
-///     Un controlador base abstracto para los controladores del área de administración.
-///     Proporciona funcionalidades comunes, como el manejo estandarizado de los resultados de los servicios
-///     y la visualización de notificaciones a través de TempData.
+/// A base controller for admin area controllers to share common functionality,
+/// such as handling service results and displaying notifications.
 /// </summary>
 public abstract class BaseAdminController : Controller
 {
-    /// <summary>
-    ///     Clave para almacenar mensajes de éxito en TempData.
-    /// </summary>
     protected const string SuccessMessageKey = "SuccessMessage";
-
-    /// <summary>
-    ///     Clave para almacenar mensajes de error en TempData.
-    /// </summary>
     protected const string ErrorMessageKey = "ErrorMessage";
+    protected const string InvalidRequestDataMessage = "Invalid request data.";
 
     /// <summary>
-    ///     Mensaje genérico para solicitudes con datos inválidos.
+    /// Handles the result of a service operation, setting TempData messages
+    /// and returning the appropriate IActionResult.
     /// </summary>
-    protected const string InvalidRequestDataMessage = "Los datos de la solicitud son inválidos.";
-
-    /// <summary>
-    ///     Maneja el resultado de una operación de servicio.
-    ///     Si la operación es exitosa, establece un mensaje de éxito y redirige a la acción especificada.
-    ///     Si falla, establece un mensaje de error y devuelve la vista actual con el modelo para no perder los datos
-    ///     ingresados por el usuario.
-    /// </summary>
-    /// <param name="result">El objeto Result devuelto por el servicio.</param>
-    /// <param name="successRedirectActionName">El nombre de la acción a la que se redirigirá en caso de éxito.</param>
-    /// <param name="modelForFailure">El modelo que se devolverá a la vista en caso de fallo.</param>
-    /// <returns>Un `RedirectToAction` en caso de éxito, o una `ViewResult` con el modelo en caso de fallo.</returns>
+    /// <param name="result">The result object from the service layer.</param>
+    /// <param name="successRedirectActionName">The name of the action to redirect to on success.</param>
+    /// <param name="modelForFailure">The view model to return to the view on failure.</param>
+    /// <returns>A RedirectToAction on success, or a View with the model on failure.</returns>
     protected IActionResult HandleServiceResult(Result result, string successRedirectActionName, object modelForFailure)
     {
         if (result.IsSuccess)
         {
+            // You can customize the success message here if needed
             TempData[SuccessMessageKey] = "Operación completada exitosamente.";
             return RedirectToAction(successRedirectActionName);
         }
-
-        TempData[ErrorMessageKey] = result.ErrorMessage;
-        return View(modelForFailure);
+        else
+        {
+            TempData[ErrorMessageKey] = result.ErrorMessage;
+            // By returning the model, the user doesn't lose the data they entered.
+            return View(modelForFailure);
+        }
     }
 
     /// <summary>
-    ///     Sobrecarga para manejar el resultado de operaciones (como eliminaciones) que no necesitan devolver un modelo en
-    ///     caso de fallo.
-    ///     Redirige a una acción tanto en caso de éxito como de fallo.
+    /// Overload for delete operations or actions that don't return a model on failure.
     /// </summary>
-    /// <param name="result">El objeto Result devuelto por el servicio.</param>
-    /// <param name="successRedirectActionName">El nombre de la acción a la que se redirigirá en caso de éxito.</param>
-    /// <param name="failureRedirectActionName">El nombre de la acción a la que se redirigirá en caso de fallo.</param>
-    /// <returns>Un `RedirectToAction` en cualquier caso.</returns>
-    protected IActionResult HandleServiceResult(Result result, string successRedirectActionName,
-        string failureRedirectActionName)
+    protected IActionResult HandleServiceResult(Result result, string successRedirectActionName, string failureRedirectActionName)
     {
         if (result.IsSuccess)
         {
             TempData[SuccessMessageKey] = "Operación completada exitosamente.";
             return RedirectToAction(successRedirectActionName);
         }
-
-        TempData[ErrorMessageKey] = result.ErrorMessage;
-        return RedirectToAction(failureRedirectActionName);
+        else
+        {
+            TempData[ErrorMessageKey] = result.ErrorMessage;
+            return RedirectToAction(failureRedirectActionName);
+        }
     }
 }

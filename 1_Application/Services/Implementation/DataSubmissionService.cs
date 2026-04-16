@@ -10,25 +10,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
-/// <summary>
-///     Implementación del servicio de recepción y guardado de datos.
-///     Procesa los datos enviados por los dispositivos, los enriquece con información externa (clima) y los persiste.
-/// </summary>
 public class DataSubmissionService : IDataSubmissionService
 {
-    /// <summary>
-    ///     El nombre del contenedor (bucket) en el servicio de almacenamiento de objetos para las imágenes RGB.
-    /// </summary>
     private const string RgbImageBucketName = "rgb-captures";
-
     private readonly ApplicationDbContext _context;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DataSubmissionService> _logger;
     private readonly IWeatherService _weatherService;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="DataSubmissionService" />.
-    /// </summary>
     public DataSubmissionService(
         ApplicationDbContext context,
         IWeatherService weatherService,
@@ -41,7 +30,6 @@ public class DataSubmissionService : IDataSubmissionService
         _logger = logger;
     }
 
-    /// <inheritdoc />
     public async Task<Result> SaveAmbientDataAsync(DeviceIdentityContext deviceContext, AmbientDataDto ambientDataDto)
     {
         await ReactivateDeviceIfInactiveAsync(deviceContext);
@@ -106,7 +94,6 @@ public class DataSubmissionService : IDataSubmissionService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result> SaveCaptureDataAsync(
         DeviceIdentityContext deviceContext,
         ThermalDataDto thermalDataDto,
@@ -184,11 +171,6 @@ public class DataSubmissionService : IDataSubmissionService
         }
     }
 
-    /// <summary>
-    ///     Comprueba si un dispositivo está marcado como INACTIVO y, si es así, lo cambia a ACTIVO.
-    ///     Esto permite que un dispositivo se "recupere" automáticamente si vuelve a enviar datos.
-    /// </summary>
-    /// <param name="deviceContext">El contexto de identidad del dispositivo que envía los datos.</param>
     private async Task ReactivateDeviceIfInactiveAsync(DeviceIdentityContext deviceContext)
     {
         var device = await _context.Devices.FindAsync(deviceContext.DeviceId);

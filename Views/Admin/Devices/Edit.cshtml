@@ -1,9 +1,3 @@
-@*
-    Página para la edición de un dispositivo existente.
-    Presenta un formulario pre-poblado con los datos actuales del dispositivo,
-    permitiendo al usuario modificar sus propiedades como el nombre, la planta
-    asignada, el estado y el intervalo de recolección de datos.
-*@
 @model ArandanoIRT.Web._1_Application.DTOs.Device.DeviceEditDto
 @{
     ViewData["Title"] = "Editar Dispositivo";
@@ -11,7 +5,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Estilos para el textarea autoajustable */
@@ -30,27 +24,26 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <form asp-action="Edit">
-            @* Campo oculto que envía el ID del dispositivo para que el controlador sepa qué registro actualizar. *@
-            <input type="hidden" asp-for="Id"/>
+            <input type="hidden" asp-for="Id" />
             <div class="card form-card">
                 <div class="card-body">
+                    @* Contenido del formulario integrado para mayor claridad *@
                     <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
                     <div class="mb-3">
                         <label asp-for="Name" class="form-label">Nombre del Dispositivo</label>
-                        <input asp-for="Name" class="form-control"/>
+                        <input asp-for="Name" class="form-control" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="MacAddress" class="form-label">Dirección MAC (Opcional)</label>
-                        <input asp-for="MacAddress" class="form-control"/>
+                        <input asp-for="MacAddress" class="form-control" />
                         <span asp-validation-for="MacAddress" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Description" class="form-label">Descripción</label>
-                        @* Este textarea se expande verticalmente de forma automática gracias al script. *@
                         <textarea asp-for="Description" class="form-control auto-grow" rows="3"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
@@ -62,7 +55,7 @@
                         </select>
                         <span asp-validation-for="PlantId" class="text-danger"></span>
                     </div>
-
+                    
                     <div class="mb-3">
                         <label asp-for="Status" class="form-label">Estado del Dispositivo</label>
                         <select asp-for="Status" class="form-select" asp-items="Model.AvailableStatuses">
@@ -73,7 +66,7 @@
 
                     <div class="mb-3">
                         <label asp-for="DataCollectionIntervalMinutes" class="form-label">Intervalo de Recolección de Datos (minutos)</label>
-                        <input asp-for="DataCollectionIntervalMinutes" type="number" class="form-control"/>
+                        <input asp-for="DataCollectionIntervalMinutes" type="number" class="form-control" />
                         <span asp-validation-for="DataCollectionIntervalMinutes" class="text-danger"></span>
                     </div>
                 </div>
@@ -89,14 +82,9 @@
 </div>
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        @*
-            Implementa la funcionalidad "auto-grow" para el textarea.
-            Ajusta dinámicamente la altura del campo de texto para que coincida
-            con la altura de su contenido a medida que el usuario escribe.
-        *@
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const textarea = document.querySelector('textarea.auto-grow');
 
             if (textarea) {
@@ -108,7 +96,7 @@
                 // Llama a la función cuando el usuario escribe
                 textarea.addEventListener('input', adjustHeight);
 
-                // Ajusta la altura inicial al cargar la página, por si hay contenido precargado
+                // Ajusta la altura inicial por si hay contenido precargado
                 adjustHeight();
             }
         });

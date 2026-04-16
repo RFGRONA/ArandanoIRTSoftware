@@ -3,8 +3,7 @@
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Representa a los usuarios de la aplicación web y sus credenciales.
-/// Hereda de IdentityUser para integrarse con el sistema de autenticación de ASP.NET Core.
+///     Stores web application users and their credentials. Now inherits from IdentityUser.
 /// </summary>
 public class User : IdentityUser<int>
 {

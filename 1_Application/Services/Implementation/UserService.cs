@@ -3,8 +3,10 @@ using System.Security.Claims;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
+using ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -13,11 +15,6 @@ using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
-/// <summary>
-///     Implementación del servicio de gestión de usuarios.
-///     Centraliza toda la lógica de negocio para el registro, autenticación, gestión de perfiles,
-///     y acciones administrativas sobre los usuarios, utilizando ASP.NET Core Identity.
-/// </summary>
 public class UserService : IUserService
 {
     private readonly IAlertService _alertService;
@@ -28,9 +25,6 @@ public class UserService : IUserService
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="UserService" />.
-    /// </summary>
     public UserService(
         ApplicationDbContext context,
         UserManager<User> userManager,
@@ -49,24 +43,23 @@ public class UserService : IUserService
         _alertService = alertService;
     }
 
-    /// <inheritdoc />
     public async Task<(SignInResult Result, bool JustLockedOut)> LoginUserAsync(LoginDto model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
         if (user == null)
         {
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, true);
-            return (result, false);
+            return (result, false); // No hay usuario, no se puede bloquear
         }
 
-        // 1. Verificamos si al usuario le queda solo un intento antes de ser bloqueado.
+        // 1. Verificamos si el usuario está a UN intento de ser bloqueado.
+        //    Usamos la configuración de Identity en lugar de un número fijo (5).
         var isAboutToLockOut = user.AccessFailedCount == _userManager.Options.Lockout.MaxFailedAccessAttempts - 1;
 
-        // 2. Realizamos el intento de inicio de sesión.
+        // 2. Realizamos el intento de login.
         var signInResult = await _signInManager.PasswordSignInAsync(user, model.Password, true, true);
 
-        // 3. Si el intento falló y resultó en un bloqueo, y sabíamos que estaba a punto de ocurrir,
-        //    marcamos el resultado para que el controlador pueda enviar la alerta.
+        // 3. Si el intento resultó en un bloqueo Y sabíamos que estaba a punto de ocurrir, enviamos la alerta.
         if (isAboutToLockOut && signInResult.IsLockedOut)
         {
             _logger.LogWarning("La cuenta para {Email} ha sido bloqueada en este intento.", user.Email);
@@ -76,15 +69,14 @@ public class UserService : IUserService
         return (signInResult, false);
     }
 
-    /// <inheritdoc />
     public async Task<Result> RegisterUserAsync(RegisterDto model)
     {
-        // 1. Validar el código de invitación antes de cualquier otra operación.
+        // 1. Validar la invitación primero (operación de solo lectura)
         var invitationResult = await _invitationService.ValidateCodeAsync(model.InvitationCode, model.Email);
         if (invitationResult.IsFailure) return Result.Failure(invitationResult.ErrorMessage);
         var invitation = invitationResult.Value;
 
-        // 2. Crear la entidad del usuario.
+        // 2. Crear el usuario
         var user = new User
         {
             UserName = model.Email,
@@ -97,12 +89,14 @@ public class UserService : IUserService
 
         if (invitation.IsAdmin)
         {
+            // Si es admin, establecemos sus valores por defecto específicos.
             user.AccountSettings.EmailOnHelpRequest = true;
             user.AccountSettings.EmailOnAppFailureAlert = true;
             user.AccountSettings.EmailOnDeviceFailureAlert = true;
             user.AccountSettings.EmailOnDeviceInactivity = true;
         }
 
+        // UserManager.CreateAsync ya guarda el usuario en la BD.
         var identityResult = await _userManager.CreateAsync(user, model.Password);
 
         if (!identityResult.Succeeded)
@@ -113,7 +107,7 @@ public class UserService : IUserService
 
         _logger.LogInformation("Usuario {Email} creado en la base de datos.", user.Email);
 
-        // 3. Realizar operaciones secundarias (asignar rol, anular código).
+        // 3. Intentar las operaciones secundarias (asignar rol, marcar código)
         try
         {
             if (invitation.IsAdmin)
@@ -123,22 +117,23 @@ public class UserService : IUserService
                 await _userManager.AddToRoleAsync(user, "Admin");
             }
 
+            // Marcar el código como usado (ahora es una operación separada)
             await _invitationService.MarkCodeAsUsedAsync(invitation.Id);
         }
         catch (Exception ex)
         {
-            // Si algo falla después de crear el usuario, se debe revertir la creación para mantener la consistencia.
-            _logger.LogError(ex, "Error en operaciones secundarias para {Email}. Revirtiendo creación.", user.Email);
+            // Si algo falla DESPUÉS de crear el usuario, debemos deshacerlo.
+            _logger.LogError(ex,
+                "Error al asignar rol o marcar invitación para el usuario {Email}. Revirtiendo creación.", user.Email);
             await _userManager.DeleteAsync(user);
             return Result.Failure("Ocurrió un error al finalizar el registro. Por favor, intente de nuevo.");
         }
 
-        // 4. Si todo el proceso fue exitoso, iniciar sesión con el nuevo usuario.
+        // 4. Si todo salió bien, iniciar sesión
         await _signInManager.SignInAsync(user, false);
-        return Result.Success();
+        return Result.Success(user.Id);
     }
 
-    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetUsersForSelectionAsync()
     {
         return await _context.Users
@@ -153,19 +148,22 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
-    /// <inheritdoc />
     public async Task<Result<(string Name, string ResetLink)>> GeneratePasswordResetAsync(ForgotPasswordDto model,
         IUrlHelper urlHelper, string scheme)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
 
-        // Nota de Seguridad: Si el usuario no existe, no se devuelve un error explícito.
-        // Esto previene que un atacante pueda usar el formulario para descubrir qué correos están registrados.
+        // NOTA DE SEGURIDAD: Si el usuario no se encuentra, no devolvemos un error.
+        // Simplemente terminamos el proceso silenciosamente. Esto previene que un atacante
+        // pueda usar este formulario para descubrir qué correos están registrados en el sistema.
         if (user == null)
+            // Devolvemos un Result exitoso pero con valores vacíos. El controlador no enviará correo.
             return Result.Success(("", ""));
 
+        // Generar el token de reseteo
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
+        // Generar la URL de callback que irá en el correo
         var callbackUrl = urlHelper.Action(
             "ResetPassword",
             "Account",
@@ -178,13 +176,14 @@ public class UserService : IUserService
         return Result.Success((user.FirstName, callbackUrl));
     }
 
-    /// <inheritdoc />
     public async Task<Result> ResetPasswordAsync(ResetPasswordDto model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
         if (user == null)
+            // No revelamos que el usuario no existe por seguridad.
             return Result.Failure("Ocurrió un error. Por favor, intente de nuevo.");
 
+        // El método ResetPasswordAsync valida el token y actualiza la contraseña.
         var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
 
         if (!result.Succeeded)
@@ -193,17 +192,18 @@ public class UserService : IUserService
             return Result.Failure(errors);
         }
 
+        // Notificar al usuario que su contraseña ha cambiado
         await _alertService.SendPasswordChangedEmailAsync(user.Email, user.FirstName);
 
         return Result.Success();
     }
 
-    /// <inheritdoc />
     public async Task<Result> ChangePasswordAsync(ClaimsPrincipal userPrincipal, ChangePasswordDto model)
     {
         var user = await _userManager.GetUserAsync(userPrincipal);
         if (user == null) return Result.Failure("Usuario no encontrado.");
 
+        // El método ChangePasswordAsync valida la contraseña antigua y establece la nueva.
         var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
 
         if (!result.Succeeded)
@@ -212,14 +212,15 @@ public class UserService : IUserService
             return Result.Failure(errors);
         }
 
+        // Notificar al usuario que su contraseña ha cambiado
         await _alertService.SendPasswordChangedEmailAsync(user.Email, user.FirstName);
 
+        // Refrescar la cookie de sesión del usuario para actualizar el sello de seguridad
         await _signInManager.RefreshSignInAsync(user);
 
         return Result.Success();
     }
 
-    /// <inheritdoc />
     public async Task<Result> UpdateProfileAsync(ClaimsPrincipal userPrincipal, ProfileInfoDto model)
     {
         var user = await _userManager.GetUserAsync(userPrincipal);
@@ -241,7 +242,6 @@ public class UserService : IUserService
         return Result.Success();
     }
 
-    /// <inheritdoc />
     public async Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate)
     {
         var allAdmins = await _userManager.GetUsersInRoleAsync("Admin");
@@ -249,18 +249,23 @@ public class UserService : IUserService
         return allAdmins.Where(u => compiledPredicate(u.AccountSettings)).ToList();
     }
 
-    /// <inheritdoc />
     public async Task<List<User>> GetAllUsersAsync()
     {
         return await _userManager.Users.ToListAsync();
     }
 
-    /// <inheritdoc />
-    public async Task<Result<IEnumerable<UserDto>>> GetAllUsersForManagementAsync()
+    public async Task<Result<PagedResultDto<UserDto>>> GetPagedUsersForManagementAsync(UserQueryFilters filters)
     {
         try
         {
-            var users = await _userManager.Users.OrderBy(u => u.FirstName).ToListAsync();
+            var query = _userManager.Users.AsQueryable();
+
+            if (filters.SortOrder?.ToLower() == "desc")
+                query = query.OrderByDescending(u => u.CreatedAt);
+            else
+                query = query.OrderBy(u => u.CreatedAt);
+
+            var users = await query.ToListAsync();
             var userDtos = new List<UserDto>();
             var now = DateTime.UtcNow;
             const int inactivityDaysThreshold = 30;
@@ -269,13 +274,21 @@ public class UserService : IUserService
             {
                 var roles = await _userManager.GetRolesAsync(user);
                 var isAdmin = roles.Contains("Admin");
+                
+                var userRole = isAdmin ? "Administrador" : "Usuario Estándar";
+
+                // Filter by role manually in memory if specified
+                if (!string.IsNullOrEmpty(filters.Role) && userRole != filters.Role)
+                {
+                    continue;
+                }
 
                 var userDto = new UserDto
                 {
                     Id = user.Id,
                     FullName = $"{user.FirstName} {user.LastName}",
                     Email = user.Email,
-                    Role = isAdmin ? "Administrador" : "Usuario Estándar",
+                    Role = userRole,
                     RegisteredDate = user.CreatedAt.ToLocalTime()
                 };
 
@@ -288,16 +301,28 @@ public class UserService : IUserService
                 userDtos.Add(userDto);
             }
 
-            return Result.Success<IEnumerable<UserDto>>(userDtos);
+            var totalCount = userDtos.Count;
+            var pagedItems = userDtos
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
+                .ToList();
+
+            return Result.Success(new PagedResultDto<UserDto>
+            {
+                Items = pagedItems,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al obtener la lista de usuarios para gestión.");
-            return Result.Failure<IEnumerable<UserDto>>("Ocurrió un error al cargar los usuarios.");
+            return Result.Failure<PagedResultDto<UserDto>>("Ocurrió un error al cargar los usuarios.");
         }
     }
 
-    /// <inheritdoc />
+
     public async Task<Result> PromoteToAdminAsync(int userIdToPromote)
     {
         var user = await _userManager.FindByIdAsync(userIdToPromote.ToString());
@@ -305,6 +330,7 @@ public class UserService : IUserService
 
         var isAlreadyAdmin = await _userManager.IsInRoleAsync(user, "Admin");
         if (isAlreadyAdmin)
+            // No es un error, pero la operación es innecesaria.
             return Result.Success();
 
         var result = await _userManager.AddToRoleAsync(user, "Admin");
@@ -319,24 +345,25 @@ public class UserService : IUserService
         return Result.Failure($"No se pudo ascender al usuario: {errors}");
     }
 
-    /// <inheritdoc />
     public async Task<Result> DeleteUserAsync(int userIdToDelete, int currentUserId)
     {
-        // Regla de Seguridad: Un administrador no puede eliminarse a sí mismo.
+        // Regla de Seguridad 1: Un administrador no puede eliminarse a sí mismo.
         if (userIdToDelete == currentUserId)
             return Result.Failure("No puedes eliminar tu propia cuenta de administrador.");
 
         var userToDelete = await _userManager.FindByIdAsync(userIdToDelete.ToString());
         if (userToDelete == null)
+            // El usuario ya no existe, consideramos la operación exitosa.
             return Result.Success();
 
-        // Regla de Seguridad: Un usuario estándar no puede eliminar a un administrador.
+        // Regla de Seguridad 2: No se puede eliminar a otro administrador.
         var isUserAdmin = await _userManager.IsInRoleAsync(userToDelete, "Admin");
         if (isUserAdmin) return Result.Failure("No está permitido eliminar a un usuario administrador.");
 
         var emailOfDeletedUser = userToDelete.Email;
         var nameOfDeletedUser = userToDelete.FirstName;
 
+        // Si pasa todas las validaciones, proceder con la eliminación.
         var result = await _userManager.DeleteAsync(userToDelete);
 
         if (result.Succeeded)
@@ -344,7 +371,9 @@ public class UserService : IUserService
             _logger.LogInformation("Usuario {UserId} ha sido eliminado por el administrador {AdminId}.", userIdToDelete,
                 currentUserId);
             if (!string.IsNullOrEmpty(emailOfDeletedUser))
+            {
                 await _alertService.SendAccountDeletedEmailAsync(emailOfDeletedUser, nameOfDeletedUser);
+            }
             return Result.Success();
         }
 
@@ -352,18 +381,19 @@ public class UserService : IUserService
         return Result.Failure($"No se pudo eliminar al usuario: {errors}");
     }
 
-    /// <inheritdoc />
     public async Task<Result<string>> InitiateAdminDeletionAsync(int adminToDeleteId, int currentAdminId,
         string currentAdminPassword, IUrlHelper urlHelper, string scheme)
     {
         var admins = await _userManager.GetUsersInRoleAsync("Admin");
         if (admins.Count < 3)
-            return Result.Failure<string>(
-                "La eliminación de un administrador solo está permitida si existen al menos tres administradores.");
-
+        {
+            return Result.Failure<string>("La eliminación inmediata de un administrador solo está permitida si existen al menos tres administradores en el sistema.");
+        }
+        // Regla 1: No auto-eliminación
         if (adminToDeleteId == currentAdminId)
-            return Result.Failure<string>("No puedes eliminar tu propia cuenta.");
+            return Result.Failure<string>("No puedes eliminar tu propia cuenta de administrador.");
 
+        // Regla 2: Verificar contraseña del iniciador
         var currentAdmin = await _userManager.FindByIdAsync(currentAdminId.ToString());
         if (currentAdmin == null || !await _userManager.CheckPasswordAsync(currentAdmin, currentAdminPassword))
             return Result.Failure<string>("Tu contraseña es incorrecta. La acción ha sido cancelada.");
@@ -372,33 +402,35 @@ public class UserService : IUserService
         if (adminToDelete == null)
             return Result.Failure<string>("El administrador que intentas eliminar no fue encontrado.");
 
-        // Generar un token de un solo uso con un propósito específico para la eliminación.
-        var tokenProvider = "Default";
+        // 3. Generar token de un solo uso con propósito específico
+        var tokenProvider = "Default"; // Usamos el proveedor de tokens por defecto de Identity
         var purpose = $"delete-admin:{adminToDeleteId}";
         var token = await _userManager.GenerateUserTokenAsync(adminToDelete, tokenProvider, purpose);
 
+        // 4. Generar el enlace de confirmación
         var confirmationLink = urlHelper.Action("ConfirmDeletion", "UserManagement",
             new { id = adminToDeleteId, token }, scheme);
 
         if (string.IsNullOrEmpty(confirmationLink))
             return Result.Failure<string>("No se pudo generar el enlace de confirmación.");
 
+        // 5. Enviar notificación a los otros administradores
         var otherAdmins = admins.Where(a => a.Id != currentAdminId && a.Id != adminToDeleteId).ToList();
 
         await _alertService.SendAdminDeletionRequestEmailAsync(otherAdmins, currentAdmin.FirstName,
             adminToDelete.FirstName, confirmationLink);
 
+        // Devolvemos el nombre del admin para el mensaje de éxito en el controlador
         return Result.Success(adminToDelete.FirstName);
     }
 
-    /// <inheritdoc />
     public async Task<Result> ConfirmAdminDeletionAsync(int adminToDeleteId, string token)
     {
         var adminToDelete = await _userManager.FindByIdAsync(adminToDeleteId.ToString());
         if (adminToDelete == null)
             return Result.Failure("El administrador a eliminar ya no existe.");
 
-        // Validar el token de confirmación con su propósito específico.
+        // 1. Validar el token
         var tokenProvider = "Default";
         var purpose = $"delete-admin:{adminToDeleteId}";
         var isTokenValid = await _userManager.VerifyUserTokenAsync(adminToDelete, tokenProvider, purpose, token);
@@ -409,15 +441,19 @@ public class UserService : IUserService
         var emailOfDeletedAdmin = adminToDelete.Email;
         var nameOfDeletedAdmin = adminToDelete.FirstName;
 
+        // 2. Proceder con la eliminación
         var result = await _userManager.DeleteAsync(adminToDelete);
 
         if (result.Succeeded)
         {
-            _logger.LogWarning("El administrador {AdminToDeleteId} ha sido eliminado tras confirmación.",
+            _logger.LogWarning(
+                "El administrador {AdminToDeleteId} ha sido eliminado tras confirmación por segunda firma.",
                 adminToDeleteId);
 
             if (!string.IsNullOrEmpty(emailOfDeletedAdmin))
+            {
                 await _alertService.SendAccountDeletedEmailAsync(emailOfDeletedAdmin, nameOfDeletedAdmin);
+            }
             return Result.Success();
         }
 

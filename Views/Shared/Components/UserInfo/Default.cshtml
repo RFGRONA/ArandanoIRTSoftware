@@ -1,9 +1,3 @@
-@*
-    Vista parcial para el panel de información del usuario.
-    Muestra el nombre y el rol del usuario autenticado y actúa como
-    un activador (trigger) para un menú desplegable de Bootstrap.
-    Generalmente se utiliza en el layout principal (ej. en la cabecera o sidebar).
-*@
 @model (string Name, string Role)
 
 <a href="#" class="user-info-panel" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -11,6 +5,5 @@
         <div class="user-display-name">@Model.Name</div>
         <div class="user-display-role">@Model.Role</div>
     </div>
-    @* El ícono se puede animar con CSS o JS para rotar cuando el menú está abierto. *@
-    <i class="fas fa-chevron-up ms-auto"></i>
+    <i class="fas fa-chevron-up ms-auto"></i> @* Ícono de flecha a la derecha *@
 </a>

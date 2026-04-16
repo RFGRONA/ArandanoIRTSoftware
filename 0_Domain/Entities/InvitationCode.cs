@@ -1,7 +1,7 @@
 ﻿namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Almacena códigos de invitación de un solo uso para permitir el registro de nuevos usuarios en la plataforma.
+/// Stores single-use invitation codes for user registration.
 /// </summary>
 public partial class InvitationCode
 {

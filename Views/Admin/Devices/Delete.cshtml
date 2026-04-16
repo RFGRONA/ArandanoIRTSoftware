@@ -1,10 +1,3 @@
-@*
-    Página de confirmación para la eliminación de un dispositivo.
-    Esta vista es crucial para la seguridad de los datos, ya que presenta una
-    advertencia explícita sobre la naturaleza destructiva de la acción,
-    informando al usuario que se eliminarán todos los datos históricos
-    asociados al dispositivo.
-*@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._1_Application.DTOs.Device.DeviceDetailsDto
 @{
@@ -13,11 +6,10 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/crud-forms.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
-@* Maneja el caso en que el dispositivo con el ID proporcionado no se encuentra. *@
 @if (Model == null)
 {
     <div class="alert alert-warning">Dispositivo no encontrado.</div>
@@ -29,7 +21,6 @@ else
         <h1>@ViewData["Title"]</h1>
     </div>
 
-    @* Muestra mensajes de error enviados desde el controlador. *@
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
@@ -38,18 +29,16 @@ else
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <form asp-action="Delete">
-                @* Campo oculto que envía el ID del dispositivo al controlador para su eliminación. *@
-                <input type="hidden" asp-for="Id"/>
+                <input type="hidden" asp-for="Id" />
                 <div class="card delete-confirmation-card">
                     <div class="card-body">
                         <div class="delete-warning">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <h3>¿Está absolutamente seguro?</h3>
+                            <h3>¿Esta absolutamente seguro?</h3>
                             <p class="lead">
-                                Está a punto de eliminar permanentemente el dispositivo:
+                                Esta a punto de eliminar permanentemente el dispositivo:
                                 <strong class="item-to-delete">@Model.Name</strong>
                             </p>
-                            @* Advertencia crítica que informa sobre la eliminación en cascada de todos los datos asociados. *@
                             <p class="text-danger mt-3">
                                 <strong>Advertencia:</strong> Esta acción eliminará el dispositivo y <strong>todos</strong> sus datos asociados (activación, logs, datos ambientales y capturas térmicas).
                             </p>
@@ -59,7 +48,6 @@ else
                         <hr class="my-4"/>
 
                         <h5 class="details-title">Se eliminará la siguiente información:</h5>
-                        @* Resumen de los datos del dispositivo para confirmación visual. *@
                         <dl class="row details-list mt-3">
                             <dt class="col-sm-4">Nombre del Dispositivo</dt>
                             <dd class="col-sm-8">@Model.Name</dd>

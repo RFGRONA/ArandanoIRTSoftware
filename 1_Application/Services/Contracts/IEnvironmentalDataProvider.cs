@@ -3,24 +3,19 @@ using ArandanoIRT.Web._1_Application.DTOs.Analysis;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
 
-/// <summary>
-///     Define el contrato para un servicio que provee datos ambientales consolidados y validados, listos para ser usados
-///     en el análisis de estrés hídrico.
-/// </summary>
 public interface IEnvironmentalDataProvider
 {
     /// <summary>
-    ///     Obtiene los datos ambientales consolidados y validados para el análisis, incluyendo el VPD.
-    ///     Utiliza un sistema de caché para los datos del clima y tiene una lógica de respaldo (fallback) que usa el sensor de
-    ///     luz
-    ///     si la API del clima falla o si las condiciones no son adecuadas.
+    ///     Gets consolidated and validated environmental data for analysis, including VPD.
+    ///     It uses caching for weather data and implements a fallback to the light sensor if the API fails or conditions are
+    ///     unsuitable.
     /// </summary>
-    /// <param name="cityQuery">La ciudad para consultar el clima (ej. "Bogota").</param>
-    /// <param name="lightIntensity">La lectura actual de intensidad lumínica del sensor del dispositivo.</param>
-    /// <param name="lightIntensityThreshold">La intensidad lumínica mínima requerida para la lógica de respaldo.</param>
-    /// <param name="ambientTemperatureC">La temperatura ambiente medida por el sensor del dispositivo.</param>
-    /// <param name="ambientHumidity">La humedad ambiental medida por el sensor del dispositivo.</param>
-    /// <returns>Un objeto <c>Result</c> que contiene los datos ambientales (<c>EnvironmentalData</c>) para el análisis.</returns>
+    /// <param name="cityQuery">The city to query for weather (e.g., "Bogota").</param>
+    /// <param name="lightIntensity">The current light intensity reading from the device sensor.</param>
+    /// <param name="lightIntensityThreshold">The minimum light intensity required for the fallback logic.</param>
+    /// <param name="ambientTemperatureC">The ambient temperature from the device sensor.</param>
+    /// <param name="ambientHumidity">The ambient humidity from the device sensor.</param>
+    /// <returns>A Result object containing the environmental data for analysis.</returns>
     Task<Result<EnvironmentalData>> GetEnvironmentalDataForAnalysisAsync(
         string cityQuery,
         double? lightIntensity,

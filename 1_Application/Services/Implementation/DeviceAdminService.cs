@@ -1,6 +1,8 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
+using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Device;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
@@ -11,20 +13,12 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
-/// <summary>
-///     Implementación del servicio de administración de dispositivos.
-///     Se encarga de las operaciones CRUD y la lógica de negocio asociada a los dispositivos
-///     desde la perspectiva del panel de administración web.
-/// </summary>
 public class DeviceAdminService : IDeviceAdminService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DeviceAdminService> _logger;
     private readonly TokenSettings _tokenSettings;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="DeviceAdminService" />.
-    /// </summary>
     public DeviceAdminService(
         ApplicationDbContext context,
         IOptions<TokenSettings> tokenSettingsOptions,
@@ -35,13 +29,10 @@ public class DeviceAdminService : IDeviceAdminService
         _logger = logger;
     }
 
-    /// <inheritdoc />
-    /// <remarks>
-    ///     Esta operación utiliza una transacción de base de datos para garantizar que la creación
-    ///     del dispositivo y su código de activación sea una operación atómica.
-    /// </remarks>
     public async Task<Result<DeviceCreationResultDto>> CreateDeviceAsync(DeviceCreateDto deviceDto)
     {
+        // Usamos una transacción para asegurar que la creación del dispositivo y su código de activación
+        // sea una operación atómica. O ambas tienen éxito, o ambas se revierten.
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -57,10 +48,10 @@ public class DeviceAdminService : IDeviceAdminService
                 UpdatedAt = DateTime.UtcNow
             };
 
+            // Asignar CropId basado en la planta seleccionada
             if (newDevice.PlantId.HasValue)
             {
-                var plant = await _context.Plants.AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.Id == newDevice.PlantId.Value);
+                var plant = await _context.Plants.AsNoTracking().FirstOrDefaultAsync(p => p.Id == newDevice.PlantId.Value);
                 if (plant != null)
                 {
                     newDevice.CropId = plant.CropId;
@@ -74,14 +65,15 @@ public class DeviceAdminService : IDeviceAdminService
             else
             {
                 await transaction.RollbackAsync();
-                return Result.Failure<DeviceCreationResultDto>("El dispositivo debe estar asociado a una planta.");
+                return Result.Failure<DeviceCreationResultDto>("El dispositivo debe estar asociado al menos a un cultivo.");
             }
 
             _context.Devices.Add(newDevice);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // Guardamos para obtener el ID del nuevo dispositivo
 
             _logger.LogInformation("Dispositivo creado con ID: {DeviceId}", newDevice.Id);
 
+            // Generar y guardar el código de activación (DeviceActivation)
             var activationCode = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpperInvariant();
             var expiresAt = DateTime.UtcNow.AddDays(_tokenSettings.ActivationCodeExpirationInDays);
 
@@ -89,17 +81,16 @@ public class DeviceAdminService : IDeviceAdminService
             {
                 DeviceId = newDevice.Id,
                 ActivationCode = activationCode,
-                Status = ActivationStatus.PENDING,
+                Status = ActivationStatus.PENDING, // Usando el enum directamente
                 ExpiresAt = expiresAt
             };
 
             _context.DeviceActivations.Add(newDeviceActivation);
             await _context.SaveChangesAsync();
 
-            await transaction.CommitAsync();
+            await transaction.CommitAsync(); // Confirmamos todos los cambios a la DB
 
-            _logger.LogInformation("DeviceActivation creado para DeviceID {DeviceId} con código {ActivationCode}",
-                newDevice.Id, activationCode);
+            _logger.LogInformation("DeviceActivation creado para DeviceID {DeviceId} con código {ActivationCode}", newDevice.Id, activationCode);
 
             return Result.Success(new DeviceCreationResultDto
             {
@@ -110,26 +101,27 @@ public class DeviceAdminService : IDeviceAdminService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
+            await transaction.RollbackAsync(); // Revertimos todo si algo falla
             _logger.LogError(ex, "Excepción al crear dispositivo: {DeviceName}", deviceDto.Name);
             return Result.Failure<DeviceCreationResultDto>($"Error interno al crear el dispositivo: {ex.Message}");
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<IEnumerable<DeviceSummaryDto>>> GetAllDevicesAsync()
     {
         try
         {
+            // Consulta única y eficiente usando proyecciones
             var summaries = await _context.Devices
                 .AsNoTracking()
+                .AsQueryable()
                 .OrderBy(d => d.Name)
                 .Select(d => new DeviceSummaryDto
                 {
                     Id = d.Id,
                     Name = d.Name,
                     PlantName = d.Plant != null ? d.Plant.Name : "N/A",
-                    CropName = d.Plant != null ? d.Plant.Crop.Name : d.Crop != null ? d.Crop.Name : "N/A",
+                    CropName = d.Plant != null ? d.Plant.Crop.Name : (d.Crop != null ? d.Crop.Name : "N/A"),
                     DeviceStatus = d.Status,
                     ActivationStatus = d.DeviceActivations
                         .OrderByDescending(a => a.CreatedAt)
@@ -148,11 +140,67 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
-    /// <inheritdoc />
+    public async Task<Result<PagedResultDto<DeviceSummaryDto>>> GetPagedDevicesAsync(DeviceQueryFilters filters)
+    {
+        try
+        {
+            var query = _context.Devices.AsNoTracking().Include(d => d.Plant).AsQueryable();
+
+            if (filters.PlantId.HasValue)
+            {
+                query = query.Where(d => d.PlantId == filters.PlantId.Value);
+            }
+
+            if (filters.Status.HasValue)
+            {
+                query = query.Where(d => d.Status == filters.Status.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (filters.SortOrder?.ToLower() == "desc")
+                query = query.OrderByDescending(d => d.RegisteredAt);
+            else
+                query = query.OrderBy(d => d.RegisteredAt);
+
+            var devices = await query
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
+                .Select(d => new DeviceSummaryDto
+                {
+                    Id = d.Id,
+                    Name = d.Name,
+                    PlantName = d.Plant != null ? d.Plant.Name : "N/A",
+                    CropName = d.Plant != null ? d.Plant.Crop.Name : (d.Crop != null ? d.Crop.Name : "N/A"),
+                    DeviceStatus = d.Status,
+                    ActivationStatus = d.DeviceActivations
+                        .OrderByDescending(a => a.CreatedAt)
+                        .Select(a => (ActivationStatus?)a.Status)
+                        .FirstOrDefault() ?? ActivationStatus.PENDING,
+                    RegisteredAt = d.RegisteredAt
+                })
+                .ToListAsync();
+
+            return Result.Success(new PagedResultDto<DeviceSummaryDto>
+            {
+                Items = devices,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener la lista de dispositivos paginada.");
+            return Result.Failure<PagedResultDto<DeviceSummaryDto>>("No se pudo obtener la lista de dispositivos.");
+        }
+    }
+
     public async Task<Result<DeviceDetailsDto?>> GetDeviceByIdAsync(int deviceId)
     {
         try
         {
+            // Consulta única para obtener toda la información necesaria
             var details = await _context.Devices
                 .AsNoTracking()
                 .Where(d => d.Id == deviceId)
@@ -163,14 +211,14 @@ public class DeviceAdminService : IDeviceAdminService
                     MacAddress = d.MacAddress,
                     Description = d.Description,
                     PlantName = d.Plant != null ? d.Plant.Name : "N/A",
-                    CropName = d.Plant != null ? d.Plant.Crop.Name : d.Crop != null ? d.Crop.Name : "N/A",
+                    CropName = d.Plant != null ? d.Plant.Crop.Name : (d.Crop != null ? d.Crop.Name : "N/A"),
                     DataCollectionTimeMinutes = d.DataCollectionIntervalMinutes,
                     Status = d.Status,
                     RegisteredAt = d.RegisteredAt,
                     UpdatedAt = d.UpdatedAt,
                     ActivationDevices = d.DeviceActivations
                         .OrderByDescending(a => a.CreatedAt)
-                        .Select(a => new DeviceDetailsDto.DeviceActivationDetailsDto
+                        .Select(a => new DeviceDetailsDto.DeviceActivationDetailsDto()
                         {
                             ActivationId = a.Id,
                             ActivationCode = a.ActivationCode,
@@ -180,7 +228,12 @@ public class DeviceAdminService : IDeviceAdminService
                         })
                         .FirstOrDefault()
                 })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync<DeviceDetailsDto>();
+
+            if (details == null)
+            {
+                return Result.Success<DeviceDetailsDto?>(null);
+            }
 
             return Result.Success<DeviceDetailsDto?>(details);
         }
@@ -191,7 +244,6 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<DeviceEditDto?>> GetDeviceForEditByIdAsync(int deviceId)
     {
         try
@@ -219,7 +271,6 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result> UpdateDeviceAsync(DeviceEditDto deviceDto)
     {
         try
@@ -241,7 +292,14 @@ public class DeviceAdminService : IDeviceAdminService
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.Id == existingDevice.PlantId.Value);
 
-                if (assignedPlant != null) existingDevice.CropId = assignedPlant.CropId;
+                if (assignedPlant != null)
+                {
+                    existingDevice.CropId = assignedPlant.CropId;
+                }
+            }
+            else
+            {
+                existingDevice.CropId = existingDevice.CropId;
             }
 
             await _context.SaveChangesAsync();
@@ -255,18 +313,17 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result> DeleteDeviceAsync(int deviceId)
     {
         try
         {
-            // La base de datos está configurada con ON DELETE CASCADE para las tablas relacionadas,
-            // por lo que EF Core puede eliminar el dispositivo y sus dependencias de forma segura.
+            // La base de datos está configurada con ON DELETE CASCADE para las tablas relacionadas.
+            // EF Core respetará esta configuración al eliminar el dispositivo.
             var deviceToDelete = await _context.Devices.FindAsync(deviceId);
             if (deviceToDelete == null)
             {
                 _logger.LogWarning("Se intentó eliminar un dispositivo inexistente con ID: {DeviceId}", deviceId);
-                return Result.Success();
+                return Result.Success(); // Es idempotente, si no existe, la operación es "exitosa".
             }
 
             _context.Devices.Remove(deviceToDelete);
@@ -277,8 +334,8 @@ public class DeviceAdminService : IDeviceAdminService
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "Error de base de datos al eliminar dispositivo ID: {DeviceId}.", deviceId);
-            return Result.Failure("Error de base de datos al eliminar el dispositivo.");
+            _logger.LogError(ex, "Error de base de datos al eliminar dispositivo ID: {DeviceId}. Podría ser por una restricción no configurada para borrado en cascada.", deviceId);
+            return Result.Failure($"Error de base de datos al eliminar el dispositivo.");
         }
         catch (Exception ex)
         {
@@ -287,14 +344,15 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
-    /// <inheritdoc />
+    // --- Métodos para SelectList (Dropdowns) ---
+
     public async Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync()
     {
         try
         {
             return await _context.Plants
                 .AsNoTracking()
-                .Include(p => p.Crop)
+                .Include(p => p.Crop) // Incluimos el cultivo para acceder a su nombre
                 .OrderBy(p => p.Name)
                 .Select(p => new SelectListItem
                 {
@@ -310,10 +368,11 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
-    /// <inheritdoc />
     public IEnumerable<SelectListItem> GetDeviceStatusesForSelection()
     {
+        // No se necesita consulta a la DB, se lee directamente del Enum.
         return Enum.GetValues<DeviceStatus>()
+            .Cast<DeviceStatus>()
             .Select(s => new SelectListItem
             {
                 Value = s.ToString(),

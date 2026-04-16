@@ -15,25 +15,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
-/// <summary>
-///     Implementación del servicio de consulta de datos.
-///     Se encarga de realizar todas las operaciones de lectura, filtrado y transformación de datos desde la base de datos.
-/// </summary>
 public class DataQueryService : IDataQueryService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DataQueryService> _logger;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="DataQueryService" />.
-    /// </summary>
     public DataQueryService(ApplicationDbContext context, ILogger<DataQueryService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    /// <inheritdoc />
     public async Task<Result<PagedResultDto<SensorDataDisplayDto>>> GetSensorDataAsync(DataQueryFilters filters)
     {
         _logger.LogInformation("Obteniendo datos de sensores con filtros: {@Filters}", filters);
@@ -44,12 +36,19 @@ public class DataQueryService : IDataQueryService
                 .Include(er => er.Plant)
                 .ThenInclude(p => p.Crop);
 
-            if (filters.DeviceId.HasValue) query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
+            if (filters.DeviceId.HasValue)
+            {
+                query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
+            }
 
             if (filters.PlantId.HasValue)
+            {
                 query = query.Where(er => er.PlantId == filters.PlantId.Value);
+            }
             else if (filters.CropId.HasValue)
+            {
                 query = query.Where(er => er.Plant != null && er.Plant.CropId == filters.CropId.Value);
+            }
 
             query = query.ApplyDateFilters(filters, er => er.RecordedAtServer);
 
@@ -87,6 +86,7 @@ public class DataQueryService : IDataQueryService
 
             var finalData = rawData.Select(er =>
             {
+                float? light = null;
                 var otherData = new Dictionary<string, JsonElement>();
                 var keyTranslations = new Dictionary<string, string>
                 {
@@ -100,10 +100,15 @@ public class DataQueryService : IDataQueryService
                         foreach (var property in jsonDoc.RootElement.EnumerateObject())
                         {
                             if (property.NameEquals("is_night")) continue;
-                            if (property.NameEquals("light")) continue;
-
-                            var displayName = keyTranslations.GetValueOrDefault(property.Name, property.Name);
-                            otherData[displayName] = property.Value.Clone();
+                            if (property.NameEquals("light") && property.Value.TryGetSingle(out var lightValue))
+                            {
+                                light = lightValue;
+                            }
+                            else
+                            {
+                                var displayName = keyTranslations.GetValueOrDefault(property.Name, property.Name);
+                                otherData[displayName] = property.Value.Clone();
+                            }
                         }
                     }
                     catch (JsonException ex)
@@ -121,7 +126,7 @@ public class DataQueryService : IDataQueryService
                     CityTemperature = er.CityTemperature,
                     CityHumidity = er.CityHumidity,
                     CityWeatherCondition = er.CityWeatherCondition,
-                    Light = GetLightValueFromJson(er.ExtraData),
+                    Light = light,
                     OtherData = otherData.Any() ? otherData : null,
                     RecordedAt = er.RecordedAtDevice ?? er.RecordedAtServer
                 };
@@ -143,9 +148,8 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<PagedResultDto<ThermalCaptureSummaryDto>>> GetThermalCapturesAsync(
-        DataQueryFilters filters)
+    DataQueryFilters filters)
     {
         _logger.LogInformation("Obteniendo capturas térmicas con filtros: {@Filters}", filters);
         try
@@ -155,12 +159,19 @@ public class DataQueryService : IDataQueryService
                 .Include(tc => tc.Plant)
                 .ThenInclude(p => p.Crop);
 
-            if (filters.DeviceId.HasValue) query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
+            if (filters.DeviceId.HasValue)
+            {
+                query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
+            }
 
             if (filters.PlantId.HasValue)
+            {
                 query = query.Where(tc => tc.PlantId == filters.PlantId.Value);
+            }
             else if (filters.CropId.HasValue)
+            {
                 query = query.Where(tc => tc.Plant != null && tc.Plant.CropId == filters.CropId.Value);
+            }
 
             query = query.ApplyDateFilters(filters, tc => tc.RecordedAtServer);
 
@@ -224,7 +235,6 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<ThermalCaptureDetailsDto?>> GetThermalCaptureDetailsAsync(long captureId)
     {
         _logger.LogInformation("Obteniendo detalles de captura térmica ID: {CaptureId}", captureId);
@@ -233,7 +243,7 @@ public class DataQueryService : IDataQueryService
             var result = await _context.ThermalCaptures
                 .AsNoTracking()
                 .Where(tc => tc.Id == captureId)
-                .Select(tc => new
+                .Select(tc => new // Proyección para traer solo lo necesario
                 {
                     Capture = tc,
                     DeviceName = tc.Device.Name,
@@ -278,7 +288,6 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<IEnumerable<SensorDataDisplayDto>>> GetAmbientDataForDashboardAsync(TimeSpan duration,
         int? cropId, int? plantId)
     {
@@ -291,6 +300,7 @@ public class DataQueryService : IDataQueryService
             if (plantId.HasValue) query = query.Where(er => er.PlantId == plantId.Value);
             else if (cropId.HasValue) query = query.Where(er => er.Device.CropId == cropId.Value);
 
+            // 1. Traer datos crudos
             var rawData = await query
                 .OrderBy(er => er.RecordedAtServer)
                 .Take(100)
@@ -307,6 +317,7 @@ public class DataQueryService : IDataQueryService
                 })
                 .ToListAsync();
 
+            // 2. Transformar en memoria
             var finalData = rawData.Select(er => new SensorDataDisplayDto
             {
                 DeviceId = er.DeviceId,
@@ -331,7 +342,6 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<ThermalStatsDto>> GetThermalStatsForDashboardAsync(TimeSpan duration, int? cropId,
         int? plantId)
     {
@@ -341,9 +351,11 @@ public class DataQueryService : IDataQueryService
             var since = DateTime.UtcNow.Subtract(duration);
             var query = _context.ThermalCaptures.AsNoTracking().Where(tc => tc.RecordedAtServer >= since);
 
+            // Aplicar filtros (esta lógica no cambia)
             if (plantId.HasValue) query = query.Where(tc => tc.PlantId == plantId.Value);
             else if (cropId.HasValue) query = query.Where(tc => tc.Device.CropId == cropId.Value);
 
+            // 1. Traer solo el JSON y la fecha, sin procesar nada.
             var rawCaptures = await query
                 .OrderBy(tc => tc.RecordedAtServer)
                 .Take(100)
@@ -356,6 +368,7 @@ public class DataQueryService : IDataQueryService
                 return Result.Success(new ThermalStatsDto());
             }
 
+            // 2. Deserializar toda la lista en memoria.
             var thermalStatsList = new List<ThermalDataDto>();
             foreach (var model in rawCaptures)
             {
@@ -370,6 +383,7 @@ public class DataQueryService : IDataQueryService
                 return Result.Success(new ThermalStatsDto());
             }
 
+            // 3. Calcular estadísticas sobre la lista ya procesada.
             var latestCapture = rawCaptures.OrderByDescending(x => x.RecordedAtServer).First();
             var latestStats = thermalStatsList.LastOrDefault();
 
@@ -393,13 +407,12 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<int>> GetActiveDevicesCountAsync(int? cropId, int? plantId)
     {
         try
         {
             var query = _context.Devices.AsNoTracking()
-                .Where(d => d.Status == DeviceStatus.ACTIVE);
+                .Where(d => d.Status == DeviceStatus.ACTIVE); // Consulta directa con el Enum
 
             if (plantId.HasValue)
                 query = query.Where(d => d.PlantId == plantId.Value);
@@ -418,16 +431,18 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<int>> GetMonitoredPlantsCountAsync(int? cropId)
     {
         try
         {
+            // Lógica ajustada: Una planta se considera "monitoreada" si tiene al menos un dispositivo ACTIVO asociado.
+            // La entidad Plant ya no tiene un campo 'status'.
             var query = _context.Plants.AsNoTracking();
 
             if (cropId.HasValue)
                 query = query.Where(p => p.CropId == cropId.Value);
 
+            // Contar solo las plantas que tienen algún dispositivo en estado ACTIVO.
             var count = await query.CountAsync(p => p.Devices.Any(d => d.Status == DeviceStatus.ACTIVE));
 
             _logger.LogInformation("Conteo de plantas monitoreadas (CropId: {CropId}): {Count}", cropId, count);
@@ -440,7 +455,6 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<SensorDataDisplayDto?>> GetLatestAmbientDataAsync(int? cropId, int? plantId, int? deviceId)
     {
         _logger.LogInformation("Obteniendo última lectura ambiental para CropId: {CropId}, etc.", cropId);
@@ -448,10 +462,12 @@ public class DataQueryService : IDataQueryService
         {
             var query = _context.EnvironmentalReadings.AsNoTracking();
 
+            // Filtros jerárquicos
             if (deviceId.HasValue) query = query.Where(er => er.DeviceId == deviceId.Value);
             else if (plantId.HasValue) query = query.Where(er => er.PlantId == plantId.Value);
             else if (cropId.HasValue) query = query.Where(er => er.Device.CropId == cropId.Value);
 
+            // 1. Traer el último registro crudo
             var rawResult = await query
                 .OrderByDescending(er => er.RecordedAtServer)
                 .Select(er => new
@@ -473,6 +489,7 @@ public class DataQueryService : IDataQueryService
 
             if (rawResult == null) return Result.Success<SensorDataDisplayDto?>(null);
 
+            // 2. Transformar el objeto en memoria
             var finalResult = new SensorDataDisplayDto
             {
                 Id = rawResult.Id,
@@ -480,7 +497,7 @@ public class DataQueryService : IDataQueryService
                 DeviceName = rawResult.DeviceName,
                 PlantName = rawResult.PlantName,
                 CropName = rawResult.CropName,
-                Light = GetLightValueFromJson(rawResult.ExtraData),
+                Light = GetLightValueFromJson(rawResult.ExtraData), // Llamada segura
                 Temperature = rawResult.Temperature,
                 Humidity = rawResult.Humidity,
                 CityTemperature = rawResult.CityTemperature,
@@ -500,7 +517,6 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<List<PlantRawDataDto>>> GetRawDataForAnalysisAsync(List<int> plantIds, DateTime startTime,
         DateTime endTime)
     {
@@ -531,7 +547,6 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<(ThermalDataDto? Stats, string? ImagePath)>> GetLatestCaptureForMaskAsync(int plantId)
     {
         try
@@ -542,7 +557,7 @@ public class DataQueryService : IDataQueryService
                     tc.PlantId == plantId && tc.RgbImagePath != null &&
                     EF.Functions.JsonExists(tc.ThermalDataStats, "temperatures"))
                 .OrderByDescending(tc => tc.RecordedAtServer)
-                .Select(tc => new { tc.ThermalDataStats, tc.RgbImagePath })
+                .Select(tc => new { tc.ThermalDataStats, tc.RgbImagePath }) // Seleccionamos ambos campos
                 .FirstOrDefaultAsync();
 
             if (latestCapture == null) return Result.Success<(ThermalDataDto? Stats, string? ImagePath)>((null, null));
@@ -558,11 +573,11 @@ public class DataQueryService : IDataQueryService
         }
     }
 
-    /// <inheritdoc />
     public async Task<byte[]> GetAmbientDataAsCsvAsync(DataQueryFilters filters)
     {
         _logger.LogInformation("Generando CSV de datos de sensores con filtros: {@Filters}", filters);
 
+        // 1. Construimos la consulta con los mismos filtros que la vista principal
         var query = _context.EnvironmentalReadings.AsNoTracking();
 
         if (filters.DeviceId.HasValue) query = query.Where(er => er.DeviceId == filters.DeviceId.Value);
@@ -570,6 +585,7 @@ public class DataQueryService : IDataQueryService
         if (filters.CropId.HasValue) query = query.Where(er => er.Device.CropId == filters.CropId.Value);
         query = query.ApplyDateFilters(filters, er => er.RecordedAtServer);
 
+        // 2. Ejecutamos la consulta SIN PAGINACIÓN y proyectamos a un modelo simple para el CSV
         var dataToExport = await query
             .OrderByDescending(er => er.RecordedAtServer)
             .Select(er => new
@@ -586,22 +602,24 @@ public class DataQueryService : IDataQueryService
             })
             .ToListAsync();
 
+        // 3. Usamos CsvHelper para escribir los datos en un stream en memoria
         using var memoryStream = new MemoryStream();
         using (var writer = new StreamWriter(memoryStream, leaveOpen: true))
-        using (var csv = new CsvWriter(writer,
-                   CultureInfo.GetCultureInfo("es-CO")))
+        using (var csv = new CsvWriter(writer, CultureInfo.GetCultureInfo("es-CO"))) // Usamos cultura local para formatos
         {
+            // Escribe las cabeceras y los registros
             csv.WriteRecords(dataToExport);
         }
 
+        // 4. Devolvemos los bytes del archivo generado
         return memoryStream.ToArray();
     }
 
-    /// <inheritdoc />
     public async Task<byte[]> GetThermalCapturesAsCsvAsync(DataQueryFilters filters)
     {
         _logger.LogInformation("Generando CSV de capturas térmicas con filtros: {@Filters}", filters);
 
+        // 1. Construimos la consulta con los mismos filtros
         var query = _context.ThermalCaptures.AsNoTracking();
 
         if (filters.DeviceId.HasValue) query = query.Where(tc => tc.DeviceId == filters.DeviceId.Value);
@@ -609,6 +627,7 @@ public class DataQueryService : IDataQueryService
         if (filters.CropId.HasValue) query = query.Where(tc => tc.Device.CropId == filters.CropId.Value);
         query = query.ApplyDateFilters(filters, tc => tc.RecordedAtServer);
 
+        // 2. Ejecutamos la consulta SIN PAGINACIÓN y proyectamos a un modelo simple
         var rawData = await query
             .OrderByDescending(tc => tc.RecordedAtServer)
             .Select(tc => new
@@ -622,6 +641,7 @@ public class DataQueryService : IDataQueryService
             })
             .ToListAsync();
 
+        // Procesar en memoria
         var dataToExport = rawData.Select(m =>
         {
             var stats = DeserializeThermalStats(m.ThermalDataStats, m.Id);
@@ -640,7 +660,7 @@ public class DataQueryService : IDataQueryService
                 ImagenRGB = m.RgbImagePath
             };
         }).ToList();
-
+        // 3. Usamos CsvHelper para escribir los datos en memoria
         using var memoryStream = new MemoryStream();
         using (var writer = new StreamWriter(memoryStream, leaveOpen: true))
         using (var csv = new CsvWriter(writer, CultureInfo.GetCultureInfo("es-CO")))
@@ -648,23 +668,17 @@ public class DataQueryService : IDataQueryService
             csv.WriteRecords(dataToExport);
         }
 
+        // 4. Devolvemos los bytes del archivo generado
         return memoryStream.ToArray();
     }
 
-    /// <inheritdoc />
-    public float? CalculateVpdKpa(float temperature, float humidity)
-    {
-        if (humidity < 0 || humidity > 100) return null;
+    #region Métodos Auxiliares Internos
 
-        var svp = 0.61094 * Math.Exp(17.625 * temperature / (temperature + 243.04));
-        var avp = svp * (humidity / 100.0);
-        var vpd = svp - avp;
-
-        return (float)vpd;
-    }
-
-    /// <inheritdoc />
-    public float? GetLightValueFromJson(string? extraDataJson)
+    /// <summary>
+    ///     Parsea de forma segura el campo ExtraData (JSON) para extraer el valor de 'light'.
+    /// </summary>
+    /// <returns>El valor de 'light' o null si no se encuentra o hay un error.</returns>
+    private float? GetLightValueFromJson(string? extraDataJson)
     {
         if (string.IsNullOrWhiteSpace(extraDataJson)) return null;
         try
@@ -682,12 +696,6 @@ public class DataQueryService : IDataQueryService
         return null;
     }
 
-    /// <summary>
-    ///     Deserializa de forma segura una cadena JSON que contiene estadísticas térmicas.
-    /// </summary>
-    /// <param name="thermalDataJson">La cadena JSON a deserializar.</param>
-    /// <param name="entityId">El ID de la entidad a la que pertenece el JSON (para logging).</param>
-    /// <returns>Un objeto <c>ThermalDataDto</c> o null si la deserialización falla.</returns>
     private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson, long entityId)
     {
         if (string.IsNullOrEmpty(thermalDataJson)) return null;
@@ -702,4 +710,6 @@ public class DataQueryService : IDataQueryService
             return null;
         }
     }
+
+    #endregion
 }

@@ -1,28 +1,22 @@
-using System.Security.Claims;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Plants;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
-/// <summary>
-///     Implementación del servicio de gestión de plantas.
-///     Se encarga de las operaciones CRUD y la lógica de negocio asociada a las plantas.
-/// </summary>
 public class PlantService : IPlantService
 {
     private readonly ApplicationDbContext _context;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<PlantService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="PlantService" />.
-    /// </summary>
     public PlantService(
         ApplicationDbContext context,
         ILogger<PlantService> logger,
@@ -33,13 +27,13 @@ public class PlantService : IPlantService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    /// <inheritdoc />
     public async Task<Result<IEnumerable<PlantSummaryDto>>> GetPlantsByCropAsync(int cropId)
     {
         if (cropId <= 0) return Result.Success<IEnumerable<PlantSummaryDto>>(new List<PlantSummaryDto>());
 
         try
         {
+            // Consulta única y eficiente que trae la planta y el nombre del cultivo asociado.
             var plantSummaries = await _context.Plants
                 .AsNoTracking()
                 .Where(p => p.CropId == cropId)
@@ -47,8 +41,8 @@ public class PlantService : IPlantService
                 {
                     Id = p.Id,
                     Name = p.Name,
-                    CropName = p.Crop.Name,
-                    StatusName = p.Status.GetDisplayName(),
+                    CropName = p.Crop.Name, // Navegación directa gracias a EF Core
+                    // StatusName ya no existe en la entidad Plant.
                     RegisteredAt = p.RegisteredAt
                 })
                 .ToListAsync();
@@ -63,9 +57,9 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<int>> CreatePlantAsync(PlantCreateDto plantDto)
     {
+        // Usamos una transacción para asegurar que la planta y su historial se creen juntos
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -80,16 +74,16 @@ public class PlantService : IPlantService
             };
 
             _context.Plants.Add(newPlant);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // Guardamos para obtener el ID de la nueva planta
 
+            // 4. Añadir el estado inicial al historial
             var currentUserId = GetCurrentUserId();
             await AddStatusHistoryAsync(newPlant, newPlant.Status, "Planta creada.", currentUserId);
             await _context.SaveChangesAsync();
 
             await transaction.CommitAsync();
 
-            _logger.LogInformation("Planta creada con ID: {PlantId} por el usuario ID: {UserId}", newPlant.Id,
-                currentUserId ?? 0);
+            _logger.LogInformation("Planta creada con ID: {PlantId} por el usuario ID: {UserId}", newPlant.Id, currentUserId ?? 0);
             return Result.Success(newPlant.Id);
         }
         catch (Exception ex)
@@ -100,7 +94,6 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result> DeletePlantAsync(int plantId)
     {
         try
@@ -112,7 +105,7 @@ public class PlantService : IPlantService
                 return Result.Success();
             }
 
-            // La configuración ON DELETE SET NULL en la base de datos se encarga de desasociar los dispositivos.
+            // La configuración ON DELETE SET NULL en la DB se encargará de los dispositivos asociados.
             _context.Plants.Remove(plantToDelete);
             await _context.SaveChangesAsync();
 
@@ -126,7 +119,6 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<IEnumerable<PlantSummaryDto>>> GetAllPlantsAsync()
     {
         try
@@ -139,7 +131,7 @@ public class PlantService : IPlantService
                     Id = p.Id,
                     Name = p.Name,
                     CropName = p.Crop.Name,
-                    StatusName = p.Status.GetDisplayName(),
+                    StatusName = p.Status.ToString(),
                     RegisteredAt = p.RegisteredAt
                 })
                 .ToListAsync();
@@ -153,7 +145,57 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
+    public async Task<Result<PagedResultDto<PlantSummaryDto>>> GetPagedPlantsAsync(PlantQueryFilters filters)
+    {
+        try
+        {
+            var query = _context.Plants.AsNoTracking().Include(p => p.Crop).AsQueryable();
+
+            if (filters.CropId.HasValue)
+            {
+                query = query.Where(p => p.CropId == filters.CropId.Value);
+            }
+
+            if (filters.Status.HasValue)
+            {
+                query = query.Where(p => p.Status == filters.Status.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (filters.SortOrder?.ToLower() == "desc")
+                query = query.OrderByDescending(p => p.RegisteredAt);
+            else
+                query = query.OrderBy(p => p.RegisteredAt);
+
+            var plantSummaries = await query
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
+                .Select(p => new PlantSummaryDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    CropName = p.Crop.Name,
+                    StatusName = p.Status.ToString(),
+                    RegisteredAt = p.RegisteredAt
+                })
+                .ToListAsync();
+
+            return Result.Success(new PagedResultDto<PlantSummaryDto>
+            {
+                Items = plantSummaries,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Excepción al obtener las plantas paginadas.");
+            return Result.Failure<PagedResultDto<PlantSummaryDto>>($"Error interno: {ex.Message}");
+        }
+    }
+
     public async Task<Result<PlantDetailsDto?>> GetPlantByIdAsync(int plantId)
     {
         try
@@ -186,7 +228,6 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result<PlantEditDto?>> GetPlantForEditByIdAsync(int plantId)
     {
         try
@@ -212,7 +253,6 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result> UpdatePlantAsync(PlantEditDto plantDto)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -240,7 +280,6 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync()
     {
         try
@@ -257,33 +296,39 @@ public class PlantService : IPlantService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al obtener lista de plantas para selección.");
+            // Devuelve una lista vacía en caso de error para no romper la vista
             return new List<SelectListItem>();
         }
     }
 
-    /// <inheritdoc />
     public async Task<Result> UpdatePlantStatusAsync(int plantId, PlantStatus newStatus, string? observation,
         int userId)
     {
+        // Usamos una transacción para asegurar que ambas operaciones (actualizar planta y crear historial)
+        // se completen exitosamente o ninguna lo haga.
         await using var transaction = await _context.Database.BeginTransactionAsync();
+
         try
         {
             var plant = await _context.Plants.FindAsync(plantId);
             if (plant == null) return Result.Failure("Planta no encontrada.");
 
+            // 1. Actualizar el estado actual en la tabla de plantas
             plant.Status = newStatus;
             plant.UpdatedAt = DateTime.UtcNow;
 
+            // 2. Crear un nuevo registro en la tabla de historial
             var historyRecord = new PlantStatusHistory
             {
                 PlantId = plantId,
                 Status = newStatus,
                 Observation = observation,
-                UserId = userId,
+                UserId = userId, // Guardamos el ID del usuario que hizo el cambio
                 ChangedAt = DateTime.UtcNow
             };
             _context.PlantStatusHistories.Add(historyRecord);
 
+            // 3. Guardar todos los cambios en la base de datos
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -300,7 +345,6 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public async Task<IEnumerable<PlantStatusHistoryDto>> GetPlantStatusHistoryAsync(int? plantId, int? userId,
         DateTime? startDate, DateTime? endDate)
     {
@@ -309,9 +353,16 @@ public class PlantService : IPlantService
         if (plantId.HasValue) query = query.Where(h => h.PlantId == plantId.Value);
         if (userId.HasValue) query = query.Where(h => h.UserId == userId.Value);
 
-        if (startDate.HasValue) query = query.Where(h => h.ChangedAt >= startDate.Value);
-        if (endDate.HasValue) query = query.Where(h => h.ChangedAt <= endDate.Value);
+        if (startDate.HasValue)
+        {
+            query = query.Where(h => h.ChangedAt >= startDate.Value);
+        }
+        if (endDate.HasValue)
+        {
+            query = query.Where(h => h.ChangedAt <= endDate.Value);
+        }
 
+        // Proyectar el resultado al DTO y ordenar por fecha
         var historyList = await query
             .OrderByDescending(h => h.ChangedAt)
             .Select(h => new PlantStatusHistoryDto
@@ -328,7 +379,9 @@ public class PlantService : IPlantService
         return historyList;
     }
 
-    /// <inheritdoc />
+
+    // --- Métodos para Dropdowns ---
+
     public async Task<IEnumerable<SelectListItem>> GetCropsForSelectionAsync()
     {
         try
@@ -349,7 +402,6 @@ public class PlantService : IPlantService
         }
     }
 
-    /// <inheritdoc />
     public IEnumerable<SelectListItem> GetExperimentalGroupsForSelection()
     {
         return Enum.GetValues(typeof(ExperimentalGroupType))
@@ -361,13 +413,6 @@ public class PlantService : IPlantService
             }).ToList();
     }
 
-    /// <summary>
-    ///     Crea y añade un nuevo registro de historial de estado de planta al contexto de la base de datos.
-    /// </summary>
-    /// <param name="plant">La entidad de la planta.</param>
-    /// <param name="status">El estado que se va a registrar.</param>
-    /// <param name="observation">Una descripción del evento.</param>
-    /// <param name="userId">El ID del usuario que originó el cambio, o null si fue el sistema.</param>
     private async Task AddStatusHistoryAsync(Plant plant, PlantStatus status, string observation, int? userId)
     {
         var historyRecord = new PlantStatusHistory
@@ -375,21 +420,20 @@ public class PlantService : IPlantService
             PlantId = plant.Id,
             Status = status,
             Observation = observation,
-            UserId = userId,
+            UserId = userId, // Puede ser null si el sistema lo cambia
             ChangedAt = DateTime.UtcNow
         };
         await _context.PlantStatusHistories.AddAsync(historyRecord);
     }
 
-    /// <summary>
-    ///     Obtiene el ID del usuario actualmente autenticado a partir del HttpContext.
-    /// </summary>
-    /// <returns>El ID del usuario como un entero, o null si no se puede determinar.</returns>
     private int? GetCurrentUserId()
     {
         var userIdString = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (int.TryParse(userIdString, out var userId)) return userId;
+        if (int.TryParse(userIdString, out var userId))
+        {
+            return userId;
+        }
         _logger.LogWarning("No se pudo obtener el ID del usuario actual desde el HttpContext.");
-        return null;
+        return null; // Devuelve null si no hay un usuario logueado
     }
 }

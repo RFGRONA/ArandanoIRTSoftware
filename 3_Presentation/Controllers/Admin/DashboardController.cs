@@ -1,17 +1,14 @@
-using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._1_Application.DTOs.SensorData;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._3_Presentation.ViewModels.SensorData;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using RestSharp.Portable.Serializers;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
-/// <summary>
-///     Controlador para el dashboard principal del área de administración.
-///     Es responsable de agregar datos de múltiples servicios para construir el modelo de vista del dashboard.
-/// </summary>
 [Area("Admin")]
 [Authorize]
 public class DashboardController : Controller
@@ -21,9 +18,6 @@ public class DashboardController : Controller
     private readonly ILogger<DashboardController> _logger;
     private readonly IPlantService _plantService;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="DashboardController" />.
-    /// </summary>
     public DashboardController(
         IDataQueryService dataQueryService,
         ICropService cropService,
@@ -36,18 +30,6 @@ public class DashboardController : Controller
         _logger = logger;
     }
 
-    /// <summary>
-    ///     Muestra la página principal del dashboard.
-    ///     Este método recolecta y procesa una gran cantidad de datos, incluyendo:
-    ///     - Listas de cultivos y plantas para los filtros.
-    ///     - KPIs (Indicadores Clave de Rendimiento) como el número de dispositivos activos.
-    ///     - Estadísticas térmicas y ambientales de las últimas 24 horas.
-    ///     - Datos de series temporales para los gráficos de temperatura, humedad y luz.
-    ///     - Las capturas térmicas más recientes.
-    /// </summary>
-    /// <param name="selectedCropId">El ID del cultivo seleccionado para filtrar los datos (opcional).</param>
-    /// <param name="selectedPlantId">El ID de la planta seleccionada para filtrar los datos (opcional).</param>
-    /// <returns>La vista del dashboard con el modelo <see cref="DashboardViewModel" /> completamente poblado.</returns>
     public async Task<IActionResult> Index(int? selectedCropId = null, int? selectedPlantId = null)
     {
         _logger.LogInformation(
@@ -61,18 +43,18 @@ public class DashboardController : Controller
         };
 
         var cropsResult = await _cropService.GetAllCropsAsync();
-        if (cropsResult.IsSuccess && cropsResult.Value != null)
+        if (cropsResult.IsSuccess)
             viewModel.AvailableCrops = cropsResult.Value
                 .Select(c => new SelectListItem
-                { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId }).OrderBy(s => s.Text)
-                .ToList();
+                { Value = c.Id.ToString(), Text = c.Name, Selected = c.Id == selectedCropId })
+                .OrderBy(s => s.Text).ToList();
         viewModel.AvailableCrops.Insert(0,
             new SelectListItem("Todos los Cultivos", "") { Selected = !selectedCropId.HasValue });
 
         if (selectedCropId.HasValue)
         {
             var plantsResult = await _plantService.GetPlantsByCropAsync(selectedCropId.Value);
-            if (plantsResult.IsSuccess && plantsResult.Value != null)
+            if (plantsResult.IsSuccess)
                 viewModel.AvailablePlants = plantsResult.Value
                     .Select(p => new SelectListItem
                     { Value = p.Id.ToString(), Text = p.Name, Selected = p.Id == selectedPlantId })
@@ -99,7 +81,8 @@ public class DashboardController : Controller
 
             var thermalStatsResult =
                 await _dataQueryService.GetThermalStatsForDashboardAsync(duration, selectedCropId, selectedPlantId);
-            if (thermalStatsResult.IsSuccess) viewModel.ThermalStatistics = thermalStatsResult.Value;
+            if (thermalStatsResult.IsSuccess)
+                viewModel.ThermalStatistics = thermalStatsResult.Value;
 
             var latestAmbientDataResult =
                 await _dataQueryService.GetLatestAmbientDataAsync(selectedCropId, selectedPlantId, null);
@@ -108,7 +91,7 @@ public class DashboardController : Controller
 
             var ambientDataForChartsResult =
                 await _dataQueryService.GetAmbientDataForDashboardAsync(duration, selectedCropId, selectedPlantId);
-            if (ambientDataForChartsResult.IsSuccess && ambientDataForChartsResult.Value != null)
+            if (ambientDataForChartsResult.IsSuccess)
             {
                 var data = ambientDataForChartsResult.Value.ToList();
                 if (data.Any())
@@ -120,7 +103,12 @@ public class DashboardController : Controller
                         Values = data.Select(d => (float?)d.Temperature).ToList(),
                         BorderColor = "rgb(255, 99, 132)",
                         BackgroundColor = "rgba(255, 99, 132, 0.2)",
-                        YAxisOptions = new ChartYAxisOptions { Label = "°C", BeginAtZero = true, Min = null }
+                        YAxisOptions = new ChartYAxisOptions
+                        {
+                            Label = "°C",
+                            BeginAtZero = true,
+                            Min = null
+                        }
                     };
                     viewModel.HumidityChartData = new TimeSeriesChartDataDto
                     {
@@ -129,7 +117,12 @@ public class DashboardController : Controller
                         Values = data.Select(d => (float?)d.Humidity).ToList(),
                         BorderColor = "rgb(54, 162, 235)",
                         BackgroundColor = "rgba(54, 162, 235, 0.2)",
-                        YAxisOptions = new ChartYAxisOptions { Label = "%", BeginAtZero = true, Min = 0, Max = 100 }
+                        YAxisOptions = new ChartYAxisOptions
+                        {
+                            Label = "%",
+                            BeginAtZero = true,
+                            Min = 0
+                        }
                     };
                     viewModel.LightChartData = new TimeSeriesChartDataDto
                     {
@@ -138,12 +131,17 @@ public class DashboardController : Controller
                         Values = data.Select(d => d.Light).ToList(),
                         BorderColor = "rgb(255, 205, 86)",
                         BackgroundColor = "rgba(255, 205, 86, 0.2)",
-                        YAxisOptions = new ChartYAxisOptions { Label = "lx", BeginAtZero = true, Min = 0 }
+                        YAxisOptions = new ChartYAxisOptions
+                        {
+                            Label = "lx",
+                            BeginAtZero = true,
+                            Min = 0
+                        }
                     };
 
-                    ViewBag.TempDataJson = JsonSerializer.Serialize(viewModel.TemperatureChartData);
-                    ViewBag.HumDataJson = JsonSerializer.Serialize(viewModel.HumidityChartData);
-                    ViewBag.LightDataJson = JsonSerializer.Serialize(viewModel.LightChartData);
+                    ViewBag.TempDataJson = System.Text.Json.JsonSerializer.Serialize(viewModel.TemperatureChartData);
+                    ViewBag.HumDataJson = System.Text.Json.JsonSerializer.Serialize(viewModel.HumidityChartData);
+                    ViewBag.LightDataJson = System.Text.Json.JsonSerializer.Serialize(viewModel.LightChartData);
 
                     viewModel.AverageAmbientTemperature24h = data.Average(d => d.Temperature);
                     viewModel.MaxAmbientTemperature24h = data.Max(d => d.Temperature);
@@ -168,7 +166,7 @@ public class DashboardController : Controller
 
             var recentCapturesResult =
                 await _dataQueryService.GetThermalCapturesAsync(new DataQueryFilters { PageSize = 5 });
-            if (recentCapturesResult.IsSuccess && recentCapturesResult.Value != null)
+            if (recentCapturesResult.IsSuccess)
                 viewModel.RecentCaptures = recentCapturesResult.Value.Items;
             else
                 _logger.LogWarning("No se pudieron cargar las capturas recientes: {Error}",
@@ -177,6 +175,7 @@ public class DashboardController : Controller
         catch (Exception ex)
         {
             _logger.LogCritical(ex, "Ocurrió una excepción no controlada al cargar los datos del dashboard.");
+
             ViewData["ErrorMessage"] =
                 "No se pudieron cargar los datos del dashboard. Por favor, intente de nuevo más tarde.";
         }

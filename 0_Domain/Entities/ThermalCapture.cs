@@ -1,8 +1,7 @@
 ﻿namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Almacena las capturas termográficas. Las estadísticas se guardan en formato JSONB
-/// y la ruta de la imagen apunta a un servicio de almacenamiento de objetos.
+/// Stores thermographic captures. Statistics are stored in JSONB, the image path in Object Storage.
 /// </summary>
 public partial class ThermalCapture
 {

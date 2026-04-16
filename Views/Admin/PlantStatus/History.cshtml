@@ -1,10 +1,3 @@
-@*
-    Página de "Historial de Estados de Plantas".
-    Actúa como una bitácora o registro de auditoría, mostrando todos los cambios
-    de estado que han sufrido las plantas a lo largo del tiempo. Incluye un panel
-    de filtros para que el usuario pueda acotar la búsqueda por planta y/o
-    rango de fechas.
-*@
 @using ArandanoIRT.Web._0_Domain.Common
 @using ArandanoIRT.Web._0_Domain.Enums
 @model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Plants.PlantStatusHistoryDto>
@@ -27,7 +20,6 @@
 </div>
 <p class="lead mb-4">Consulta todos los cambios de estado que han ocurrido en las plantas.</p>
 
-@* Panel de filtros para acotar los resultados del historial. *@
 <div class="filter-card">
     <form asp-action="History" method="get">
         <div class="row g-3 align-items-end">
@@ -37,18 +29,31 @@
                     <option value="">Todas</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label fw-bold">Desde</label>
                 <input type="date" name="startDate" class="form-control" value="@startDateValue" max="@maxDate"/>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label fw-bold">Hasta</label>
                 <input type="date" name="endDate" class="form-control" value="@endDateValue" max="@maxDate"/>
             </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100">
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Orden</label>
+                <select name="sortOrder" id="sortOrder" class="form-select">
+                    <option value="desc">Más recientes</option>
+                    <option value="asc">Más antiguos</option>
+                </select>
+                @if(!string.IsNullOrEmpty(ViewBag.SortOrder as string)) {
+                    <script>document.getElementById('sortOrder').value = '@ViewBag.SortOrder';</script>
+                }
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
                     <i class="fas fa-filter me-2"></i>Filtrar
                 </button>
+                <a asp-action="History" class="btn btn-outline-secondary flex-grow-1 text-center">
+                    <i class="fas fa-undo me-2"></i>Limpiar
+                </a>
             </div>
         </div>
     </form>
@@ -75,11 +80,6 @@
                         <td>@Html.DisplayFor(modelItem => item.ChangedAt)</td>
                         <td>@Html.DisplayFor(modelItem => item.PlantName)</td>
                         <td>
-                            @*
-                                Asigna una clase CSS a la insignia de estado según el valor del enum.
-                                Esto permite una representación visual clara del estado de la planta
-                                a través de colores.
-                            *@
                             @{
                                 var statusClass = item.Status switch
                                 {
@@ -99,7 +99,6 @@
             }
             else
             {
-                @* Mensaje que se muestra si no se encuentran registros con los filtros aplicados. *@
                 <tr>
                     <td colspan="5" class="text-center py-4">No hay registros en el historial que coincidan con los
                         filtros.

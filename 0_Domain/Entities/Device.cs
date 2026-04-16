@@ -3,7 +3,7 @@
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Representa un dispositivo de hardware físico utilizado para el monitoreo en el cultivo.
+/// Stores physical monitoring hardware devices.
 /// </summary>
 public partial class Device
 {

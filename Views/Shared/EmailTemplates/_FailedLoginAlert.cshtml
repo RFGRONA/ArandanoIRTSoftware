@@ -1,14 +1,7 @@
-@*
-    Plantilla de correo electrónico para notificar a un usuario sobre una alerta de seguridad.
-    Este correo se envía cuando se detectan múltiples intentos fallidos de inicio de sesión
-    en la cuenta de un usuario. Informa al usuario que su cuenta ha sido bloqueada
-    temporalmente por seguridad y le proporciona un enlace directo para restablecer
-    su contraseña y asegurar la cuenta.
-*@
 @using ArandanoIRT.Web._0_Domain.Common
 @model ArandanoIRT.Web._3_Presentation.ViewModels.Alerts.FailedLoginAlertViewModel
 @{
-    Layout = "_EmailLayout.cshtml"; // Define el layout base para correos electrónicos.
+    Layout = "_EmailLayout.cshtml";
     ViewData["Title"] = "Alerta de Seguridad de la Cuenta";
 }
 
@@ -18,7 +11,6 @@
 
 <p>Detectamos múltiples intentos fallidos de inicio de sesión en tu cuenta. Por tu seguridad, <strong>tu cuenta ha sido bloqueada temporalmente</strong>.</p>
 
-@* Contenedor que resalta la fecha y hora del evento de seguridad para una fácil visualización. *@
 <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 16px; margin: 24px 0; border-radius: 8px;">
     <p style="color: #842029; margin: 0;">
         <strong>Fecha y Hora del bloqueo (UTC):</strong> @Model.AlertTime.ToColombiaTime().ToString("F")
@@ -27,7 +19,6 @@
 
 <p>Si no reconoces esta actividad, te recomendamos que asegures tu cuenta inmediatamente restableciendo tu contraseña.</p>
 
-@* Botón de llamada a la acción (Call to Action) que dirige al usuario al flujo de "olvidé mi contraseña". *@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
     <tr>
         <td align="center">

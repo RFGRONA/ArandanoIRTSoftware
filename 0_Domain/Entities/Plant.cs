@@ -3,7 +3,7 @@
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Almacena los datos de cada planta individual que está siendo monitoreada.
+///     Stores data for each monitored plant.
 /// </summary>
 public class Plant
 {

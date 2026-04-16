@@ -1,7 +1,7 @@
 ﻿namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Almacena los datos ambientales recolectados por los sensores de un dispositivo en un momento específico.
+/// Stores environmental data collected by device sensors.
 /// </summary>
 public partial class EnvironmentalReading
 {

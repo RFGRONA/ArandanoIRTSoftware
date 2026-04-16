@@ -1,25 +1,10 @@
-@*
-    Página principal para la visualización de datos ambientales.
-    Muestra una tabla paginada con los datos de los sensores y proporciona
-    un formulario con múltiples opciones para filtrar los resultados.
-    También permite la descarga de los datos filtrados en formato CSV.
-*@
-
 @using ArandanoIRT.Web._1_Application.Services.Contracts
 @model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.SensorData.SensorDataDisplayDto>
 @{
     ViewData["Title"] = "Datos Ambientales";
     Layout = "_AdminLayout";
-    
-    @* Recupera los filtros actuales desde el ViewBag para mantener el estado en el formulario. *@
     var currentFilters = ViewBag.CurrentFilters as DataQueryFilters ?? new DataQueryFilters();
 
-    @*
-        Construye un diccionario con los parámetros de la URL actual (filtros aplicados).
-        Esto es crucial para que los enlaces de paginación conserven los filtros
-        al navegar entre páginas. Se excluye 'PageNumber' porque será establecido
-        por cada enlace de paginación individualmente.
-    *@
     var routeData = new RouteValueDictionary();
     foreach (var key in Context.Request.Query.Keys)
     {
@@ -29,7 +14,6 @@
         }
     }
 
-    @* Establece la fecha máxima seleccionable en los inputs de fecha al día actual. *@
     var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
@@ -41,7 +25,6 @@
 <div class="page-header">
     <h1>@ViewData["Title"]</h1>
     <div class="header-actions">
-        @* El href de este botón se actualiza dinámicamente con JS para incluir los filtros actuales. *@
         <a id="download-csv-btn" href="#"
            data-download-url="@Url.Action("DownloadCsv", "AmbientData", new { area = "Admin" })"
            class="btn btn-outline-secondary">
@@ -54,11 +37,9 @@
     </div>
 </div>
 
-@* Panel de filtros colapsable. *@
 <div class="collapse show" id="filterCollapse">
     <div class="card filter-card mb-4">
         <form asp-action="Index" method="get">
-            @* Al aplicar nuevos filtros, siempre se vuelve a la primera página. *@
             <input type="hidden" name="PageNumber" value="1"/>
             <div class="row g-3">
                 <div class="col-md-3">
@@ -106,7 +87,6 @@
 </div>
 
 
-@* Renderizado condicional: muestra un mensaje si no hay datos o la tabla si los hay. *@
 @if (Model == null || !Model.Items.Any())
 {
     <div class="alert alert-info text-center">
@@ -141,7 +121,6 @@ else
                         <td class="text-center">@item.Temperature.ToString("0.0")°C</td>
                         <td class="text-center">@item.Humidity.ToString("0")%</td>
                         <td class="text-center">
-                            @* Manejo de valores nulos para el sensor de luz. *@
                             @(item.Light.HasValue ? item.Light.Value.ToString("N0") : "-")
                         </td>
                         <td class="text-center">@(item.CityTemperature?.ToString("0.0") ?? "-")°C</td>
@@ -149,8 +128,8 @@ else
                         <td class="text-center">@(item.CityWeatherCondition ?? "N/A")</td>
 
                         <td>
-                            @* Renderiza datos adicionales si existen en el diccionario OtherData. *@
                             <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
+
                                 @if (item.OtherData != null)
                                 {
                                     @foreach (var extra in item.OtherData)
@@ -168,18 +147,15 @@ else
             </table>
         </div>
         <div class="card-footer">
-            @* Componente de paginación. *@
             <nav class="pagination-container" aria-label="Paginación de datos ambientales">
                 <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
                 <ul class="pagination">
-                    @* Botón "Anterior", deshabilitado si está en la primera página. *@
                     <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
                         <a class="page-link" asp-action="Index"
                            asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
                            asp-route-pageNumber="@(Model.PageNumber - 1)">Anterior</a>
                     </li>
 
-                    @* Lógica para mostrar la primera página y puntos suspensivos si es necesario. *@
                     @if (Model.PageNumber > 3)
                     {
                         <a class="page-link" asp-action="Index"
@@ -191,7 +167,6 @@ else
                         }
                     }
 
-                    @* Bucle para renderizar los números de página cercanos a la página actual. *@
                     @for (var i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
                     {
                         <li class="page-item @(i == Model.PageNumber ? "active" : "")">
@@ -201,19 +176,18 @@ else
                         </li>
                     }
 
-                    @* Lógica para mostrar la última página y puntos suspensivos si es necesario. *@
                     @if (Model.PageNumber + 2 < Model.TotalPages)
                     {
                         @if (Model.PageNumber + 3 < Model.TotalPages)
                         {
                             <li class="page-item disabled"><span class="page-link">...</span></li>
                         }
+
                         <a class="page-link" asp-action="Index"
                            asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
                            asp-route-pageNumber="@Model.TotalPages">@Model.TotalPages</a>
                     }
 
-                    @* Botón "Siguiente", deshabilitado si está en la última página. *@
                     <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
                         <a class="page-link" asp-action="Index"
                            asp-all-route-data="routeData.ToDictionary(k => k.Key, v => v.Value?.ToString())"
@@ -228,12 +202,6 @@ else
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     <script>
-        @*
-            Este script actualiza dinámicamente el enlace de descarga de CSV.
-            Cada vez que un filtro cambia, toma todos los valores del formulario
-            y los añade como parámetros a la URL de descarga. Esto asegura que
-            el archivo CSV exportado coincida con los datos que se ven en pantalla.
-        *@
         document.addEventListener('DOMContentLoaded', function () {
             const downloadBtn = document.getElementById('download-csv-btn');
             const filterForm = document.querySelector('.filter-card form');
@@ -248,10 +216,10 @@ else
                 downloadBtn.setAttribute('href', downloadUrl);
             }
 
-            // Actualiza la URL cada vez que un filtro cambie.
+            // Actualiza la URL cada vez que un filtro cambie
             filterForm.addEventListener('change', updateDownloadUrl);
 
-            // Actualiza la URL al cargar la página por primera vez.
+            // Actualiza la URL al cargar la página
             updateDownloadUrl();
         });
     </script>
