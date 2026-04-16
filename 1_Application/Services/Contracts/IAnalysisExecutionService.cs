@@ -41,8 +41,7 @@ public interface IAnalysisExecutionService
     record CwsiCalculationInput(
         EnvironmentalReading EnvironmentalReading,
         ThermalCapture MonitoredPlantCapture,
-        ThermalCapture ControlPlantCapture,
         Plant MonitoredPlant,
-        Plant ControlPlant
+        AnalysisParameters Parameters
     );
 }

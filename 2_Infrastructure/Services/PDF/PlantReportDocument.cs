@@ -6,32 +6,17 @@ using QuestPDF.Infrastructure;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services.Pdf;
 
-/// <summary>
-/// Representa la definición estructural de un informe de planta, implementando la interfaz IDocument de QuestPDF.
-/// Recibe un modelo con todos los datos y se encarga de componer el documento con cabeceras, contenido y pies de página.
-/// </summary>
 public class PlantReportDocument : IDocument
 {
     private readonly PlantReportModel _model;
 
-    /// <summary>
-    /// Inicializa una nueva instancia de la clase <see cref="PlantReportDocument"/>.
-    /// </summary>
-    /// <param name="model">El modelo de datos que contiene toda la información a renderizar en el reporte.</param>
     public PlantReportDocument(PlantReportModel model)
     {
         _model = model;
     }
 
-    /// <summary>
-    /// Obtiene los metadatos del documento, como el título, autor, etc.
-    /// </summary>
     public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
 
-    /// <summary>
-    /// Método principal donde se compone la estructura del documento, página por página.
-    /// </summary>
-    /// <param name="container">El contenedor principal del documento.</param>
     public void Compose(IDocumentContainer container)
     {
         container.Page(page =>
@@ -47,9 +32,6 @@ public class PlantReportDocument : IDocument
         });
     }
 
-    /// <summary>
-    /// Compone la sección de la cabecera de cada página del documento.
-    /// </summary>
     private void ComposeHeader(IContainer container)
     {
         container.Row(row =>
@@ -69,17 +51,18 @@ public class PlantReportDocument : IDocument
         });
     }
 
-    /// <summary>
-    /// Compone el contenido principal del documento, distribuyendo los elementos en diferentes páginas.
-    /// </summary>
     private void ComposeContent(IContainer container)
     {
+        // --- INICIO DE LA CORRECCIÓN DE MAQUETACIÓN ---
         container.Column(column =>
         {
-            // --- Contenido de la Primera Página ---
+            // --- Contenido de la PRIMERA PÁGINA ---
             column.Item().PaddingTop(3);
+
+            // 1. Resumen Ejecutivo (los cuadros de métricas)
             column.Item().Element(ComposeSummaryMetrics);
 
+            // 2. Gráficos
             if (!_model.AnalysisData.Any())
             {
                 column.Item().AlignCenter().Text("No hay datos de análisis para mostrar en los gráficos.");
@@ -88,40 +71,43 @@ public class PlantReportDocument : IDocument
             {
                 column.Item().Column(graphContainer =>
                 {
-                    graphContainer.Spacing(2);
+                    graphContainer.Spacing(2); // Reducimos el espacio aquí
                     graphContainer.Item().Text("Evolución del Índice de Estrés Hídrico (CWSI)").Style(Styles.Header);
-                    graphContainer.Item().Image(GraphGenerator.CreateCwsiGraph(_model.AnalysisData, _model.CwsiThresholdIncipient, _model.CwsiThresholdCritical));
+                    graphContainer.Item().Image(GraphGenerator.CreateCwsiGraph(_model.AnalysisData, 0.3f, 0.5f));
                 });
 
                 column.Item().Column(graphContainer =>
                 {
-                    graphContainer.Spacing(10);
+                    graphContainer.Spacing(10); // Reducimos el espacio aquí
                     graphContainer.Item().Text("Evolución de Temperaturas").Style(Styles.Header);
                     graphContainer.Item().Image(GraphGenerator.CreateTemperatureGraph(_model.AnalysisData));
                 });
             }
 
+            // 3. Forzar un Salto de Página
             column.Item().PageBreak();
 
-            // --- Contenido de la Segunda Página ---
-            column.Spacing(20);
+            // --- Contenido de la SEGUNDA PÁGINA ---
+            column.Spacing(20); // Reiniciar el espaciado para la nueva página
+
+            // 4. Diagnóstico
             column.Item().Element(ComposeDiagnosis);
 
+            // 5. Tabla de Eventos
             if (_model.StatusHistory.Any())
             {
                 column.Item().Element(ComposeEventsTable);
             }
 
+            // 6. Tabla de Observaciones
             if (_model.ObservationData.Any())
             {
                 column.Item().Element(ComposeObservationsTable);
             }
         });
+        // --- FIN DE LA CORRECCIÓN DE MAQUETACIÓN ---
     }
 
-    /// <summary>
-    /// Compone la cuadrícula de métricas de resumen en la parte superior del informe.
-    /// </summary>
     private void ComposeSummaryMetrics(IContainer container)
     {
         container.Grid(grid =>
@@ -135,9 +121,6 @@ public class PlantReportDocument : IDocument
         });
     }
 
-    /// <summary>
-    /// Compone la sección de diagnóstico o resumen ejecutivo.
-    /// </summary>
     private void ComposeDiagnosis(IContainer container)
     {
         container.Column(col =>
@@ -148,9 +131,6 @@ public class PlantReportDocument : IDocument
         });
     }
 
-    /// <summary>
-    /// Compone un único cuadro de métrica con un título y un valor.
-    /// </summary>
     private void ComposeMetric(IContainer container, string title, string value)
     {
         container.Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(5).Column(column =>
@@ -160,11 +140,9 @@ public class PlantReportDocument : IDocument
         });
     }
 
-    /// <summary>
-    /// Compone la tabla que muestra la bitácora de observaciones manuales.
-    /// </summary>
     private void ComposeObservationsTable(IContainer container)
     {
+        // Aplicamos la misma corrección de columnas aquí para consistencia
         container.Column(column =>
         {
             column.Item().Text("Bitácora de Observaciones Manuales").Style(Styles.Header);
@@ -194,9 +172,6 @@ public class PlantReportDocument : IDocument
         });
     }
 
-    /// <summary>
-    /// Compone la tabla que muestra el historial de cambios de estado (eventos relevantes).
-    /// </summary>
     private void ComposeEventsTable(IContainer container)
     {
         container.Column(column =>
@@ -204,12 +179,17 @@ public class PlantReportDocument : IDocument
             column.Item().Text("Tabla de Eventos Relevantes").Style(Styles.Header);
             column.Item().Table(table =>
             {
+                // --- INICIO DE LA CORRECCIÓN DE COLUMNAS ---
                 table.ColumnsDefinition(columns =>
                 {
+                    // Columna de fecha con ancho fijo
                     columns.ConstantColumn(120);
+                    // Columna de estado con ancho proporcional
                     columns.RelativeColumn(1);
+                    // Columna de descripción con más ancho proporcional
                     columns.RelativeColumn(2.5f);
                 });
+                // --- FIN DE LA CORRECCIÓN DE COLUMNAS ---
 
                 table.Header(header =>
                 {
@@ -221,31 +201,26 @@ public class PlantReportDocument : IDocument
                 foreach (var item in _model.StatusHistory)
                 {
                     table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(item.ChangedAt.ToColombiaTime().ToString("dd/MM/yyyy HH:mm"));
-                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(item.Status.GetDisplayName());
+                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(item.Status.ToString().Replace("_", " "));
                     table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(item.Observation ?? "N/A");
                 }
             });
         });
     }
 
-    /// <summary>
-    /// Genera un texto de diagnóstico simple basado en el valor máximo de CWSI del reporte.
-    /// </summary>
-    private string GenerateDiagnosisText()
-    {
-        if (_model.MaxCwsi == null) return "No hay suficientes datos para generar un diagnóstico.";
-        if (_model.MaxCwsi > _model.CwsiThresholdCritical) return "La planta ha experimentado periodos de estrés hídrico crítico. Se recomienda revisar el plan de riego y las condiciones ambientales.";
-        if (_model.MaxCwsi > _model.CwsiThresholdIncipient) return "La planta muestra signos de estrés hídrico incipiente. Se recomienda monitorear de cerca y considerar ajustes en el riego.";
-        return "El estado hídrico de la planta se ha mantenido en niveles óptimos durante el periodo evaluado.";
-    }
-
-    /// <summary>
-    /// Clase estática interna que define los estilos de texto reutilizables para el documento.
-    /// </summary>
+    // Clase estática interna para los estilos reutilizables
     private static class Styles
     {
         public static TextStyle Title => TextStyle.Default.FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
         public static TextStyle Subtitle => TextStyle.Default.FontSize(10).FontColor(Colors.Grey.Darken1);
         public static TextStyle Header => TextStyle.Default.FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
+    }
+
+    private string GenerateDiagnosisText()
+    {
+        if (_model.MaxCwsi == null) return "No hay suficientes datos para generar un diagnóstico.";
+        if (_model.MaxCwsi > 0.5) return "La planta ha experimentado periodos de estrés hídrico crítico. Se recomienda revisar el plan de riego y las condiciones ambientales.";
+        if (_model.MaxCwsi > 0.3) return "La planta muestra signos de estrés hídrico incipiente. Se recomienda monitorear de cerca y considerar ajustes en el riego.";
+        return "El estado hídrico de la planta se ha mantenido en niveles óptimos durante el periodo evaluado.";
     }
 }
