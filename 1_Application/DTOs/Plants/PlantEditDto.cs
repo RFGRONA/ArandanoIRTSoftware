@@ -4,12 +4,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
-/// <summary>
-///     DTO para el formulario de edición de una planta existente.
-/// </summary>
 public class PlantEditDto : IPlantFormData
 {
-    [Required] public int Id { get; set; }
+    [Required] public int Id { get; set; } // El ID de la planta a editar
 
     public IEnumerable<SelectListItem> AvailableCrops { get; set; } = new List<SelectListItem>();
 

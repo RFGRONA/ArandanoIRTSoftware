@@ -1,19 +1,15 @@
-@*
-    Página de índice para la gestión de dispositivos.
-    Muestra una tabla con un listado de todos los dispositivos registrados,
-    su estado operativo y de activación, y las plantas/cultivos a los que están
-    asociados. Proporciona las acciones CRUD estándar (Editar, Detalles, Eliminar).
-*@
 @using ArandanoIRT.Web._0_Domain.Common
 @using ArandanoIRT.Web._0_Domain.Enums
-@model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Device.DeviceSummaryDto>
+@using ArandanoIRT.Web._1_Application.DTOs.Device
+@model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.Device.DeviceSummaryDto>
 @{
     ViewData["Title"] = "Gestión de Dispositivos";
     Layout = "_AdminLayout";
+    var currentFilters = ViewBag.CurrentFilters as DeviceQueryFilters;
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/devices.css" asp-append-version="true"/>
+     <link rel="stylesheet" href="~/css/devices.css" asp-append-version="true" /> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
@@ -26,9 +22,52 @@
     </div>
 </div>
 
-@* Muestra notificaciones de éxito o error después de una acción (crear, editar, etc.). *@
 @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
 @if (ViewData["ErrorMessage"] != null) { <div class="alert alert-danger">@ViewData["ErrorMessage"]</div> }
+
+<!-- Panel de Filtros -->
+<div class="card filter-card mb-4 p-3 shadow-sm">
+    <form method="get" asp-action="Index">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="PlantId" class="form-label">Planta</label>
+                <select name="PlantId" id="PlantId" class="form-select" asp-items="ViewBag.AvailablePlants">
+                    <option value="">-- Todas --</option>
+                </select>
+                @if(currentFilters?.PlantId != null) {
+                    <script>document.getElementById('PlantId').value = '@currentFilters.PlantId';</script>
+                }
+            </div>
+            <div class="col-md-3">
+                <label for="Status" class="form-label">Estado</label>
+                <select name="Status" id="Status" class="form-select" asp-items="ViewBag.AvailableStatuses">
+                    <option value="">-- Todos --</option>
+                </select>
+                @if(currentFilters?.Status != null) {
+                    <script>document.getElementById('Status').value = '@currentFilters.Status';</script>
+                }
+            </div>
+            <div class="col-md-3">
+                <label for="SortOrder" class="form-label">Orden</label>
+                <select name="SortOrder" id="SortOrder" class="form-select">
+                    <option value="desc">Más recientes</option>
+                    <option value="asc">Más antiguos</option>
+                </select>
+                @if(!string.IsNullOrEmpty(currentFilters?.SortOrder)) {
+                    <script>document.getElementById('SortOrder').value = '@currentFilters.SortOrder';</script>
+                }
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="fas fa-filter me-2"></i>Filtrar
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary flex-grow-1 text-center">
+                    <i class="fas fa-undo me-2"></i>Limpiar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
 
 <div class="card table-card">
     <div class="table-responsive">
@@ -45,20 +84,15 @@
                 </tr>
             </thead>
             <tbody>
-            @if (Model != null && Model.Any())
+            @if (Model != null && Model.Items.Any())
             {
-                @foreach (var item in Model)
+                @foreach (var item in Model.Items)
                 {
                     <tr>
                         <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                        <td>@(item.PlantName ?? "No asignada")</td>
+                        <td>@(item.PlantName ?? "No asignada")</td> 
                         <td>@(item.CropName ?? "No asignado")</td>
                         <td>
-                            @*
-                                Lógica para asignar una clase CSS a la insignia de estado del dispositivo.
-                                Cada estado (Activo, Inactivo, etc.) se mapea a una clase que define
-                                su color para una rápida identificación visual.
-                            *@
                             @{
                                 var statusClass = "";
                                 switch (item.DeviceStatus)
@@ -80,8 +114,7 @@
                             <span class="status-badge @statusClass">@item.DeviceStatus.GetDisplayName()</span>
                         </td>
                         <td>
-                            @* Lógica similar para mostrar el estado del proceso de activación del dispositivo. *@
-                            @{
+                             @{
                                 var activationClass = "";
                                 switch (item.ActivationStatus)
                                 {
@@ -102,13 +135,13 @@
                         <td>
                             <div class="action-buttons">
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action edit" title="Editar">
-                                    <i class="fas fa-pencil-alt"></i>
+                                    <i class="fas fa-pencil-alt"></i> 
                                 </a>
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn-action details" title="Detalles">
-                                    <i class="fas fa-info-circle"></i>
+                                    <i class="fas fa-info-circle"></i> 
                                 </a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn-action delete" title="Eliminar">
-                                    <i class="fas fa-trash-alt"></i>
+                                    <i class="fas fa-trash-alt"></i> 
                                 </a>
                             </div>
                         </td>
@@ -117,12 +150,46 @@
             }
             else
             {
-                @* Mensaje que se muestra si no hay dispositivos registrados en el sistema. *@
                 <tr>
-                    <td colspan="7" class="text-center py-4">No hay dispositivos registrados.</td>
+                    <td colspan="7" class="text-center py-4">No hay dispositivos registrados.</td> 
                 </tr>
             }
             </tbody>
         </table>
     </div>
+
+    @if (Model != null && Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav class="pagination-container" aria-label="Paginación de dispositivos">
+                <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
+                <ul class="pagination">
+                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageNumber - 1)"
+                           asp-route-PlantId="@currentFilters?.PlantId"
+                           asp-route-Status="@currentFilters?.Status"
+                           asp-route-SortOrder="@currentFilters?.SortOrder">Anterior</a>
+                    </li>
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pageNumber="@i"
+                               asp-route-PlantId="@currentFilters?.PlantId"
+                               asp-route-Status="@currentFilters?.Status"
+                               asp-route-SortOrder="@currentFilters?.SortOrder">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageNumber + 1)"
+                           asp-route-PlantId="@currentFilters?.PlantId"
+                           asp-route-Status="@currentFilters?.Status"
+                           asp-route-SortOrder="@currentFilters?.SortOrder">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
 </div>

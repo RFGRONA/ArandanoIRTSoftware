@@ -3,18 +3,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
-/// <summary>
-///     DTO para el formulario de creación de un nuevo dispositivo.
-///     Implementa IDeviceFormData y añade propiedades específicas para la vista de creación.
-/// </summary>
 public class DeviceCreateDto : IDeviceFormData
 {
-    [RegularExpression("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
-        ErrorMessage = "El formato de la dirección MAC no es válido.")]
-    public string? MacAddress { get; set; }
-
-    public IEnumerable<SelectListItem> AvailablePlants { get; set; } = new List<SelectListItem>();
-
     [Required(ErrorMessage = "El nombre del dispositivo es obligatorio.")]
     [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
     public string Name { get; set; } = string.Empty;
@@ -29,4 +19,11 @@ public class DeviceCreateDto : IDeviceFormData
     [Required(ErrorMessage = "El intervalo de recolección es obligatorio.")]
     [Range(1, 1440, ErrorMessage = "El intervalo debe estar entre 1 y 1440 minutos.")]
     public short DataCollectionIntervalMinutes { get; set; } = 15;
+
+    [RegularExpression("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", ErrorMessage = "El formato de la dirección MAC no es válido.")]
+    public string? MacAddress { get; set; }
+
+    // Para poblar los DropDownLists en la vista
+    public IEnumerable<SelectListItem> AvailablePlants { get; set; } = new List<SelectListItem>();
+
 }

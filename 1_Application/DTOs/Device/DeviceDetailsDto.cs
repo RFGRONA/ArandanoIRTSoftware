@@ -3,9 +3,6 @@ using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
-/// <summary>
-///     DTO para presentar la información detallada de un dispositivo, incluyendo sus datos de activación.
-/// </summary>
 public class DeviceDetailsDto
 {
     public int Id { get; set; }
@@ -25,11 +22,9 @@ public class DeviceDetailsDto
     [Display(Name = "Última Actualización")]
     public DateTime UpdatedAt { get; set; }
 
+    // Información de Activación
     public DeviceActivationDetailsDto? ActivationDevices { get; set; }
 
-    /// <summary>
-    ///     Sub-DTO anidado que contiene los detalles específicos de la activación del dispositivo.
-    /// </summary>
     public class DeviceActivationDetailsDto
     {
         [Display(Name = "Código de Activación")]

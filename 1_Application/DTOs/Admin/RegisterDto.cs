@@ -2,9 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
-/// <summary>
-/// DTO para el proceso de registro de un nuevo usuario en la plataforma.
-/// </summary>
 public class RegisterDto
 {
     [Required(ErrorMessage = "El campo \"{0}\" es obligatorio.")]

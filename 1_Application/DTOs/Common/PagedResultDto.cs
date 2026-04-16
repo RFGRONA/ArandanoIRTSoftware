@@ -1,9 +1,5 @@
 namespace ArandanoIRT.Web._1_Application.DTOs.Common;
 
-/// <summary>
-/// Representa un resultado paginado de una consulta, incluyendo la lista de items y la información de paginación.
-/// </summary>
-/// <typeparam name="T">El tipo de los elementos en la lista.</typeparam>
 public class PagedResultDto<T>
 {
     public List<T> Items { get; set; } = new List<T>();

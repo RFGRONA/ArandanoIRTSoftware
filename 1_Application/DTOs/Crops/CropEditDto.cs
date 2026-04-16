@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using ArandanoIRT.Web._0_Domain.Entities;
+using ArandanoIRT.Web._1_Application.DTOs.Admin;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
-/// <summary>
-/// DTO utilizado para capturar los datos del formulario de edición de un cultivo existente.
-/// </summary>
 public class CropEditDto : ICropFormData
 {
     [Required]

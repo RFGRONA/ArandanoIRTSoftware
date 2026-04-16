@@ -2,9 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
-/// <summary>
-/// DTO para representar la información de un usuario en listas y vistas de administración.
-/// </summary>
 public class UserDto
 {
     public int Id { get; set; }

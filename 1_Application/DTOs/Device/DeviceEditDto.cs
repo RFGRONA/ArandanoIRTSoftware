@@ -4,22 +4,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
-/// <summary>
-///     DTO para el formulario de edición de un dispositivo existente.
-///     Incluye el ID del dispositivo y listas para las opciones de la vista.
-/// </summary>
 public class DeviceEditDto : IDeviceFormData
 {
-    [Required] public int Id { get; set; }
-
-    public DeviceStatus Status { get; set; }
-
-    [RegularExpression("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
-        ErrorMessage = "El formato de la dirección MAC no es válido.")]
-    public string? MacAddress { get; set; }
-
-    public IEnumerable<SelectListItem> AvailablePlants { get; set; } = new List<SelectListItem>();
-    public IEnumerable<SelectListItem> AvailableStatuses { get; set; } = new List<SelectListItem>();
+    [Required]
+    public int Id { get; set; } // El ID del dispositivo a editar
 
     [Required(ErrorMessage = "El nombre del dispositivo es obligatorio.")]
     [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
@@ -35,4 +23,13 @@ public class DeviceEditDto : IDeviceFormData
     [Required(ErrorMessage = "El intervalo de recolección es obligatorio.")]
     [Range(1, 1440, ErrorMessage = "El intervalo debe estar entre 1 y 1440 minutos.")]
     public short DataCollectionIntervalMinutes { get; set; } = 15;
+
+    public DeviceStatus Status { get; set; }
+
+    [RegularExpression("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", ErrorMessage = "El formato de la dirección MAC no es válido.")]
+    public string? MacAddress { get; set; }
+
+    // Para poblar los DropDownLists en la vista
+    public IEnumerable<SelectListItem> AvailablePlants { get; set; } = new List<SelectListItem>();
+    public IEnumerable<SelectListItem> AvailableStatuses { get; set; } = new List<SelectListItem>();
 }

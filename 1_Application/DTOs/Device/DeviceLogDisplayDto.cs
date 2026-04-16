@@ -2,25 +2,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
-/// <summary>
-///     DTO para mostrar los registros de log de un dispositivo de una manera legible para el usuario.
-/// </summary>
 public class DeviceLogDisplayDto
 {
     public long Id { get; set; }
-
-    [Display(Name = "Dispositivo")] public string DeviceName { get; set; } = "N/A";
-
+    [Display(Name = "Dispositivo")]
+    public string DeviceName { get; set; } = "N/A";
     public int DeviceId { get; set; }
-
-    [Display(Name = "Tipo")] public string LogType { get; set; } = string.Empty;
-
-    [Display(Name = "Mensaje")] public string LogMessage { get; set; } = string.Empty;
-
+    [Display(Name = "Tipo")]
+    public string LogType { get; set; } = string.Empty;
+    [Display(Name = "Mensaje")]
+    public string LogMessage { get; set; } = string.Empty;
     [Display(Name = "Timestamp (Servidor)")]
     public DateTime LogTimestampServer { get; set; }
 
-    [Display(Name = "Temp. (°C)")] public float? InternalDeviceTemperature { get; set; }
+    [Display(Name = "Temp. (°C)")]
+    public float? InternalDeviceTemperature { get; set; }
 
-    [Display(Name = "Hum. (%)")] public float? InternalDeviceHumidity { get; set; }
+    [Display(Name = "Hum. (%)")]
+    public float? InternalDeviceHumidity { get; set; }
 }

@@ -2,9 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
-/// <summary>
-/// DTO para mostrar una vista resumida de un cultivo, típicamente en una lista o tabla.
-/// </summary>
 public class CropSummaryDto
 {
     public int Id { get; set; }

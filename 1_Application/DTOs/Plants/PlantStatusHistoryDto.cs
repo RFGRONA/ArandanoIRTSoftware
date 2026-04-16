@@ -3,9 +3,6 @@ using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
-/// <summary>
-///     DTO para mostrar una entrada en el historial de cambios de estado de una planta.
-/// </summary>
 public class PlantStatusHistoryDto
 {
     public long Id { get; set; }

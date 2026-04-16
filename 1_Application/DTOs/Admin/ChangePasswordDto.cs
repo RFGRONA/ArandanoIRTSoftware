@@ -2,9 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
-/// <summary>
-/// DTO utilizado para el formulario de cambio de contraseña de un usuario autenticado.
-/// </summary>
 public class ChangePasswordDto
 {
     [Required(ErrorMessage = "La contraseña actual es requerida.")]

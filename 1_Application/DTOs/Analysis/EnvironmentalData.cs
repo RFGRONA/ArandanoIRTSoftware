@@ -1,27 +1,27 @@
 namespace ArandanoIRT.Web._1_Application.DTOs.Analysis;
 
 /// <summary>
-/// Contiene los datos ambientales consolidados necesarios para un ciclo de análisis de estrés hídrico.
+///     Holds the consolidated environmental data required for a water stress analysis cycle.
 /// </summary>
 public class EnvironmentalData
 {
     /// <summary>
-    /// Indica si las condiciones ambientales son adecuadas para un cálculo válido del CWSI.
+    ///     Indicates if the environmental conditions are suitable for a valid CWSI calculation.
     /// </summary>
     public bool IsConditionSuitable { get; init; }
 
     /// <summary>
-    /// El Déficit de Presión de Vapor (VPD) calculado en kilopascales (kPa).
+    ///     The calculated Vapor Pressure Deficit (VPD) in kilopascals (kPa).
     /// </summary>
     public double VpdKpa { get; init; }
 
     /// <summary>
-    /// La temperatura ambiente en Celsius utilizada para los cálculos.
+    ///     The ambient temperature in Celsius used for the calculations.
     /// </summary>
     public double AmbientTemperatureC { get; init; }
 
     /// <summary>
-    /// El porcentaje de humedad ambiental utilizado para los cálculos.
+    ///     The ambient humidity percentage used for the calculations.
     /// </summary>
     public double AmbientHumidity { get; init; }
 }

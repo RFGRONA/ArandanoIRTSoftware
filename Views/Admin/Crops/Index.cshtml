@@ -1,17 +1,13 @@
-@*
-    Página de índice para la gestión de cultivos.
-    Muestra una tabla con un listado de todos los cultivos registrados en el sistema.
-    Proporciona acciones CRUD básicas para cada cultivo: Editar, ver Detalles y Eliminar,
-    así como un botón para crear un nuevo cultivo.
-*@
-@model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Crops.CropSummaryDto>
+@using ArandanoIRT.Web._1_Application.DTOs.Crops
+@model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.Crops.CropSummaryDto>
 @{
     ViewData["Title"] = "Gestión de Cultivos";
     Layout = "_AdminLayout";
+    var currentFilters = ViewBag.CurrentFilters as CropQueryFilters;
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/management.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/management.css" asp-append-version="true" /> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 }
 
@@ -24,7 +20,6 @@
     </div>
 </div>
 
-@* Muestra notificaciones de éxito o error después de realizar una acción (ej. crear, editar, eliminar). *@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success">@TempData["SuccessMessage"]</div>
@@ -33,6 +28,36 @@
 {
     <div class="alert alert-danger">@ViewData["ErrorMessage"]</div>
 }
+
+<!-- Panel de Filtros -->
+<div class="card filter-card mb-4 p-3 shadow-sm">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="CityName" class="form-label">Ciudad</label>
+                <input type="text" name="CityName" id="CityName" class="form-control" value="@currentFilters?.CityName" placeholder="Buscar por ciudad..." />
+            </div>
+            <div class="col-md-4">
+                <label for="SortOrder" class="form-label">Orden</label>
+                <select name="SortOrder" id="SortOrder" class="form-select">
+                    <option value="desc">Más recientes</option>
+                    <option value="asc">Más antiguos</option>
+                </select>
+                @if(!string.IsNullOrEmpty(currentFilters?.SortOrder)) {
+                    <script>document.getElementById('SortOrder').value = '@currentFilters.SortOrder';</script>
+                }
+            </div>
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="fas fa-filter me-2"></i>Filtrar
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary flex-grow-1 text-center">
+                    <i class="fas fa-undo me-2"></i>Limpiar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
 
 <div class="card table-card">
     <div class="table-responsive">
@@ -46,16 +71,15 @@
                 </tr>
             </thead>
             <tbody>
-            @if (Model != null && Model.Any())
+            @if (Model != null && Model.Items.Any())
             {
-                @foreach (var item in Model)
+                @foreach (var item in Model.Items)
                 {
                     <tr>
                         <td>@Html.DisplayFor(modelItem => item.Name)</td>
                         <td>@Html.DisplayFor(modelItem => item.CityName)</td>
                         <td>@Html.DisplayFor(modelItem => item.CreatedAt)</td>
                         <td>
-                            @* Grupo de botones de acción para cada registro de la tabla. *@
                             <div class="action-buttons">
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn-action edit" title="Editar">
                                     <i class="fas fa-pencil-alt"></i>
@@ -73,7 +97,6 @@
             }
             else
             {
-                @* Mensaje que se muestra si no hay ningún cultivo registrado en la base de datos. *@
                 <tr>
                     <td colspan="4" class="text-center py-4">No hay cultivos registrados.</td>
                 </tr>
@@ -81,4 +104,36 @@
             </tbody>
         </table>
     </div>
+
+    @if (Model != null && Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav class="pagination-container" aria-label="Paginación de cultivos">
+                <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
+                <ul class="pagination">
+                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageNumber - 1)"
+                           asp-route-CityName="@currentFilters?.CityName"
+                           asp-route-SortOrder="@currentFilters?.SortOrder">Anterior</a>
+                    </li>
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pageNumber="@i"
+                               asp-route-CityName="@currentFilters?.CityName"
+                               asp-route-SortOrder="@currentFilters?.SortOrder">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageNumber + 1)"
+                           asp-route-CityName="@currentFilters?.CityName"
+                           asp-route-SortOrder="@currentFilters?.SortOrder">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
 </div>

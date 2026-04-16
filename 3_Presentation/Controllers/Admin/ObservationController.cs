@@ -1,14 +1,13 @@
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._1_Application.DTOs.Admin;
 using ArandanoIRT.Web._1_Application.DTOs.Observations;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
+using ArandanoIRT.Web._3_Presentation.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
-/// <summary>
-///     Controlador para la gestión de las observaciones manuales realizadas por los usuarios.
-/// </summary>
 [Area("Admin")]
 [Authorize]
 public class ObservationController : Controller
@@ -17,9 +16,6 @@ public class ObservationController : Controller
     private readonly IPlantService _plantService;
     private readonly IUserService _userService;
 
-    /// <summary>
-    ///     Inicializa una nueva instancia de la clase <see cref="ObservationController" />.
-    /// </summary>
     public ObservationController(IObservationService observationService, IPlantService plantService,
         IUserService userService)
     {
@@ -28,16 +24,17 @@ public class ObservationController : Controller
         _userService = userService;
     }
 
-    /// <summary>
-    ///     Muestra la página principal con una lista paginada y filtrable de todas las observaciones manuales.
-    /// </summary>
-    /// <param name="filters">Objeto que contiene los parámetros de filtrado y paginación desde la URL.</param>
-    /// <returns>La vista `Index` con los datos paginados y las listas para los filtros.</returns>
+    // GET: Admin/Observation
     public async Task<IActionResult> Index([FromQuery] ObservationQueryFilters filters)
     {
-        if (filters.StartDate.HasValue) filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        if (filters.StartDate.HasValue)
+        {
+            filters.StartDate = filters.StartDate.Value.ToSafeUniversalTime();
+        }
         if (filters.EndDate.HasValue)
+        {
             filters.EndDate = filters.EndDate.Value.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
+        }
 
         var result = await _observationService.GetPagedObservationsAsync(filters);
 
@@ -48,9 +45,7 @@ public class ObservationController : Controller
         return View(result);
     }
 
-    /// <summary>
-    ///     Muestra el formulario para crear una nueva observación manual.
-    /// </summary>
+    // GET: Admin/Observation/Create
     public async Task<IActionResult> Create()
     {
         var model = new ObservationCreateDto
@@ -60,16 +55,14 @@ public class ObservationController : Controller
         return View(model);
     }
 
-    /// <summary>
-    ///     Procesa el envío del formulario para crear una nueva observación.
-    /// </summary>
-    /// <param name="model">Los datos de la nueva observación a crear.</param>
+    // POST: Admin/Observation/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ObservationCreateDto model)
     {
         if (!ModelState.IsValid)
         {
+            // Si la validación falla, volvemos a cargar las plantas para el dropdown
             model.AvailablePlants = await _plantService.GetPlantsForSelectionAsync();
             return View(model);
         }
