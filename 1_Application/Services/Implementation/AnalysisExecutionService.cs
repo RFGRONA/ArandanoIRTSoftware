@@ -15,41 +15,35 @@ namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 /// </summary>
 public class AnalysisExecutionService : IAnalysisExecutionService
 {
-    /// <summary>
-    ///     Contiene los umbrales de la línea base no estresada (T_canopia - T_ambiente) para cada hora del día.
-    ///     Estos valores son fundamentales para calcular la temperatura de referencia seca (T_dry).
-    /// </summary>
-    private static readonly Dictionary<int, double> HourlyStressThresholds = new()
-    {
-        { 0, 0.71 }, { 1, 0.51 }, { 2, 0.55 }, { 3, 0.63 }, { 4, 0.67 },
-        { 5, 0.76 }, { 6, 0.73 }, { 7, 0.68 }, { 8, 0.14 }, { 9, -0.95 },
-        { 10, -1.37 }, { 11, -1.21 }, { 12, -0.64 }, { 13, -1.07 }, { 14, -1.00 },
-        { 15, -0.87 }, { 16, -0.29 }, { 17, 0.15 }, { 18, 0.41 }, { 19, 0.59 },
-        { 20, 0.56 }, { 21, 0.62 }, { 22, 0.65 }, { 23, 0.64 }
-    };
-
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<int, System.Threading.SemaphoreSlim> _plantLocks = new();
+    
     private readonly ApplicationDbContext _context;
     private readonly IDataQueryService _dataQueryService;
     private readonly ILogger<AnalysisExecutionService> _logger;
     private readonly IConditionPredictor _predictor;
+    private readonly ICropService _cropService;
+    private readonly IAlertTriggerService _alertTriggerService;
 
     /// <summary>
     ///     Inicializa una nueva instancia de la clase <see cref="AnalysisExecutionService" />.
     /// </summary>
     public AnalysisExecutionService(ApplicationDbContext context, ILogger<AnalysisExecutionService> logger,
-        IConditionPredictor predictor, IDataQueryService dataQueryService)
+        IConditionPredictor predictor, IDataQueryService dataQueryService,
+        ICropService cropService, IAlertTriggerService alertTriggerService)
     {
         _context = context;
         _logger = logger;
         _predictor = predictor;
         _dataQueryService = dataQueryService;
+        _cropService = cropService;
+        _alertTriggerService = alertTriggerService;
     }
 
     /// <inheritdoc />
     public async Task<Result<AnalysisResult>> CalculateCwsiAsync(CwsiCalculationInput input)
     {
-        var lightValue = _dataQueryService.GetLightValueFromJson(input.EnvironmentalReading.ExtraData);
-        var vpdValue = _dataQueryService.CalculateVpdKpa(input.EnvironmentalReading.Temperature,
+        var lightValue = GetLightValueFromJson(input.EnvironmentalReading.ExtraData);
+        var vpdValue = CalculateVpdKpa(input.EnvironmentalReading.Temperature,
             input.EnvironmentalReading.Humidity);
 
         if (!vpdValue.HasValue)
@@ -68,21 +62,25 @@ public class AnalysisExecutionService : IAnalysisExecutionService
             return Result.Failure<AnalysisResult>("Condiciones ambientales no aptas según el modelo.");
 
         var tCanopy = GetCanopyTemperature(input.MonitoredPlantCapture, input.MonitoredPlant.ThermalMaskData);
-        var tWet = GetCanopyTemperature(input.ControlPlantCapture, input.ControlPlant.ThermalMaskData);
 
-        if (!tCanopy.HasValue || !tWet.HasValue)
-            return Result.Failure<AnalysisResult>(
-                "No se pudo determinar T.Canopia o T.Húmeda a partir de las capturas térmicas.");
+        if (!tCanopy.HasValue)
+            return Result.Failure<AnalysisResult>("No se pudo determinar T.Canopia a partir de las capturas térmicas.");
 
-        var hour = input.EnvironmentalReading.RecordedAtServer.ToColombiaTime().Hour;
-        var threshold = HourlyStressThresholds[hour];
-        var tDry = tWet.Value + threshold;
+        // Clipping: Verificar si la temperatura del canopio es válida
+        var p = input.Parameters;
+        if (tCanopy.Value < p.MinValidCanopyTemp || tCanopy.Value > p.MaxValidCanopyTemp)
+             return Result.Failure<AnalysisResult>($"Temperatura de canopia ({tCanopy.Value}°C) fuera del rango válido de ({p.MinValidCanopyTemp} - {p.MaxValidCanopyTemp}).");
 
-        if (tDry - tWet.Value <= 0.1)
-            return Result.Failure<AnalysisResult>(
-                "La diferencia entre T_dry y T_wet es muy pequeña para un cálculo fiable.");
+        // Modelamiento Empírico de Líneas Base
+        var ll = (float)((p.EmpiricalM * vpdValue.Value) + p.EmpiricalC);
+        var ul = (float)p.EmpiricalUl;
+        
+        var tDiff = tCanopy.Value - input.EnvironmentalReading.Temperature;
 
-        var cwsi = (tCanopy.Value - tWet.Value) / (tDry - tWet.Value);
+        if (ul - ll <= 0.01)
+            return Result.Failure<AnalysisResult>("La diferencia entre UL y LL empíricos es muy pequeña matemáticamente.");
+
+        var cwsi = (tDiff - ll) / (ul - ll);
         cwsi = Math.Clamp(cwsi, 0, 1);
 
         var result = new AnalysisResult
@@ -93,8 +91,8 @@ public class AnalysisExecutionService : IAnalysisExecutionService
             CanopyTemperature = tCanopy.Value,
             AmbientTemperature = input.EnvironmentalReading.Temperature,
             Vpd = vpdValue.Value,
-            BaselineTwet = tWet.Value,
-            BaselineTdry = (float)tDry,
+            BaselineLL = ll,
+            BaselineUL = ul,
             Status = PlantStatus.UNKNOWN
         };
 
@@ -104,21 +102,20 @@ public class AnalysisExecutionService : IAnalysisExecutionService
     /// <inheritdoc />
     public async Task ExecuteCatchUpForPlantAsync(int plantId)
     {
-        _logger.LogInformation("Iniciando análisis de catch-up para la planta {PlantId}", plantId);
+        var plantLock = _plantLocks.GetOrAdd(plantId, _ => new System.Threading.SemaphoreSlim(1, 1));
+        
+        if (!await plantLock.WaitAsync(0))
+        {
+            _logger.LogInformation("El catch-up para la planta {PlantId} ya está en curso. Evitando ejecución simultánea.", plantId);
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Iniciando análisis de catch-up para la planta {PlantId}", plantId);
 
         var monitoredPlant = await _context.Plants.AsNoTracking().FirstOrDefaultAsync(p => p.Id == plantId);
         if (monitoredPlant == null) return;
-
-        var controlPlant = await _context.Plants.AsNoTracking()
-            .FirstOrDefaultAsync(p =>
-                p.CropId == monitoredPlant.CropId && p.ExperimentalGroup == ExperimentalGroupType.CONTROL);
-
-        if (controlPlant == null)
-        {
-            _logger.LogWarning("No se encontró planta de control para el cultivo {CropId}. Cancelando catch-up.",
-                monitoredPlant.CropId);
-            return;
-        }
 
         var lastAnalysisDate = await _context.AnalysisResults
             .Where(ar => ar.PlantId == plantId)
@@ -147,46 +144,91 @@ public class AnalysisExecutionService : IAnalysisExecutionService
             .OrderBy(tc => tc.RecordedAtServer)
             .ToListAsync();
 
-        var controlThermals = await _context.ThermalCaptures
-            .Where(tc => tc.PlantId == controlPlant.Id && tc.RecordedAtServer >= dateRangeStart &&
-                         tc.RecordedAtServer <= dateRangeEnd)
-            .OrderBy(tc => tc.RecordedAtServer)
-            .ToListAsync();
+        var parametersResult = await _cropService.GetAnalysisParametersAsync(monitoredPlant.CropId);
+        if (parametersResult.IsFailure)
+        {
+            _logger.LogWarning("No se encontraron parámetros de análisis para el cultivo {CropId}", monitoredPlant.CropId);
+            return;
+        }
+        var parameters = parametersResult.Value.AnalysisParameters;
 
         var newAnalysisResults = new List<AnalysisResult>();
+        var currentStatus = monitoredPlant.Status;
+        
         foreach (var reading in environmentalData)
         {
+            var hour = reading.RecordedAtServer.ToColombiaTime().Hour;
+            if (hour < parameters.AnalysisWindowStartHour || hour > parameters.AnalysisWindowEndHour)
+            {
+                continue;
+            }
+
             // Buscar la captura térmica más cercana para la planta monitoreada
             var monitoredCapture = monitoredThermals
                 .Where(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) <= 5)
                 .MinBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes));
 
-            // Buscar la captura térmica más cercana para la planta de control
-            var controlCapture = controlThermals
-                .Where(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) <= 5)
-                .MinBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes));
-
-            if (monitoredCapture == null || controlCapture == null)
+            if (monitoredCapture == null)
             {
                 _logger.LogWarning(
-                    "No se encontraron capturas térmicas cercanas para la lectura ambiental en {RecordedAtServer} de la planta {PlantId}",
+                    "No se encontró captura térmica cercana para la lectura ambiental en {RecordedAtServer} de la planta {PlantId}",
                     reading.RecordedAtServer, plantId);
                 continue;
             }
 
-            var input = new CwsiCalculationInput(reading, monitoredCapture, controlCapture, monitoredPlant,
-                controlPlant);
+            var input = new CwsiCalculationInput(reading, monitoredCapture, monitoredPlant, parameters);
             var calculationResult = await CalculateCwsiAsync(input);
 
-            if (calculationResult.IsSuccess) newAnalysisResults.Add(calculationResult.Value);
+            if (calculationResult.IsSuccess)
+            {
+                var analysis = calculationResult.Value;
+                var cwsiValueDouble = (double)(analysis.CwsiValue ?? 0f);
+                var newStatus = DetermineStatus(cwsiValueDouble, parameters, currentStatus);
+                analysis.Status = newStatus;
+                
+                newAnalysisResults.Add(analysis);
+                currentStatus = newStatus; // actualizamos el estado actual circulante
+            }
             else
+            {
                 _logger.LogWarning("Fallo el calculo de CWSI para la lectura ambiental en {RecordedAtServer}: {Error}",
                     reading.RecordedAtServer, calculationResult.ErrorMessage);
+            }
         }
 
         if (newAnalysisResults.Any())
         {
             await _context.AnalysisResults.AddRangeAsync(newAnalysisResults);
+            
+            // Actualizar la planta y generar alertas si el último registro marca un cambio
+            var lastResult = newAnalysisResults.Last();
+            var plantToUpdate = await _context.Plants.FindAsync(plantId);
+            
+            if (plantToUpdate != null && plantToUpdate.Status != lastResult.Status)
+            {
+                var oldStatus = plantToUpdate.Status;
+                plantToUpdate.Status = lastResult.Status;
+                plantToUpdate.UpdatedAt = DateTime.UtcNow;
+                
+                var historyRecord = new PlantStatusHistory
+                {
+                    PlantId = plantId,
+                    Status = lastResult.Status,
+                    Observation = $"Cambio de estado en Catch-up automático por el sistema basado en un valor CWSI de {lastResult.CwsiValue:F2}.",
+                    UserId = null,
+                    ChangedAt = DateTime.UtcNow
+                };
+                _context.PlantStatusHistories.Add(historyRecord);
+
+                await _alertTriggerService.TriggerStressAlertAsync(
+                    plantId,
+                    plantToUpdate.Name,
+                    lastResult.Status,
+                    oldStatus,
+                    lastResult.CwsiValue ?? 0f
+                );
+            }
+            
             await _context.SaveChangesAsync();
             _logger.LogInformation(
                 "Catch-up completado. Se generaron {Count} nuevos registros para la planta {PlantId}",
@@ -196,6 +238,30 @@ public class AnalysisExecutionService : IAnalysisExecutionService
         {
             _logger.LogInformation("No se generaron nuevos resultados de análisis para la planta {PlantId}", plantId);
         }
+        }
+        finally
+        {
+            plantLock.Release();
+        }
+    }
+
+    private PlantStatus DetermineStatus(double cwsi, ArandanoIRT.Web._0_Domain.Entities.AnalysisParameters parameters, PlantStatus previousStatus)
+    {
+        PlantStatus newStatus;
+        if (cwsi > parameters.CwsiThresholdCritical)
+            newStatus = PlantStatus.SEVERE_STRESS;
+        else if (cwsi > parameters.CwsiThresholdIncipient)
+            newStatus = PlantStatus.MILD_STRESS;
+        else
+            newStatus = PlantStatus.OPTIMAL;
+
+        // Lógica de recuperación
+        var wasStressed = previousStatus == PlantStatus.MILD_STRESS || previousStatus == PlantStatus.SEVERE_STRESS;
+        if (wasStressed && newStatus == PlantStatus.OPTIMAL) return PlantStatus.RECOVERING;
+
+        if (previousStatus == PlantStatus.RECOVERING && newStatus == PlantStatus.OPTIMAL) return PlantStatus.OPTIMAL;
+
+        return newStatus;
     }
 
     /// <summary>
@@ -266,5 +332,33 @@ public class AnalysisExecutionService : IAnalysisExecutionService
     {
         public int x { get; set; }
         public int y { get; set; }
+    }
+
+    private float? GetLightValueFromJson(string? extraDataJson)
+    {
+        if (string.IsNullOrWhiteSpace(extraDataJson)) return null;
+        try
+        {
+            using var jsonDoc = JsonDocument.Parse(extraDataJson);
+            if (jsonDoc.RootElement.TryGetProperty("light", out var lightElement) &&
+                lightElement.TryGetSingle(out var lightValue))
+                return lightValue;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "No se pudo parsear el JSON de ExtraData para obtener luz.");
+        }
+
+        return null;
+    }
+
+    private float? CalculateVpdKpa(float temperature, float humidity)
+    {
+        // VPD (kPa) = e_s - e_a
+        // e_s = 0.6108 * exp(17.27 * T / (T + 237.3))
+        // e_a = e_s * (HR / 100)
+        double es = 0.6108 * Math.Exp(17.27 * temperature / (temperature + 237.3));
+        double ea = es * (humidity / 100.0);
+        return (float)(es - ea);
     }
 }
