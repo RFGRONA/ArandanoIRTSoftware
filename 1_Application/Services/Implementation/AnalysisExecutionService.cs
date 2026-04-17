@@ -16,7 +16,7 @@ namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 public class AnalysisExecutionService : IAnalysisExecutionService
 {
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<int, System.Threading.SemaphoreSlim> _plantLocks = new();
-    
+
     private readonly ApplicationDbContext _context;
     private readonly IDataQueryService _dataQueryService;
     private readonly ILogger<AnalysisExecutionService> _logger;
@@ -69,12 +69,12 @@ public class AnalysisExecutionService : IAnalysisExecutionService
         // Clipping: Verificar si la temperatura del canopio es válida
         var p = input.Parameters;
         if (tCanopy.Value < p.MinValidCanopyTemp || tCanopy.Value > p.MaxValidCanopyTemp)
-             return Result.Failure<AnalysisResult>($"Temperatura de canopia ({tCanopy.Value}°C) fuera del rango válido de ({p.MinValidCanopyTemp} - {p.MaxValidCanopyTemp}).");
+            return Result.Failure<AnalysisResult>($"Temperatura de canopia ({tCanopy.Value}°C) fuera del rango válido de ({p.MinValidCanopyTemp} - {p.MaxValidCanopyTemp}).");
 
         // Modelamiento Empírico de Líneas Base
         var ll = (float)((p.EmpiricalM * vpdValue.Value) + p.EmpiricalC);
         var ul = (float)p.EmpiricalUl;
-        
+
         var tDiff = tCanopy.Value - input.EnvironmentalReading.Temperature;
 
         if (ul - ll <= 0.01)
@@ -103,7 +103,7 @@ public class AnalysisExecutionService : IAnalysisExecutionService
     public async Task ExecuteCatchUpForPlantAsync(int plantId)
     {
         var plantLock = _plantLocks.GetOrAdd(plantId, _ => new System.Threading.SemaphoreSlim(1, 1));
-        
+
         if (!await plantLock.WaitAsync(0))
         {
             _logger.LogInformation("El catch-up para la planta {PlantId} ya está en curso. Evitando ejecución simultánea.", plantId);
@@ -114,130 +114,130 @@ public class AnalysisExecutionService : IAnalysisExecutionService
         {
             _logger.LogInformation("Iniciando análisis de catch-up para la planta {PlantId}", plantId);
 
-        var monitoredPlant = await _context.Plants.AsNoTracking().FirstOrDefaultAsync(p => p.Id == plantId);
-        if (monitoredPlant == null) return;
+            var monitoredPlant = await _context.Plants.AsNoTracking().FirstOrDefaultAsync(p => p.Id == plantId);
+            if (monitoredPlant == null) return;
 
-        var lastAnalysisDate = await _context.AnalysisResults
-            .Where(ar => ar.PlantId == plantId)
-            .OrderByDescending(ar => ar.RecordedAt)
-            .Select(ar => (DateTime?)ar.RecordedAt)
-            .FirstOrDefaultAsync();
+            var lastAnalysisDate = await _context.AnalysisResults
+                .Where(ar => ar.PlantId == plantId)
+                .OrderByDescending(ar => ar.RecordedAt)
+                .Select(ar => (DateTime?)ar.RecordedAt)
+                .FirstOrDefaultAsync();
 
-        var environmentalData = await _context.EnvironmentalReadings
-            .Where(er => er.PlantId == plantId && er.RecordedAtServer > (lastAnalysisDate ?? DateTime.MinValue))
-            .OrderBy(er => er.RecordedAtServer)
-            .ToListAsync();
+            var environmentalData = await _context.EnvironmentalReadings
+                .Where(er => er.PlantId == plantId && er.RecordedAtServer > (lastAnalysisDate ?? DateTime.MinValue))
+                .OrderBy(er => er.RecordedAtServer)
+                .ToListAsync();
 
-        if (!environmentalData.Any())
-        {
-            _logger.LogInformation("No hay nuevos datos crudos para analizar en el catch-up de la planta {PlantId}",
-                plantId);
-            return;
-        }
-
-        var dateRangeStart = environmentalData.First().RecordedAtServer.AddMinutes(-5); // Ampliar rango de búsqueda
-        var dateRangeEnd = environmentalData.Last().RecordedAtServer.AddMinutes(5); // Ampliar rango de búsqueda
-
-        var monitoredThermals = await _context.ThermalCaptures
-            .Where(tc =>
-                tc.PlantId == plantId && tc.RecordedAtServer >= dateRangeStart && tc.RecordedAtServer <= dateRangeEnd)
-            .OrderBy(tc => tc.RecordedAtServer)
-            .ToListAsync();
-
-        var parametersResult = await _cropService.GetAnalysisParametersAsync(monitoredPlant.CropId);
-        if (parametersResult.IsFailure)
-        {
-            _logger.LogWarning("No se encontraron parámetros de análisis para el cultivo {CropId}", monitoredPlant.CropId);
-            return;
-        }
-        var parameters = parametersResult.Value.AnalysisParameters;
-
-        var newAnalysisResults = new List<AnalysisResult>();
-        var currentStatus = monitoredPlant.Status;
-        
-        foreach (var reading in environmentalData)
-        {
-            var hour = reading.RecordedAtServer.ToColombiaTime().Hour;
-            if (hour < parameters.AnalysisWindowStartHour || hour > parameters.AnalysisWindowEndHour)
+            if (!environmentalData.Any())
             {
-                continue;
+                _logger.LogInformation("No hay nuevos datos crudos para analizar en el catch-up de la planta {PlantId}",
+                    plantId);
+                return;
             }
 
-            // Buscar la captura térmica más cercana para la planta monitoreada
-            var monitoredCapture = monitoredThermals
-                .Where(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) <= 5)
-                .MinBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes));
+            var dateRangeStart = environmentalData.First().RecordedAtServer.AddMinutes(-5); // Ampliar rango de búsqueda
+            var dateRangeEnd = environmentalData.Last().RecordedAtServer.AddMinutes(5); // Ampliar rango de búsqueda
 
-            if (monitoredCapture == null)
+            var monitoredThermals = await _context.ThermalCaptures
+                .Where(tc =>
+                    tc.PlantId == plantId && tc.RecordedAtServer >= dateRangeStart && tc.RecordedAtServer <= dateRangeEnd)
+                .OrderBy(tc => tc.RecordedAtServer)
+                .ToListAsync();
+
+            var parametersResult = await _cropService.GetAnalysisParametersAsync(monitoredPlant.CropId);
+            if (parametersResult.IsFailure)
             {
-                _logger.LogWarning(
-                    "No se encontró captura térmica cercana para la lectura ambiental en {RecordedAtServer} de la planta {PlantId}",
-                    reading.RecordedAtServer, plantId);
-                continue;
+                _logger.LogWarning("No se encontraron parámetros de análisis para el cultivo {CropId}", monitoredPlant.CropId);
+                return;
+            }
+            var parameters = parametersResult.Value.AnalysisParameters;
+
+            var newAnalysisResults = new List<AnalysisResult>();
+            var currentStatus = monitoredPlant.Status;
+
+            foreach (var reading in environmentalData)
+            {
+                var hour = reading.RecordedAtServer.ToColombiaTime().Hour;
+                if (hour < parameters.AnalysisWindowStartHour || hour > parameters.AnalysisWindowEndHour)
+                {
+                    continue;
+                }
+
+                // Buscar la captura térmica más cercana para la planta monitoreada
+                var monitoredCapture = monitoredThermals
+                    .Where(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes) <= 5)
+                    .MinBy(tc => Math.Abs((tc.RecordedAtServer - reading.RecordedAtServer).TotalMinutes));
+
+                if (monitoredCapture == null)
+                {
+                    _logger.LogWarning(
+                        "No se encontró captura térmica cercana para la lectura ambiental en {RecordedAtServer} de la planta {PlantId}",
+                        reading.RecordedAtServer, plantId);
+                    continue;
+                }
+
+                var input = new CwsiCalculationInput(reading, monitoredCapture, monitoredPlant, parameters);
+                var calculationResult = await CalculateCwsiAsync(input);
+
+                if (calculationResult.IsSuccess)
+                {
+                    var analysis = calculationResult.Value;
+                    var cwsiValueDouble = (double)(analysis.CwsiValue ?? 0f);
+                    var newStatus = DetermineStatus(cwsiValueDouble, parameters, currentStatus);
+                    analysis.Status = newStatus;
+
+                    newAnalysisResults.Add(analysis);
+                    currentStatus = newStatus; // actualizamos el estado actual circulante
+                }
+                else
+                {
+                    _logger.LogWarning("Fallo el calculo de CWSI para la lectura ambiental en {RecordedAtServer}: {Error}",
+                        reading.RecordedAtServer, calculationResult.ErrorMessage);
+                }
             }
 
-            var input = new CwsiCalculationInput(reading, monitoredCapture, monitoredPlant, parameters);
-            var calculationResult = await CalculateCwsiAsync(input);
-
-            if (calculationResult.IsSuccess)
+            if (newAnalysisResults.Any())
             {
-                var analysis = calculationResult.Value;
-                var cwsiValueDouble = (double)(analysis.CwsiValue ?? 0f);
-                var newStatus = DetermineStatus(cwsiValueDouble, parameters, currentStatus);
-                analysis.Status = newStatus;
-                
-                newAnalysisResults.Add(analysis);
-                currentStatus = newStatus; // actualizamos el estado actual circulante
+                await _context.AnalysisResults.AddRangeAsync(newAnalysisResults);
+
+                // Actualizar la planta y generar alertas si el último registro marca un cambio
+                var lastResult = newAnalysisResults.Last();
+                var plantToUpdate = await _context.Plants.FindAsync(plantId);
+
+                if (plantToUpdate != null && plantToUpdate.Status != lastResult.Status)
+                {
+                    var oldStatus = plantToUpdate.Status;
+                    plantToUpdate.Status = lastResult.Status;
+                    plantToUpdate.UpdatedAt = DateTime.UtcNow;
+
+                    var historyRecord = new PlantStatusHistory
+                    {
+                        PlantId = plantId,
+                        Status = lastResult.Status,
+                        Observation = $"Cambio de estado en Catch-up automático por el sistema basado en un valor CWSI de {lastResult.CwsiValue:F2}.",
+                        UserId = null,
+                        ChangedAt = DateTime.UtcNow
+                    };
+                    _context.PlantStatusHistories.Add(historyRecord);
+
+                    await _alertTriggerService.TriggerStressAlertAsync(
+                        plantId,
+                        plantToUpdate.Name,
+                        lastResult.Status,
+                        oldStatus,
+                        lastResult.CwsiValue ?? 0f
+                    );
+                }
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation(
+                    "Catch-up completado. Se generaron {Count} nuevos registros para la planta {PlantId}",
+                    newAnalysisResults.Count, plantId);
             }
             else
             {
-                _logger.LogWarning("Fallo el calculo de CWSI para la lectura ambiental en {RecordedAtServer}: {Error}",
-                    reading.RecordedAtServer, calculationResult.ErrorMessage);
+                _logger.LogInformation("No se generaron nuevos resultados de análisis para la planta {PlantId}", plantId);
             }
-        }
-
-        if (newAnalysisResults.Any())
-        {
-            await _context.AnalysisResults.AddRangeAsync(newAnalysisResults);
-            
-            // Actualizar la planta y generar alertas si el último registro marca un cambio
-            var lastResult = newAnalysisResults.Last();
-            var plantToUpdate = await _context.Plants.FindAsync(plantId);
-            
-            if (plantToUpdate != null && plantToUpdate.Status != lastResult.Status)
-            {
-                var oldStatus = plantToUpdate.Status;
-                plantToUpdate.Status = lastResult.Status;
-                plantToUpdate.UpdatedAt = DateTime.UtcNow;
-                
-                var historyRecord = new PlantStatusHistory
-                {
-                    PlantId = plantId,
-                    Status = lastResult.Status,
-                    Observation = $"Cambio de estado en Catch-up automático por el sistema basado en un valor CWSI de {lastResult.CwsiValue:F2}.",
-                    UserId = null,
-                    ChangedAt = DateTime.UtcNow
-                };
-                _context.PlantStatusHistories.Add(historyRecord);
-
-                await _alertTriggerService.TriggerStressAlertAsync(
-                    plantId,
-                    plantToUpdate.Name,
-                    lastResult.Status,
-                    oldStatus,
-                    lastResult.CwsiValue ?? 0f
-                );
-            }
-            
-            await _context.SaveChangesAsync();
-            _logger.LogInformation(
-                "Catch-up completado. Se generaron {Count} nuevos registros para la planta {PlantId}",
-                newAnalysisResults.Count, plantId);
-        }
-        else
-        {
-            _logger.LogInformation("No se generaron nuevos resultados de análisis para la planta {PlantId}", plantId);
-        }
         }
         finally
         {
