@@ -274,7 +274,7 @@ public class UserService : IUserService
             {
                 var roles = await _userManager.GetRolesAsync(user);
                 var isAdmin = roles.Contains("Admin");
-                
+
                 var userRole = isAdmin ? "Administrador" : "Usuario Estándar";
 
                 // Filter by role manually in memory if specified

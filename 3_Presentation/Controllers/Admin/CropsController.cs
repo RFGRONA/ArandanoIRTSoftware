@@ -27,7 +27,7 @@ public class CropsController : BaseAdminController
             TempData[ErrorMessageKey] = result.ErrorMessage;
             return View(new ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<CropSummaryDto>());
         }
-        
+
         ViewBag.CurrentFilters = filters;
         return View(result.Value);
     }

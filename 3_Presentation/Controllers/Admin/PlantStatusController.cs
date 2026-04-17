@@ -93,9 +93,9 @@ public class PlantStatusController : Controller
         var utcEndDate = endDate?.Date.AddDays(1).AddTicks(-1).ToSafeUniversalTime();
 
         var historyList = await _plantService.GetPlantStatusHistoryAsync(plantId, userId, utcStartDate, utcEndDate);
-        
-        var history = sortOrder == "asc" 
-            ? historyList.OrderBy(h => h.ChangedAt) 
+
+        var history = sortOrder == "asc"
+            ? historyList.OrderBy(h => h.ChangedAt)
             : historyList.OrderByDescending(h => h.ChangedAt);
 
         ViewBag.Plants = await _plantService.GetPlantsForSelectionAsync();

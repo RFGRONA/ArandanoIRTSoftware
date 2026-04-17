@@ -51,7 +51,7 @@ public class PdfGeneratorService : IPdfGeneratorService
         {
             _logger.LogInformation("No se encontraron datos analíticos para la planta {PlantId}. Ejecutando Catch-Up...", plantId);
             await _analysisExecutionService.ExecuteCatchUpForPlantAsync(plantId);
-            
+
             rawAnalysisData = await _context.AnalysisResults
                 .AsNoTracking()
                 .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= queryStartDate && ar.RecordedAt < queryEndDate)
