@@ -9,6 +9,9 @@ using System.Linq;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+/// Controlador para la gestión y visualización del estado de las plantas.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class PlantStatusController : Controller
@@ -16,6 +19,9 @@ public class PlantStatusController : Controller
     private readonly IPlantService _plantService;
     private readonly IUserService _userService;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="PlantStatusController"/>.
+    /// </summary>
     public PlantStatusController(IPlantService plantService, IUserService userService)
     {
         _plantService = plantService;
@@ -24,6 +30,10 @@ public class PlantStatusController : Controller
 
     // GET: /Admin/PlantStatus/Change/5
     // Muestra el formulario para cambiar el estado de una planta específica.
+    /// <summary>
+    /// Muestra el formulario para cambiar manualmente el estado de una planta específica.
+    /// </summary>
+    /// <param name="id">El ID de la planta cuyo estado se va a cambiar.</param>
     [HttpGet]
     public async Task<IActionResult> Change(int id)
     {
@@ -40,6 +50,10 @@ public class PlantStatusController : Controller
         return View(model);
     }
 
+    /// <summary>
+    /// Procesa la solicitud para cambiar el estado de una planta.
+    /// </summary>
+    /// <param name="model">El modelo con los datos del nuevo estado y la observación.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Change(PlantStatusUpdateDto model)

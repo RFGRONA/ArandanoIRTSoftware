@@ -7,6 +7,9 @@ using ArandanoIRT.Web._3_Presentation.ViewModels;
 
 namespace ArandanoIRT.Web._1_Application.Services.Contracts;
 
+/// <summary>
+///     Define el contrato para el servicio que gestiona las observaciones manuales de los agrónomos.
+/// </summary>
 public interface IObservationService
 {
     /// <summary>

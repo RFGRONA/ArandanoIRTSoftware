@@ -4,6 +4,9 @@ using System.ComponentModel.DataAnnotations; // Necesario para las validaciones
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
+/// <summary>
+/// DTO utilizado para capturar los datos del formulario de creación de un nuevo cultivo.
+/// </summary>
 public class CropCreateDto : ICropFormData
 {
     [Required(ErrorMessage = "El nombre del cultivo es obligatorio.")]

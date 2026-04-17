@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador para que los usuarios gestionen su propia información de perfil y contraseña.
+///     Requiere que el usuario esté autenticado.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class ManageController : Controller
@@ -16,6 +20,9 @@ public class ManageController : Controller
     private readonly UserManager<User> _userManager;
     private readonly IUserService _userService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="ManageController" />.
+    /// </summary>
     public ManageController(UserManager<User> userManager, IUserService userService)
     {
         _userManager = userManager;
@@ -23,6 +30,11 @@ public class ManageController : Controller
     }
 
     // GET: /Admin/Manage/Index
+    /// <summary>
+    ///     Muestra la página principal de gestión de perfil.
+    ///     Obtiene los datos del usuario actual y los muestra en los formularios correspondientes.
+    /// </summary>
+    /// <returns>La vista `Index` con el modelo <see cref="ManageProfileViewModel" /> poblado.</returns>
     public async Task<IActionResult> Index()
     {
         var user = await _userManager.GetUserAsync(User);
@@ -42,6 +54,11 @@ public class ManageController : Controller
     }
 
     // POST: /Admin/Manage/UpdateProfile
+    /// <summary>
+    ///     Procesa la solicitud para actualizar la información del perfil del usuario.
+    /// </summary>
+    /// <param name="model">El ViewModel que contiene los datos del perfil a actualizar.</param>
+    /// <returns>Una redirección a la página de perfil con un mensaje de éxito o error.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateProfile(ManageProfileViewModel model)
@@ -55,6 +72,11 @@ public class ManageController : Controller
     }
 
     // POST: /Admin/Manage/ChangePassword
+    /// <summary>
+    ///     Procesa la solicitud para cambiar la contraseña del usuario.
+    /// </summary>
+    /// <param name="model">El ViewModel que contiene los datos para el cambio de contraseña.</param>
+    /// <returns>Una redirección a la página de perfil con un mensaje de éxito o error.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangePassword(ManageProfileViewModel model)

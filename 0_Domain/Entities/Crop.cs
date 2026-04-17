@@ -1,7 +1,7 @@
 ﻿namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-///     Stores information about crops. Acts as the main grouping entity (tenant).
+/// Representa un cultivo. Actúa como la principal entidad de agrupación (tenant) en el sistema.
 /// </summary>
 public class Crop
 {

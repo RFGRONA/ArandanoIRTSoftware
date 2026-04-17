@@ -13,12 +13,20 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de administración de dispositivos.
+///     Se encarga de las operaciones CRUD y la lógica de negocio asociada a los dispositivos
+///     desde la perspectiva del panel de administración web.
+/// </summary>
 public class DeviceAdminService : IDeviceAdminService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DeviceAdminService> _logger;
     private readonly TokenSettings _tokenSettings;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DeviceAdminService" />.
+    /// </summary>
     public DeviceAdminService(
         ApplicationDbContext context,
         IOptions<TokenSettings> tokenSettingsOptions,
@@ -29,6 +37,11 @@ public class DeviceAdminService : IDeviceAdminService
         _logger = logger;
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    ///     Esta operación utiliza una transacción de base de datos para garantizar que la creación
+    ///     del dispositivo y su código de activación sea una operación atómica.
+    /// </remarks>
     public async Task<Result<DeviceCreationResultDto>> CreateDeviceAsync(DeviceCreateDto deviceDto)
     {
         // Usamos una transacción para asegurar que la creación del dispositivo y su código de activación
@@ -107,6 +120,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<IEnumerable<DeviceSummaryDto>>> GetAllDevicesAsync()
     {
         try
@@ -196,6 +210,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<DeviceDetailsDto?>> GetDeviceByIdAsync(int deviceId)
     {
         try
@@ -244,6 +259,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<DeviceEditDto?>> GetDeviceForEditByIdAsync(int deviceId)
     {
         try
@@ -271,6 +287,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdateDeviceAsync(DeviceEditDto deviceDto)
     {
         try
@@ -313,6 +330,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeleteDeviceAsync(int deviceId)
     {
         try
@@ -346,6 +364,7 @@ public class DeviceAdminService : IDeviceAdminService
 
     // --- Métodos para SelectList (Dropdowns) ---
 
+    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync()
     {
         try
@@ -368,6 +387,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public IEnumerable<SelectListItem> GetDeviceStatusesForSelection()
     {
         // No se necesita consulta a la DB, se lee directamente del Enum.

@@ -12,12 +12,19 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+///     Un servicio en segundo plano que realiza el análisis de estrés hídrico a intervalos regulares.
+///     Orquesta el proceso de recolección de datos, cálculo de CWSI y actualización del estado de las plantas.
+/// </summary>
 public class WaterStressAnalysisService : BackgroundService
 {
     private readonly ILogger<WaterStressAnalysisService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BackgroundJobSettings _settings;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="WaterStressAnalysisService" />.
+    /// </summary>
     public WaterStressAnalysisService(
         IServiceScopeFactory scopeFactory,
         IOptions<BackgroundJobSettings> settings,
@@ -28,6 +35,12 @@ public class WaterStressAnalysisService : BackgroundService
         _settings = settings.Value;
     }
 
+    /// <summary>
+    ///     Método principal del servicio. Se ejecuta en un bucle periódico según el intervalo configurado.
+    ///     Para cada cultivo, verifica si la hora actual está dentro de la ventana de análisis definida en su configuración
+    ///     antes de iniciar un ciclo de análisis.
+    /// </summary>
+    /// <param name="stoppingToken">Token que indica cuándo se debe detener el servicio.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var interval = TimeSpan.FromMinutes(_settings.AnalysisIntervalMinutes);

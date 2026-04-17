@@ -3,8 +3,18 @@ using System.Text;
 
 namespace ArandanoIRT.Web._1_Application.Helper;
 
+/// <summary>
+///     Proporciona métodos de utilidad estáticos para operaciones relacionadas con la seguridad.
+/// </summary>
 public static class SecurityHelper
 {
+    /// <summary>
+    ///     Genera un hash SHA256 único combinando un código público de invitación y el correo electrónico del invitado.
+    ///     Esto permite crear un enlace de registro seguro y no adivinable.
+    /// </summary>
+    /// <param name="publicCode">El código de invitación visible.</param>
+    /// <param name="email">El correo electrónico del usuario a invitar.</param>
+    /// <returns>Una cadena hexadecimal que representa el hash SHA256.</returns>
     public static string GenerateInvitationHash(string publicCode, string email)
     {
         // Normalizamos el correo a minúsculas para evitar problemas de mayúsculas/minúsculas

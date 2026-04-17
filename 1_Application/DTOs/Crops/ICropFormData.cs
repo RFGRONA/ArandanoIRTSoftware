@@ -3,6 +3,10 @@ using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Crops;
 
+/// <summary>
+/// Define una interfaz común para los formularios de creación y edición de cultivos,
+/// asegurando que ambos contengan las mismas propiedades y validaciones básicas.
+/// </summary>
 public interface ICropFormData
 {
     [Required(ErrorMessage = "El nombre del cultivo es requerido.")]

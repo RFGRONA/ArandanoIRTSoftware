@@ -1,9 +1,17 @@
 namespace ArandanoIRT.Web._0_Domain.Common;
 
+/// <summary>
+/// Proporciona métodos de extensión para la manipulación y conversión de objetos DateTime,
+/// enfocados principalmente en la zona horaria de Colombia.
+/// </summary>
 public static class DateTimeExtensions
 {
     private static readonly TimeZoneInfo ColombiaTimeZone;
 
+    /// <summary>
+    /// Inicializa estáticamente la zona horaria de Colombia, con soporte para sistemas Linux y Windows.
+    /// Si no se encuentra la zona horaria, se utiliza UTC como respaldo.
+    /// </summary>
     static DateTimeExtensions()
     {
         try
@@ -82,6 +90,13 @@ public static class DateTimeExtensions
         return colombiaTime.Hour >= startHour && colombiaTime.Hour < endHour;
     }
 
+    /// <summary>
+    /// Convierte de forma segura un DateTime a la hora universal coordinada (UTC).
+    /// Si el DateTime ya es UTC, lo devuelve sin cambios.
+    /// Si es Local o Unspecified, asume que es hora de Colombia y lo convierte a UTC.
+    /// </summary>
+    /// <param name="dt">El DateTime a convertir.</param>
+    /// <returns>El DateTime equivalente en UTC.</returns>
     public static DateTime ToSafeUniversalTime(this DateTime dt)
     {
         if (dt.Kind == DateTimeKind.Utc)

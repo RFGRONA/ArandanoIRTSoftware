@@ -11,6 +11,10 @@ using QuestPDF.Infrastructure;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de generación de PDFs.
+///     Utiliza la librería QuestPDF para crear documentos a partir de los datos de la aplicación.
+/// </summary>
 public class PdfGeneratorService : IPdfGeneratorService
 {
     private readonly ApplicationDbContext _context;
@@ -25,6 +29,7 @@ public class PdfGeneratorService : IPdfGeneratorService
         Settings.License = LicenseType.Community;
     }
 
+    /// <inheritdoc />
     public async Task<byte[]> GeneratePlantReportAsync(int plantId, DateTime startDate, DateTime endDate)
     {
         var queryStartDate = startDate.Date.ToSafeUniversalTime();

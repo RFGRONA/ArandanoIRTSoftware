@@ -6,6 +6,10 @@ using Polly.CircuitBreaker;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+/// Implementación del servicio que valida los tokens de Cloudflare Turnstile.
+/// Se comunica con la API de Cloudflare para verificar la validez de un token de captcha.
+/// </summary>
 public class TurnstileService : ITurnstileService
 {
     private readonly HttpClient _httpClient;
@@ -13,11 +17,17 @@ public class TurnstileService : ITurnstileService
     private readonly ILogger<TurnstileService> _logger;
 
     // Clase interna para deserializar la respuesta de Cloudflare
+    /// <summary>
+    /// DTO interno para deserializar la respuesta JSON de la API de Cloudflare.
+    /// </summary>
     private class TurnstileResponse
     {
         public bool Success { get; set; }
     }
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="TurnstileService"/>.
+    /// </summary>
     public TurnstileService(HttpClient httpClient, IOptions<TurnstileSettings> settings, ILogger<TurnstileService> logger)
     {
         _httpClient = httpClient;
@@ -26,6 +36,12 @@ public class TurnstileService : ITurnstileService
         _httpClient.BaseAddress = new Uri("https://challenges.cloudflare.com/");
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// Esta implementación realiza una petición POST al endpoint "siteverify" de Cloudflare.
+    /// Incluye una lógica de "fail-open": si el servicio de Cloudflare no responde y el Circuit Breaker se activa,
+    /// la validación devolverá 'true' para no bloquear a los usuarios legítimos.
+    /// </remarks>
     public async Task<bool> IsTokenValid(string token)
     {
         _logger.LogInformation("Iniciando validación de token de Turnstile.");

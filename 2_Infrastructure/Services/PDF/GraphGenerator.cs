@@ -3,12 +3,24 @@ using SkiaSharp;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services.Pdf;
 
+/// <summary>
+/// Clase de utilidad estática para generar imágenes de gráficos utilizando la librería SkiaSharp.
+/// Estos gráficos están diseñados para ser incrustados en los informes PDF.
+/// </summary>
 public static class GraphGenerator
 {
     private const int Width = 800;
     private const int Height = 400;
     private const int Padding = 60;
 
+    /// <summary>
+    /// Crea un gráfico de líneas para los datos de CWSI a lo largo del tiempo.
+    /// Incluye líneas de umbral para estrés incipiente y crítico, y una leyenda.
+    /// </summary>
+    /// <param name="data">La lista de puntos de datos de análisis.</param>
+    /// <param name="thresholdIncipient">El valor del umbral de estrés incipiente.</param>
+    /// <param name="thresholdCritical">El valor del umbral de estrés crítico.</param>
+    /// <returns>Un arreglo de bytes que representa la imagen del gráfico en formato PNG.</returns>
     public static byte[] CreateCwsiGraph(List<AnalysisResultDataPoint> data, float thresholdIncipient, float thresholdCritical)
     {
         using var surface = SKSurface.Create(new SKImageInfo(Width, Height));
@@ -65,6 +77,11 @@ public static class GraphGenerator
         return EncodeSurfaceToPng(surface);
     }
 
+    /// <summary>
+    /// Crea un gráfico de líneas dual que compara la temperatura de la canopia y la temperatura ambiente a lo largo del tiempo.
+    /// </summary>
+    /// <param name="data">La lista de puntos de datos de análisis.</param>
+    /// <returns>Un arreglo de bytes que representa la imagen del gráfico en formato PNG.</returns>
     public static byte[] CreateTemperatureGraph(List<AnalysisResultDataPoint> data)
     {
         using var surface = SKSurface.Create(new SKImageInfo(Width, Height));
@@ -126,6 +143,9 @@ public static class GraphGenerator
 
     // MÉTODOS AUXILIARES
 
+    /// <summary>
+    /// Dibuja los ejes X e Y del gráfico, incluyendo el título y las etiquetas.
+    /// </summary>
     private static void DrawAxes(SKCanvas canvas, SKPaint textPaint, DateTime minX, DateTime maxX, float minY, float maxY, string yAxisTitle)
     {
         var axisPaint = new SKPaint { Color = SKColors.Black, IsAntialias = true, StrokeWidth = 1 };
@@ -160,6 +180,9 @@ public static class GraphGenerator
         }
     }
 
+    /// <summary>
+    /// Dibuja una línea de umbral horizontal punteada a través del gráfico.
+    /// </summary>
     private static void DrawThresholdLine(SKCanvas canvas, SKPaint textPaint, float value, string label, SKColor color, float minY, float maxY)
     {
         var linePaint = new SKPaint
@@ -185,11 +208,17 @@ public static class GraphGenerator
         canvas.DrawText(label, Width - Padding + 5, y + 5, labelPaint);
     }
 
+    /// <summary>
+    /// Mapea un punto de datos (tiempo, valor) a una coordenada de píxel en el lienzo.
+    /// </summary>
     private static SKPoint MapCoordinates(DateTime time, float value, DateTime minX, DateTime maxX, float minY, float maxY)
     {
         return new SKPoint(MapX(time, minX, maxX), MapY(value, minY, maxY));
     }
 
+    /// <summary>
+    /// Mapea un valor de tiempo del eje X a una coordenada de píxel horizontal.
+    /// </summary>
     private static float MapX(DateTime time, DateTime minX, DateTime maxX)
     {
         long totalSeconds = (long)(maxX - minX).TotalSeconds;
@@ -198,12 +227,18 @@ public static class GraphGenerator
         return Padding + (Width - 2 * Padding) * (elapsedSeconds / (float)totalSeconds);
     }
 
+    /// <summary>
+    /// Mapea un valor de datos del eje Y a una coordenada de píxel vertical.
+    /// </summary>
     private static float MapY(float value, float minY, float maxY)
     {
         if (maxY - minY == 0) return Height - Padding;
         return (Height - Padding) - (Height - 2 * Padding) * ((value - minY) / (maxY - minY));
     }
 
+    /// <summary>
+    /// Dibuja un texto de marcador de posición en el centro del lienzo cuando no hay datos para graficar.
+    /// </summary>
     private static byte[] DrawPlaceholder(SKSurface surface, string text)
     {
         var canvas = surface.Canvas;
@@ -212,6 +247,9 @@ public static class GraphGenerator
         return EncodeSurfaceToPng(surface);
     }
 
+    /// <summary>
+    /// Codifica la superficie del lienzo a un arreglo de bytes en formato PNG.
+    /// </summary>
     private static byte[] EncodeSurfaceToPng(SKSurface surface)
     {
         using var image = surface.Snapshot();

@@ -3,7 +3,7 @@
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Stores authentication tokens (JWTs) for devices.
+/// Almacena los tokens de autenticación (JWT) generados para que los dispositivos se comuniquen de forma segura con la API.
 /// </summary>
 public partial class DeviceToken
 {

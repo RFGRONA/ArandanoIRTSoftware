@@ -8,17 +8,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de gestión de cultivos.
+///     Se encarga de las operaciones CRUD interactuando directamente con la base de datos a través de Entity Framework
+///     Core.
+/// </summary>
 public class CropService : ICropService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<CropService> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="CropService" />.
+    /// </summary>
+    /// <param name="context">El contexto de la base de datos.</param>
+    /// <param name="logger">El servicio de logging.</param>
     public CropService(ApplicationDbContext context, ILogger<CropService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result<int>> CreateCropAsync(CropCreateDto cropDto)
     {
         try
@@ -43,6 +54,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeleteCropAsync(int cropId)
     {
         try
@@ -80,6 +92,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<IEnumerable<CropSummaryDto>>> GetAllCropsAsync()
     {
         try
@@ -149,6 +162,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<CropDetailsDto?>> GetCropByIdAsync(int cropId)
     {
         try
@@ -181,6 +195,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<CropEditDto?>> GetCropForEditByIdAsync(int cropId)
     {
         try
@@ -211,6 +226,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdateCropAsync(CropEditDto cropDto)
     {
         try
@@ -241,6 +257,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<CropSettings>> GetAnalysisParametersAsync(int cropId)
     {
         try

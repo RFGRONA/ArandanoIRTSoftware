@@ -2,6 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._3_Presentation.ViewModels.Admin;
 
+/// <summary>
+///     ViewModel para el formulario de confirmación de acciones administrativas sensibles,
+///     donde el administrador debe reingresar su contraseña para proceder.
+/// </summary>
 public class AdminActionConfirmationViewModel
 {
     [Required] public int AdminToDeleteId { get; set; }

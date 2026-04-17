@@ -1,7 +1,7 @@
 ﻿namespace ArandanoIRT.Web._0_Domain.Entities;
 
 /// <summary>
-/// Stores manual observations made by an agronomist or expert user.
+/// Almacena las observaciones manuales realizadas por un agrónomo o un usuario experto sobre una planta.
 /// </summary>
 public partial class Observation
 {

@@ -8,6 +8,10 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio que gestiona la lógica para disparar alertas.
+///     Utiliza un sistema de caché en memoria para agrupar alertas repetitivas y evitar el envío masivo de notificaciones.
+/// </summary>
 public class AlertTriggerService : IAlertTriggerService
 {
     private readonly IAlertService _alertService;
@@ -17,6 +21,9 @@ public class AlertTriggerService : IAlertTriggerService
     private readonly IUserService _userService;
     private readonly IMemoryCache _memoryCache;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AlertTriggerService" />.
+    /// </summary>
     public AlertTriggerService(
         ILogger<AlertTriggerService> logger,
         IDeviceService deviceService,
@@ -33,6 +40,7 @@ public class AlertTriggerService : IAlertTriggerService
         _memoryCache = memoryCache;
     }
 
+    /// <inheritdoc />
     public async Task ProcessGrafanaWebhookAsync(GrafanaWebhookPayload payload)
     {
         // 1. Extraemos la etiqueta personalizada que define el tipo de alerta
@@ -79,6 +87,7 @@ public class AlertTriggerService : IAlertTriggerService
     }
 
 
+    /// <inheritdoc />
     public async Task CheckDeviceInactivityAsync()
     {
         var inactivityMultiplier = _configuration.GetValue("Alerting:InactivityCheckMultiplier", 4);
@@ -119,6 +128,7 @@ public class AlertTriggerService : IAlertTriggerService
     }
 
 
+    /// <inheritdoc />
     public async Task SendGroupedAlertSummaryAsync(string alertType, AlertGroupState group)
     {
         // 1. Obtenemos la lista de administradores que deben ser notificados para este tipo de alerta
@@ -159,6 +169,7 @@ public class AlertTriggerService : IAlertTriggerService
             alertType, recipients.Count);
     }
 
+    /// <inheritdoc />
     public async Task TriggerAnomalyAlertAsync(int plantId, string plantName)
     {
         var usersToNotify = await _userService.GetAllUsersAsync();
@@ -179,6 +190,7 @@ public class AlertTriggerService : IAlertTriggerService
         _logger.LogWarning("Alerta de comportamiento anómalo enviada para la planta {PlantName}", plantName);
     }
 
+    /// <inheritdoc />
     public async Task TriggerMaskCreationAlertAsync(List<string> plantNames)
     {
         if (!plantNames.Any()) return;
@@ -199,6 +211,7 @@ public class AlertTriggerService : IAlertTriggerService
         _logger.LogInformation("Alerta de creación de máscara enviada para {Count} plantas.", plantNames.Count);
     }
 
+    /// <inheritdoc />
     public async Task TriggerStressAlertAsync(int plantId, string plantName, PlantStatus newStatus,
         PlantStatus previousStatus, float cwsiValue)
     {

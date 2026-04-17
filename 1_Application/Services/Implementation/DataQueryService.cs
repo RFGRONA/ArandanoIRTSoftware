@@ -15,17 +15,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de consulta de datos.
+///     Se encarga de realizar todas las operaciones de lectura, filtrado y transformación de datos desde la base de datos.
+/// </summary>
 public class DataQueryService : IDataQueryService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DataQueryService> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DataQueryService" />.
+    /// </summary>
     public DataQueryService(ApplicationDbContext context, ILogger<DataQueryService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result<PagedResultDto<SensorDataDisplayDto>>> GetSensorDataAsync(DataQueryFilters filters)
     {
         _logger.LogInformation("Obteniendo datos de sensores con filtros: {@Filters}", filters);
@@ -148,6 +156,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<PagedResultDto<ThermalCaptureSummaryDto>>> GetThermalCapturesAsync(
     DataQueryFilters filters)
     {
@@ -235,6 +244,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<ThermalCaptureDetailsDto?>> GetThermalCaptureDetailsAsync(long captureId)
     {
         _logger.LogInformation("Obteniendo detalles de captura térmica ID: {CaptureId}", captureId);
@@ -288,6 +298,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<IEnumerable<SensorDataDisplayDto>>> GetAmbientDataForDashboardAsync(TimeSpan duration,
         int? cropId, int? plantId)
     {
@@ -342,6 +353,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<ThermalStatsDto>> GetThermalStatsForDashboardAsync(TimeSpan duration, int? cropId,
         int? plantId)
     {
@@ -407,6 +419,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<int>> GetActiveDevicesCountAsync(int? cropId, int? plantId)
     {
         try
@@ -431,6 +444,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<int>> GetMonitoredPlantsCountAsync(int? cropId)
     {
         try
@@ -455,6 +469,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<SensorDataDisplayDto?>> GetLatestAmbientDataAsync(int? cropId, int? plantId, int? deviceId)
     {
         _logger.LogInformation("Obteniendo última lectura ambiental para CropId: {CropId}, etc.", cropId);
@@ -517,6 +532,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<List<PlantRawDataDto>>> GetRawDataForAnalysisAsync(List<int> plantIds, DateTime startTime,
         DateTime endTime)
     {
@@ -547,6 +563,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<(ThermalDataDto? Stats, string? ImagePath)>> GetLatestCaptureForMaskAsync(int plantId)
     {
         try
@@ -573,6 +590,7 @@ public class DataQueryService : IDataQueryService
         }
     }
 
+    /// <inheritdoc />
     public async Task<byte[]> GetAmbientDataAsCsvAsync(DataQueryFilters filters)
     {
         _logger.LogInformation("Generando CSV de datos de sensores con filtros: {@Filters}", filters);
@@ -615,6 +633,7 @@ public class DataQueryService : IDataQueryService
         return memoryStream.ToArray();
     }
 
+    /// <inheritdoc />
     public async Task<byte[]> GetThermalCapturesAsCsvAsync(DataQueryFilters filters)
     {
         _logger.LogInformation("Generando CSV de capturas térmicas con filtros: {@Filters}", filters);
@@ -696,6 +715,12 @@ public class DataQueryService : IDataQueryService
         return null;
     }
 
+    /// <summary>
+    ///     Deserializa de forma segura una cadena JSON que contiene estadísticas térmicas.
+    /// </summary>
+    /// <param name="thermalDataJson">La cadena JSON a deserializar.</param>
+    /// <param name="entityId">El ID de la entidad a la que pertenece el JSON (para logging).</param>
+    /// <returns>Un objeto <c>ThermalDataDto</c> o null si la deserialización falla.</returns>
     private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson, long entityId)
     {
         if (string.IsNullOrEmpty(thermalDataJson)) return null;

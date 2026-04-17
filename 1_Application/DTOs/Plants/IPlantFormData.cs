@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
+/// <summary>
+///     Define una interfaz común para los formularios de creación y edición de plantas,
+///     asegurando consistencia en las propiedades y validaciones.
+/// </summary>
 public interface IPlantFormData
 {
     [Required(ErrorMessage = "El nombre de la planta es requerido.")]

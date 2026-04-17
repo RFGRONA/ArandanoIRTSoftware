@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.SensorData;
 
+/// <summary>
+///     DTO para mostrar una vista resumida de una captura termográfica, ideal para listas.
+/// </summary>
 public class ThermalCaptureSummaryDto
 {
     public long Id { get; set; }

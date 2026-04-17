@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
+/// <summary>
+///     DTO para mostrar una vista resumida de una planta, ideal para listas y tablas.
+/// </summary>
 public class PlantSummaryDto
 {
     public int Id { get; set; }

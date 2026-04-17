@@ -1,5 +1,8 @@
 namespace ArandanoIRT.Web._1_Application.DTOs.Observations;
 
+/// <summary>
+///     DTO que contiene los filtros aplicables a una consulta de observaciones.
+/// </summary>
 public class ObservationQueryFilters
 {
     public int? PlantId { get; set; }

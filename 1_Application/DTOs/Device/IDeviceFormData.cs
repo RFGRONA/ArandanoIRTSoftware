@@ -2,6 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
+/// <summary>
+///     Define una interfaz común para los formularios de creación y edición de dispositivos,
+///     garantizando que compartan las propiedades y validaciones fundamentales.
+/// </summary>
 public interface IDeviceFormData
 {
     [Required(ErrorMessage = "El nombre del dispositivo es requerido.")]

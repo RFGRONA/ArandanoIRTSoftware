@@ -13,6 +13,6 @@ public class AnalysisDetailsViewModel
     public string TempChartDataJson { get; set; }
     public float CwsiThresholdIncipient { get; set; }
     public float CwsiThresholdCritical { get; set; }
-
+    
     public bool HasData => !string.IsNullOrEmpty(CwsiChartDataJson);
 }

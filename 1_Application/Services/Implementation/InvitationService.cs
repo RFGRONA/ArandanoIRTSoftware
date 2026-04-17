@@ -7,12 +7,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de gestión de invitaciones.
+///     Se encarga de la creación, validación segura mediante hashes y anulación de códigos de invitación.
+/// </summary>
 public class InvitationService : IInvitationService
 {
     private readonly IAlertService _alertService;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<InvitationService> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="InvitationService" />.
+    /// </summary>
     public InvitationService(ApplicationDbContext context, IAlertService alertService,
         ILogger<InvitationService> logger)
     {
@@ -21,6 +28,7 @@ public class InvitationService : IInvitationService
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result<InvitationCode>> CreateInvitationAsync(string email, bool isAdmin, int? createdByUserId)
     {
         var isFirstInvitation = !await _context.InvitationCodes.AnyAsync();
@@ -65,6 +73,7 @@ public class InvitationService : IInvitationService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<InvitationCode>> ValidateCodeAsync(string code, string email)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -87,6 +96,7 @@ public class InvitationService : IInvitationService
         return Result.Success(invitation);
     }
 
+    /// <inheritdoc />
     public async Task<Result> MarkCodeAsUsedAsync(int invitationId)
     {
         var invitation = await _context.InvitationCodes.FindAsync(invitationId);

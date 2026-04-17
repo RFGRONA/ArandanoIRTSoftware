@@ -6,13 +6,24 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio que provee datos ambientales consolidados y validados.
+///     Utiliza una caché para los datos del clima y un fallback al sensor de luz si la API externa falla o las condiciones
+///     no son óptimas.
+/// </summary>
 public class EnvironmentalDataProvider : IEnvironmentalDataProvider
 {
+    /// <summary>
+    ///     Define las palabras clave que indican condiciones climáticas adecuadas para un análisis válido.
+    /// </summary>
     private static readonly string[] SuitableWeatherConditions = { "sunny", "clear", "despejado", "soleado" };
     private readonly ILogger<EnvironmentalDataProvider> _logger;
     private readonly IMemoryCache _memoryCache;
     private readonly IWeatherService _weatherService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="EnvironmentalDataProvider" />.
+    /// </summary>
     public EnvironmentalDataProvider(
         IWeatherService weatherService,
         IMemoryCache memoryCache,
@@ -23,6 +34,7 @@ public class EnvironmentalDataProvider : IEnvironmentalDataProvider
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result<EnvironmentalData>> GetEnvironmentalDataForAnalysisAsync(
         string cityQuery,
         double? lightIntensity,
@@ -66,6 +78,12 @@ public class EnvironmentalDataProvider : IEnvironmentalDataProvider
         return Result.Success(environmentalData);
     }
 
+    /// <summary>
+    ///     Obtiene la información del clima para una ciudad, priorizando la obtención de datos desde la caché.
+    ///     Si no hay datos en caché, llama al servicio de clima y guarda el resultado por 30 minutos.
+    /// </summary>
+    /// <param name="cityQuery">La ciudad a consultar.</param>
+    /// <returns>Un objeto Result con la información del clima.</returns>
     private async Task<Result<WeatherInfo>> GetWeatherWithCacheAsync(string cityQuery)
     {
         var cacheKey = $"weather_{cityQuery.ToLower().Replace(" ", "_")}";
@@ -88,6 +106,13 @@ public class EnvironmentalDataProvider : IEnvironmentalDataProvider
         return weatherResult;
     }
 
+    /// <summary>
+    ///     Lógica de respaldo que determina si las condiciones son adecuadas para el análisis basándose únicamente en el
+    ///     sensor de luz.
+    /// </summary>
+    /// <param name="lightIntensity">La intensidad lumínica actual.</param>
+    /// <param name="lightIntensityThreshold">El umbral mínimo de intensidad requerido.</param>
+    /// <returns>True si la intensidad lumínica es suficiente, de lo contrario False.</returns>
     private bool CheckLightSensorFallback(double? lightIntensity, double lightIntensityThreshold)
     {
         if (!lightIntensity.HasValue)

@@ -4,6 +4,9 @@ using ArandanoIRT.Web._1_Application.Helper;
 
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
+/// <summary>
+/// Contenedor principal para todas las configuraciones específicas de un cultivo.
+/// </summary>
 public class CropSettings
 {
     [JsonPropertyName("analysis_parameters")]
@@ -16,6 +19,9 @@ public class CropSettings
     public CalibrationReminder CalibrationReminder { get; set; } = new();
 }
 
+/// <summary>
+/// Define los parámetros utilizados para el análisis de estrés hídrico.
+/// </summary>
 [ValidateAnalysisParameters]
 public class AnalysisParameters
 {
@@ -83,6 +89,9 @@ public class AnalysisParameters
     public int SmoothingWindowMinutes { get; set; } = 60;
 }
 
+/// <summary>
+/// Define los parámetros para la detección de anomalías en los datos.
+/// </summary>
 public class AnomalyParameters
 {
     [Required(ErrorMessage = "El umbral Delta T es obligatorio.")]
@@ -97,6 +106,9 @@ public class AnomalyParameters
     public int DurationMinutes { get; set; } = 30;
 }
 
+/// <summary>
+/// Define los parámetros para los recordatorios de calibración de dispositivos.
+/// </summary>
 public class CalibrationReminder
 {
     [Required(ErrorMessage = "El intervalo de recordatorio es obligatorio.")]

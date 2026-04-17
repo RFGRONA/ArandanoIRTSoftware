@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
+/// <summary>
+/// Data Transfer Object para el proceso de inicio de sesión del administrador principal (bootstrap).
+/// </summary>
 public class AdminLoginDto
 {
     [Required(ErrorMessage = "El nombre de usuario es requerido.")]

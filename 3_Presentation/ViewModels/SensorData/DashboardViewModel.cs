@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 namespace ArandanoIRT.Web._3_Presentation.ViewModels.SensorData;
 
 // Para los datos de gráficos de series temporales
+/// <summary>
+///     DTO que encapsula los datos y la configuración para renderizar un gráfico de series temporales con Chart.js.
+/// </summary>
 public class TimeSeriesChartDataDto
 {
     public List<string> Labels { get; set; } = new();
@@ -20,6 +23,9 @@ public class TimeSeriesChartDataDto
 }
 
 // Para las estadísticas térmicas
+/// <summary>
+///     DTO que contiene un resumen de las estadísticas térmicas para mostrar en el dashboard.
+/// </summary>
 public class ThermalStatsDto
 {
     public float? AverageMaxTemp24h { get; set; }
@@ -31,6 +37,10 @@ public class ThermalStatsDto
     public DateTime? LatestThermalReadingTimestamp { get; set; }
 }
 
+/// <summary>
+///     ViewModel principal y completo para la página del Dashboard.
+///     Contiene todos los datos necesarios: filtros, datos para gráficos, KPIs y estadísticas.
+/// </summary>
 public class DashboardViewModel
 {
     // Filtros
@@ -66,10 +76,16 @@ public class DashboardViewModel
     public float? MaxAmbientLight24h { get; set; }
     public float? MinAmbientLight24h { get; set; }
 
+    /// <summary>
+    ///     Lista de las capturas térmicas más recientes para mostrar en el dashboard.
+    /// </summary>
     public List<ThermalCaptureSummaryDto> RecentCaptures { get; set; } = new();
     // ======================================================================
 }
 
+/// <summary>
+///     DTO para configurar las opciones del eje Y de un gráfico en Chart.js.
+/// </summary>
 public class ChartYAxisOptions
 {
     public string Label { get; set; }

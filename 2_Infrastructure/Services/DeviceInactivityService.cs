@@ -6,12 +6,22 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+/// Un servicio en segundo plano que se ejecuta a intervalos regulares para realizar tareas de monitoreo.
+/// Sus responsabilidades incluyen la comprobación de inactividad de dispositivos y el envío de resúmenes de alertas agrupadas.
+/// </summary>
 public class DeviceInactivityService : BackgroundService
 {
     private readonly ILogger<DeviceInactivityService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BackgroundJobSettings _settings;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="DeviceInactivityService"/>.
+    /// </summary>
+    /// <param name="scopeFactory">Factoría para crear nuevos ámbitos de inyección de dependencias.</param>
+    /// <param name="settings">La configuración de los trabajos en segundo plano, como el intervalo de ejecución.</param>
+    /// <param name="logger">El servicio de logging.</param>
     public DeviceInactivityService(
         IServiceScopeFactory scopeFactory,
         IOptions<BackgroundJobSettings> settings,
@@ -22,6 +32,13 @@ public class DeviceInactivityService : BackgroundService
         _settings = settings.Value;
     }
 
+    /// <summary>
+    /// Método principal del servicio. Contiene un bucle que se ejecuta periódicamente según el intervalo configurado.
+    /// En cada ciclo, realiza dos tareas:
+    /// 1. Comprueba si hay dispositivos inactivos.
+    /// 2. Revisa si hay grupos de alertas de Grafana pendientes en caché y envía un resumen si ha pasado más de una hora.
+    /// </summary>
+    /// <param name="stoppingToken">Token que indica cuándo se debe detener el servicio.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var interval = TimeSpan.FromMinutes(_settings.InactivityCheckIntervalMinutes);

@@ -12,12 +12,19 @@ using JsonException = Newtonsoft.Json.JsonException;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+/// Un servicio en segundo plano que ejecuta un conjunto de tareas diarias programadas,
+/// como la detección de anomalías y la verificación de la configuración del sistema.
+/// </summary>
 public class DailyTasksService : BackgroundService
 {
     private readonly AnomalyParametersSettings _anomalySettings;
     private readonly ILogger<DailyTasksService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="DailyTasksService"/>.
+    /// </summary>
     public DailyTasksService(
         IServiceScopeFactory scopeFactory,
         IOptions<AnomalyParametersSettings> anomalySettings,
@@ -28,6 +35,11 @@ public class DailyTasksService : BackgroundService
         _anomalySettings = anomalySettings.Value;
     }
 
+    /// <summary>
+    /// Método principal del servicio. Utiliza un temporizador periódico para ejecutar las tareas
+    /// una vez al día, aproximadamente a las 6:00 AM hora de Colombia.
+    /// </summary>
+    /// <param name="stoppingToken">Token que indica cuándo se debe detener el servicio.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // El timer se ejecutará cada hora, pero la lógica interna solo correrá a las 6 AM.
@@ -49,6 +61,13 @@ public class DailyTasksService : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Ejecuta la lógica de detección de anomalías nocturnas.
+    /// Analiza los datos de la noche anterior (20:00 a 06:00 UTC) y si detecta una diferencia de temperatura anómala
+    /// y sostenida entre la canopia y el ambiente, actualiza el estado de la planta a 'UNKNOWN' y envía una alerta.
+    /// </summary>
+    /// <param name="services">El proveedor de servicios del ámbito para resolver dependencias.</param>
+    /// <param name="token">El token de cancelación.</param>
     private async Task RunAnomalyDetectionAsync(IServiceProvider services, CancellationToken token)
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
@@ -136,6 +155,9 @@ public class DailyTasksService : BackgroundService
     }
 
     // Necesitamos este método auxiliar dentro de DailyTasksService
+    /// <summary>
+    /// Deserializa de forma segura una cadena JSON que contiene estadísticas térmicas.
+    /// </summary>
     private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson)
     {
         if (string.IsNullOrEmpty(thermalDataJson)) return null;
@@ -151,6 +173,10 @@ public class DailyTasksService : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Verifica si existen plantas monitoreadas que no tengan una máscara térmica configurada.
+    /// Si encuentra alguna, dispara una alerta para notificar a los usuarios.
+    /// </summary>
     private async Task RunMaskCreationCheckAsync(IServiceProvider services, CancellationToken token)
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();

@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
+/// <summary>
+/// DTO para el proceso de inicio de sesión de usuarios estándar.
+/// </summary>
 public class LoginDto
 {
     [Required(ErrorMessage = "El correo electrónico es requerido.")]

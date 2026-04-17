@@ -176,7 +176,7 @@ public class AnalyticsService : IAnalyticsService
         if (!analysisData.Any())
         {
             _logger.LogWarning("No se encontraron datos de análisis para la planta {PlantId}. Lanzando Catch-Up en Background...", plantId);
-
+            
             Task.Run(async () =>
             {
                 using var scope = _scopeFactory.CreateScope();
@@ -191,7 +191,7 @@ public class AnalyticsService : IAnalyticsService
                     logger.LogError(ex, "Error crítico durante Catch-Up en background para la planta {PlantId}", plantId);
                 }
             });
-
+            
             return Result.Failure<AnalysisDetailsViewModel>("Sin datos de análisis actualizados. Reconstruyendo análisis de la planta en segundo plano. Consulte nuevamente en unos minutos.");
         }
 
@@ -219,7 +219,7 @@ public class AnalyticsService : IAnalyticsService
             };
             smoothedData.Add(smoothedRecord);
         }
-
+        
         analysisData = smoothedData;
 
         // 5. Formatear datos para Chart.js
@@ -292,7 +292,7 @@ public class AnalyticsService : IAnalyticsService
         };
 
         return Result.Success(viewModel);
-    }
+}
 
     public async Task<Result> ReanalyzePlantAsync(int plantId)
     {

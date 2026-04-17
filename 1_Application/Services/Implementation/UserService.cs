@@ -15,6 +15,11 @@ using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de gestión de usuarios.
+///     Centraliza toda la lógica de negocio para el registro, autenticación, gestión de perfiles,
+///     y acciones administrativas sobre los usuarios, utilizando ASP.NET Core Identity.
+/// </summary>
 public class UserService : IUserService
 {
     private readonly IAlertService _alertService;
@@ -25,6 +30,9 @@ public class UserService : IUserService
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="UserService" />.
+    /// </summary>
     public UserService(
         ApplicationDbContext context,
         UserManager<User> userManager,
@@ -43,6 +51,7 @@ public class UserService : IUserService
         _alertService = alertService;
     }
 
+    /// <inheritdoc />
     public async Task<(SignInResult Result, bool JustLockedOut)> LoginUserAsync(LoginDto model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -69,6 +78,7 @@ public class UserService : IUserService
         return (signInResult, false);
     }
 
+    /// <inheritdoc />
     public async Task<Result> RegisterUserAsync(RegisterDto model)
     {
         // 1. Validar la invitación primero (operación de solo lectura)
@@ -134,6 +144,7 @@ public class UserService : IUserService
         return Result.Success(user.Id);
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetUsersForSelectionAsync()
     {
         return await _context.Users
@@ -148,6 +159,7 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
+    /// <inheritdoc />
     public async Task<Result<(string Name, string ResetLink)>> GeneratePasswordResetAsync(ForgotPasswordDto model,
         IUrlHelper urlHelper, string scheme)
     {
@@ -176,6 +188,7 @@ public class UserService : IUserService
         return Result.Success((user.FirstName, callbackUrl));
     }
 
+    /// <inheritdoc />
     public async Task<Result> ResetPasswordAsync(ResetPasswordDto model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -198,6 +211,7 @@ public class UserService : IUserService
         return Result.Success();
     }
 
+    /// <inheritdoc />
     public async Task<Result> ChangePasswordAsync(ClaimsPrincipal userPrincipal, ChangePasswordDto model)
     {
         var user = await _userManager.GetUserAsync(userPrincipal);
@@ -221,6 +235,7 @@ public class UserService : IUserService
         return Result.Success();
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdateProfileAsync(ClaimsPrincipal userPrincipal, ProfileInfoDto model)
     {
         var user = await _userManager.GetUserAsync(userPrincipal);
@@ -242,6 +257,7 @@ public class UserService : IUserService
         return Result.Success();
     }
 
+    /// <inheritdoc />
     public async Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate)
     {
         var allAdmins = await _userManager.GetUsersInRoleAsync("Admin");
@@ -249,6 +265,7 @@ public class UserService : IUserService
         return allAdmins.Where(u => compiledPredicate(u.AccountSettings)).ToList();
     }
 
+    /// <inheritdoc />
     public async Task<List<User>> GetAllUsersAsync()
     {
         return await _userManager.Users.ToListAsync();
@@ -323,6 +340,7 @@ public class UserService : IUserService
     }
 
 
+    /// <inheritdoc />
     public async Task<Result> PromoteToAdminAsync(int userIdToPromote)
     {
         var user = await _userManager.FindByIdAsync(userIdToPromote.ToString());
@@ -345,6 +363,7 @@ public class UserService : IUserService
         return Result.Failure($"No se pudo ascender al usuario: {errors}");
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeleteUserAsync(int userIdToDelete, int currentUserId)
     {
         // Regla de Seguridad 1: Un administrador no puede eliminarse a sí mismo.
@@ -381,6 +400,7 @@ public class UserService : IUserService
         return Result.Failure($"No se pudo eliminar al usuario: {errors}");
     }
 
+    /// <inheritdoc />
     public async Task<Result<string>> InitiateAdminDeletionAsync(int adminToDeleteId, int currentAdminId,
         string currentAdminPassword, IUrlHelper urlHelper, string scheme)
     {
@@ -424,6 +444,7 @@ public class UserService : IUserService
         return Result.Success(adminToDelete.FirstName);
     }
 
+    /// <inheritdoc />
     public async Task<Result> ConfirmAdminDeletionAsync(int adminToDeleteId, string token)
     {
         var adminToDelete = await _userManager.FindByIdAsync(adminToDeleteId.ToString());

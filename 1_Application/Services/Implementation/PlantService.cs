@@ -11,12 +11,19 @@ using System.Security.Claims;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de gestión de plantas.
+///     Se encarga de las operaciones CRUD y la lógica de negocio asociada a las plantas.
+/// </summary>
 public class PlantService : IPlantService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PlantService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="PlantService" />.
+    /// </summary>
     public PlantService(
         ApplicationDbContext context,
         ILogger<PlantService> logger,
@@ -27,6 +34,7 @@ public class PlantService : IPlantService
         _httpContextAccessor = httpContextAccessor;
     }
 
+    /// <inheritdoc />
     public async Task<Result<IEnumerable<PlantSummaryDto>>> GetPlantsByCropAsync(int cropId)
     {
         if (cropId <= 0) return Result.Success<IEnumerable<PlantSummaryDto>>(new List<PlantSummaryDto>());
@@ -57,6 +65,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<int>> CreatePlantAsync(PlantCreateDto plantDto)
     {
         // Usamos una transacción para asegurar que la planta y su historial se creen juntos
@@ -94,6 +103,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeletePlantAsync(int plantId)
     {
         try
@@ -119,6 +129,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<IEnumerable<PlantSummaryDto>>> GetAllPlantsAsync()
     {
         try
@@ -196,6 +207,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<PlantDetailsDto?>> GetPlantByIdAsync(int plantId)
     {
         try
@@ -228,6 +240,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<PlantEditDto?>> GetPlantForEditByIdAsync(int plantId)
     {
         try
@@ -253,6 +266,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdatePlantAsync(PlantEditDto plantDto)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -280,6 +294,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync()
     {
         try
@@ -301,6 +316,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdatePlantStatusAsync(int plantId, PlantStatus newStatus, string? observation,
         int userId)
     {
@@ -345,6 +361,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<PlantStatusHistoryDto>> GetPlantStatusHistoryAsync(int? plantId, int? userId,
         DateTime? startDate, DateTime? endDate)
     {
@@ -382,6 +399,7 @@ public class PlantService : IPlantService
 
     // --- Métodos para Dropdowns ---
 
+    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetCropsForSelectionAsync()
     {
         try
@@ -402,6 +420,7 @@ public class PlantService : IPlantService
         }
     }
 
+    /// <inheritdoc />
     public IEnumerable<SelectListItem> GetExperimentalGroupsForSelection()
     {
         return Enum.GetValues(typeof(ExperimentalGroupType))
@@ -413,6 +432,13 @@ public class PlantService : IPlantService
             }).ToList();
     }
 
+    /// <summary>
+    ///     Crea y añade un nuevo registro de historial de estado de planta al contexto de la base de datos.
+    /// </summary>
+    /// <param name="plant">La entidad de la planta.</param>
+    /// <param name="status">El estado que se va a registrar.</param>
+    /// <param name="observation">Una descripción del evento.</param>
+    /// <param name="userId">El ID del usuario que originó el cambio, o null si fue el sistema.</param>
     private async Task AddStatusHistoryAsync(Plant plant, PlantStatus status, string observation, int? userId)
     {
         var historyRecord = new PlantStatusHistory
@@ -426,6 +452,10 @@ public class PlantService : IPlantService
         await _context.PlantStatusHistories.AddAsync(historyRecord);
     }
 
+    /// <summary>
+    ///     Obtiene el ID del usuario actualmente autenticado a partir del HttpContext.
+    /// </summary>
+    /// <returns>El ID del usuario como un entero, o null si no se puede determinar.</returns>
     private int? GetCurrentUserId()
     {
         var userIdString = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
