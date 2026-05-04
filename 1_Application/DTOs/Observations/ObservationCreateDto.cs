@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Observations;
 
+/// <summary>
+///     DTO para el formulario de creación de una nueva observación manual.
+/// </summary>
 public class ObservationCreateDto
 {
     [Required(ErrorMessage = "Debe seleccionar una planta.")]
@@ -19,5 +22,8 @@ public class ObservationCreateDto
     public short? SubjectiveRating { get; set; }
 
     // Propiedad para poblar el dropdown de plantas en la vista
+    /// <summary>
+    ///     Propiedad para poblar la lista desplegable de plantas en la vista.
+    /// </summary>
     public IEnumerable<SelectListItem> AvailablePlants { get; set; } = new List<SelectListItem>();
 }

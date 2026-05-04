@@ -11,18 +11,25 @@ using QuestPDF.Infrastructure;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de generación de PDFs.
+///     Utiliza la librería QuestPDF para crear documentos a partir de los datos de la aplicación.
+/// </summary>
 public class PdfGeneratorService : IPdfGeneratorService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PdfGeneratorService> _logger;
+    private readonly IAnalysisExecutionService _analysisExecutionService;
 
-    public PdfGeneratorService(ApplicationDbContext context, ILogger<PdfGeneratorService> logger)
+    public PdfGeneratorService(ApplicationDbContext context, ILogger<PdfGeneratorService> logger, IAnalysisExecutionService analysisExecutionService)
     {
         _context = context;
         _logger = logger;
+        _analysisExecutionService = analysisExecutionService;
         Settings.License = LicenseType.Community;
     }
 
+    /// <inheritdoc />
     public async Task<byte[]> GeneratePlantReportAsync(int plantId, DateTime startDate, DateTime endDate)
     {
         var queryStartDate = startDate.Date.ToSafeUniversalTime();
@@ -39,18 +46,44 @@ public class PdfGeneratorService : IPdfGeneratorService
             return Array.Empty<byte>();
         }
 
-        var analysisData = await _context.AnalysisResults
+        var rawAnalysisData = await _context.AnalysisResults
             .AsNoTracking()
             .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= queryStartDate && ar.RecordedAt < queryEndDate)
             .OrderBy(ar => ar.RecordedAt)
-            .Select(ar => new AnalysisResultDataPoint
-            {
-                Timestamp = ar.RecordedAt,
-                CwsiValue = ar.CwsiValue ?? 0,
-                CanopyTemperature = ar.CanopyTemperature ?? 0,
-                AmbientTemperature = ar.AmbientTemperature ?? 0
-            })
             .ToListAsync();
+
+        if (!rawAnalysisData.Any())
+        {
+            _logger.LogInformation("No se encontraron datos analíticos para la planta {PlantId}. Ejecutando Catch-Up...", plantId);
+            await _analysisExecutionService.ExecuteCatchUpForPlantAsync(plantId);
+
+            rawAnalysisData = await _context.AnalysisResults
+                .AsNoTracking()
+                .Where(ar => ar.PlantId == plantId && ar.RecordedAt >= queryStartDate && ar.RecordedAt < queryEndDate)
+                .OrderBy(ar => ar.RecordedAt)
+                .ToListAsync();
+        }
+
+        var smoothingWindow = plant.Crop.CropSettings.AnalysisParameters.SmoothingWindowMinutes;
+        var analysisData = new List<AnalysisResultDataPoint>();
+
+        foreach (var record in rawAnalysisData)
+        {
+            var windowStart = record.RecordedAt.AddMinutes(-smoothingWindow);
+            var pointsInWindow = rawAnalysisData
+                .Where(ar => ar.RecordedAt >= windowStart && ar.RecordedAt <= record.RecordedAt)
+                .ToList();
+
+            analysisData.Add(new AnalysisResultDataPoint
+            {
+                Timestamp = record.RecordedAt,
+                CwsiValue = (float)(pointsInWindow.Average(p => p.CwsiValue) ?? 0f),
+                CanopyTemperature = (float)(pointsInWindow.Average(p => p.CanopyTemperature) ?? 0f),
+                AmbientTemperature = (float)(pointsInWindow.Average(p => p.AmbientTemperature) ?? 0f),
+                BaselineLL = (float)(pointsInWindow.Average(p => p.BaselineLL) ?? 0f),
+                Vpd = (float)(pointsInWindow.Average(p => p.Vpd) ?? 0f)
+            });
+        }
 
         // --- INICIO DE LA CORRECCIÓN: OBTENER TODOS LOS DATOS ---
         var observationData = await _context.Observations

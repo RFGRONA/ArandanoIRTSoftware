@@ -1,4 +1,4 @@
-﻿using ArandanoIRT.Web._0_Domain.Entities;
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -6,8 +6,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Data;
 
+/// <summary>
+///     Representa la sesión con la base de datos de la aplicación.
+///     Hereda de IdentityDbContext para integrar el sistema de usuarios y roles de ASP.NET Core Identity.
+/// </summary>
 public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationRole, int>
 {
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="ApplicationDbContext" />.
+    /// </summary>
+    /// <param name="options">Las opciones a ser usadas por el DbContext.</param>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
@@ -35,6 +43,12 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
 
     public virtual DbSet<AnalysisResult> AnalysisResults { get; set; }
 
+    /// <summary>
+    ///     Configura el modelo de datos para el contexto utilizando el ModelBuilder.
+    ///     Este método es donde se definen las relaciones, índices, claves primarias, nombres de tablas y columnas,
+    ///     y otras configuraciones específicas de la base de datos para cada entidad.
+    /// </summary>
+    /// <param name="modelBuilder">El constructor que se utiliza para construir el modelo para este contexto.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -401,12 +415,12 @@ public partial class ApplicationDbContext : IdentityDbContext<User, ApplicationR
             entity.Property(e => e.PlantId).HasColumnName("plant_id");
             entity.Property(e => e.RecordedAt).HasColumnName("recorded_at");
             entity.Property(e => e.CwsiValue).HasColumnName("cwsi_value");
-            entity.Property(e => e.Status).HasColumnName("status").HasConversion<string>();
+            entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.CanopyTemperature).HasColumnName("canopy_temperature");
             entity.Property(e => e.AmbientTemperature).HasColumnName("ambient_temperature");
             entity.Property(e => e.Vpd).HasColumnName("vpd");
-            entity.Property(e => e.BaselineTwet).HasColumnName("baseline_twet");
-            entity.Property(e => e.BaselineTdry).HasColumnName("baseline_tdry");
+            entity.Property(e => e.BaselineLL).HasColumnName("baseline_ll");
+            entity.Property(e => e.BaselineUL).HasColumnName("baseline_ul");
 
             entity.HasOne(d => d.Plant).WithMany(p => p.AnalysisResults)
                 .HasForeignKey(d => d.PlantId)

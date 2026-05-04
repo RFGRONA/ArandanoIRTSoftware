@@ -11,6 +11,11 @@ using Microsoft.Extensions.Options;
 
 // NUEVO
 
+/// <summary>
+///     Controlador de propósito especial utilizado únicamente para la configuración inicial de la aplicación.
+///     Permite un inicio de sesión temporal con credenciales pre-configuradas para crear el primer administrador.
+///     Sus endpoints se desactivan (devuelven 404) tan pronto como existe al menos un usuario con el rol "Admin".
+/// </summary>
 [Area("Admin")]
 public class BootstrapController : Controller
 {
@@ -18,6 +23,9 @@ public class BootstrapController : Controller
     private readonly AdminCredentialsSettings _rootCredentials;
     private readonly UserManager<User> _userManager; // NUEVO
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="BootstrapController" />.
+    /// </summary>
     public BootstrapController(
         IOptions<AdminCredentialsSettings> adminCredentialsOptions,
         UserManager<User> userManager, // NUEVO
@@ -29,6 +37,10 @@ public class BootstrapController : Controller
     }
 
     // GET: /Admin/Bootstrap/Login
+    /// <summary>
+    ///     Muestra la página de inicio de sesión de arranque, solo si no existen administradores en el sistema.
+    /// </summary>
+    /// <returns>La vista de login o un `NotFound (404)` si la configuración inicial ya se completó.</returns>
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> Login()
@@ -40,6 +52,12 @@ public class BootstrapController : Controller
     }
 
     // POST: /Admin/Bootstrap/Login
+    /// <summary>
+    ///     Procesa la solicitud de inicio de sesión de arranque. Si las credenciales son válidas,
+    ///     inicia una sesión temporal con un rol especial 'BootstrapAdmin' para permitir la creación de la primera invitación.
+    /// </summary>
+    /// <param name="model">Las credenciales de inicio de sesión de arranque.</param>
+    /// <returns>Una redirección al controlador de invitaciones en caso de éxito, o la vista con un error en caso de fallo.</returns>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]

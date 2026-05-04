@@ -12,6 +12,7 @@ using Npgsql;
 using Polly;
 using Polly.Extensions.Http;
 using Serilog;
+using Microsoft.AspNetCore.Hosting;
 
 namespace ArandanoIRT.Web._2_Infrastructure;
 
@@ -94,6 +95,13 @@ public static class DependencyInjection
         services.AddScoped<IEnvironmentalDataProvider, EnvironmentalDataProvider>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
+        services.AddScoped<IAnalysisExecutionService, AnalysisExecutionService>();
+        services.AddScoped<IConditionPredictor>(provider =>
+        {
+            var env = provider.GetRequiredService<IWebHostEnvironment>();
+            var modelPath = Path.Combine(env.ContentRootPath, "Assets", "decision_model.onnx");
+            return new OnnxConditionPredictor(modelPath);
+        });
         services.AddScoped<ITurnstileService, TurnstileService>();
 
         // Infrastructure Services

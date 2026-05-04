@@ -15,8 +15,8 @@ public class AnalysisResult
     public float? CanopyTemperature { get; set; }
     public float? AmbientTemperature { get; set; }
     public float? Vpd { get; set; }
-    public float? BaselineTwet { get; set; }
-    public float? BaselineTdry { get; set; }
+    public float? BaselineLL { get; set; }
+    public float? BaselineUL { get; set; }
 
     public virtual Plant Plant { get; set; } = null!;
 }

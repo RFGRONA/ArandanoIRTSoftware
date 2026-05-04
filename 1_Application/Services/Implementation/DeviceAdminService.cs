@@ -2,6 +2,7 @@ using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.DTOs.Device;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
@@ -12,12 +13,20 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de administración de dispositivos.
+///     Se encarga de las operaciones CRUD y la lógica de negocio asociada a los dispositivos
+///     desde la perspectiva del panel de administración web.
+/// </summary>
 public class DeviceAdminService : IDeviceAdminService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DeviceAdminService> _logger;
     private readonly TokenSettings _tokenSettings;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DeviceAdminService" />.
+    /// </summary>
     public DeviceAdminService(
         ApplicationDbContext context,
         IOptions<TokenSettings> tokenSettingsOptions,
@@ -28,6 +37,11 @@ public class DeviceAdminService : IDeviceAdminService
         _logger = logger;
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    ///     Esta operación utiliza una transacción de base de datos para garantizar que la creación
+    ///     del dispositivo y su código de activación sea una operación atómica.
+    /// </remarks>
     public async Task<Result<DeviceCreationResultDto>> CreateDeviceAsync(DeviceCreateDto deviceDto)
     {
         // Usamos una transacción para asegurar que la creación del dispositivo y su código de activación
@@ -106,6 +120,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<IEnumerable<DeviceSummaryDto>>> GetAllDevicesAsync()
     {
         try
@@ -128,7 +143,7 @@ public class DeviceAdminService : IDeviceAdminService
                         .FirstOrDefault() ?? ActivationStatus.PENDING,
                     RegisteredAt = d.RegisteredAt
                 })
-                .ToListAsync<DeviceSummaryDto>();
+                .ToListAsync();
 
             return Result.Success<IEnumerable<DeviceSummaryDto>>(summaries);
         }
@@ -139,6 +154,63 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    public async Task<Result<PagedResultDto<DeviceSummaryDto>>> GetPagedDevicesAsync(DeviceQueryFilters filters)
+    {
+        try
+        {
+            var query = _context.Devices.AsNoTracking().Include(d => d.Plant).AsQueryable();
+
+            if (filters.PlantId.HasValue)
+            {
+                query = query.Where(d => d.PlantId == filters.PlantId.Value);
+            }
+
+            if (filters.Status.HasValue)
+            {
+                query = query.Where(d => d.Status == filters.Status.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (filters.SortOrder?.ToLower() == "desc")
+                query = query.OrderByDescending(d => d.RegisteredAt);
+            else
+                query = query.OrderBy(d => d.RegisteredAt);
+
+            var devices = await query
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
+                .Select(d => new DeviceSummaryDto
+                {
+                    Id = d.Id,
+                    Name = d.Name,
+                    PlantName = d.Plant != null ? d.Plant.Name : "N/A",
+                    CropName = d.Plant != null ? d.Plant.Crop.Name : (d.Crop != null ? d.Crop.Name : "N/A"),
+                    DeviceStatus = d.Status,
+                    ActivationStatus = d.DeviceActivations
+                        .OrderByDescending(a => a.CreatedAt)
+                        .Select(a => (ActivationStatus?)a.Status)
+                        .FirstOrDefault() ?? ActivationStatus.PENDING,
+                    RegisteredAt = d.RegisteredAt
+                })
+                .ToListAsync();
+
+            return Result.Success(new PagedResultDto<DeviceSummaryDto>
+            {
+                Items = devices,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener la lista de dispositivos paginada.");
+            return Result.Failure<PagedResultDto<DeviceSummaryDto>>("No se pudo obtener la lista de dispositivos.");
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<Result<DeviceDetailsDto?>> GetDeviceByIdAsync(int deviceId)
     {
         try
@@ -187,6 +259,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<DeviceEditDto?>> GetDeviceForEditByIdAsync(int deviceId)
     {
         try
@@ -214,6 +287,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdateDeviceAsync(DeviceEditDto deviceDto)
     {
         try
@@ -256,6 +330,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeleteDeviceAsync(int deviceId)
     {
         try
@@ -289,6 +364,7 @@ public class DeviceAdminService : IDeviceAdminService
 
     // --- Métodos para SelectList (Dropdowns) ---
 
+    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetPlantsForSelectionAsync()
     {
         try
@@ -311,6 +387,7 @@ public class DeviceAdminService : IDeviceAdminService
         }
     }
 
+    /// <inheritdoc />
     public IEnumerable<SelectListItem> GetDeviceStatusesForSelection()
     {
         // No se necesita consulta a la DB, se lee directamente del Enum.

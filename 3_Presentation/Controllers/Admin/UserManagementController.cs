@@ -7,31 +7,44 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+/// Controlador para que los administradores gestionen las cuentas de otros usuarios.
+/// Incluye acciones como promover a administrador y eliminar cuentas de usuario,
+/// con un flujo de trabajo seguro para la eliminación de administradores.
+/// </summary>
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
 public class UserManagementController : BaseAdminController
 {
     private readonly IUserService _userService;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="UserManagementController"/>.
+    /// </summary>
     public UserManagementController(IUserService userService)
     {
         _userService = userService;
     }
 
     // GET: /Admin/UserManagement/Index
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] UserQueryFilters filters)
     {
-        var result = await _userService.GetAllUsersForManagementAsync();
+        var result = await _userService.GetPagedUsersForManagementAsync(filters);
         if (result.IsFailure)
         {
             TempData[ErrorMessageKey] = result.ErrorMessage;
-            return View(new List<UserDto>());
+            return View(new ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<UserDto>());
         }
 
+        ViewBag.CurrentFilters = filters;
         return View(result.Value);
     }
 
     // POST: /Admin/UserManagement/PromoteToAdmin/5
+    /// <summary>
+    /// Procesa la promoción de un usuario estándar al rol de Administrador.
+    /// </summary>
+    /// <param name="id">El ID del usuario a promover.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> PromoteToAdmin(int id)
@@ -42,18 +55,22 @@ public class UserManagementController : BaseAdminController
     }
 
     // GET: /Admin/UserManagement/Delete/5
+    /// <summary>
+    /// Muestra una vista de confirmación antes de eliminar a un usuario estándar.
+    /// </summary>
+    /// <param name="id">El ID del usuario a eliminar.</param>
     public async Task<IActionResult> Delete(int id)
     {
-        // Para la vista de confirmación, podemos reutilizar el UserDto
-        // obteniendo los datos de todos los usuarios y filtrando por el ID.
-        var usersResult = await _userService.GetAllUsersForManagementAsync();
+        // Para la vista de confirmación, consultamos todos los usuarios (idealmente se debería tener un método GetUserForManagementById)
+        var filter = new UserQueryFilters { PageSize = int.MaxValue };
+        var usersResult = await _userService.GetPagedUsersForManagementAsync(filter);
         if (usersResult.IsFailure)
         {
             TempData[ErrorMessageKey] = usersResult.ErrorMessage;
             return RedirectToAction(nameof(Index));
         }
 
-        var userToDelete = usersResult.Value.FirstOrDefault(u => u.Id == id);
+        var userToDelete = usersResult.Value.Items.FirstOrDefault(u => u.Id == id);
         if (userToDelete == null)
         {
             TempData[ErrorMessageKey] = "Usuario no encontrado.";
@@ -64,6 +81,10 @@ public class UserManagementController : BaseAdminController
     }
 
     // POST: /Admin/UserManagement/Delete/5
+    /// <summary>
+    /// Ejecuta la eliminación de un usuario estándar tras la confirmación.
+    /// </summary>
+    /// <param name="id">El ID del usuario a eliminar.</param>
     [HttpPost]
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
@@ -74,6 +95,10 @@ public class UserManagementController : BaseAdminController
         return HandleServiceResult(result, nameof(Index), nameof(Index));
     }
 
+    /// <summary>
+    /// Inicia el proceso seguro para eliminar una cuenta de administrador, que requiere una segunda firma.
+    /// </summary>
+    /// <param name="model">El modelo que contiene el ID del administrador a eliminar y la contraseña del administrador actual para confirmación.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteAdmin(AdminActionConfirmationViewModel model)
@@ -108,6 +133,11 @@ public class UserManagementController : BaseAdminController
 
 
     // GET: /UserManagement/ConfirmDeletion?id=X&token=Y
+    /// <summary>
+    /// Muestra la página de confirmación final para la eliminación de un administrador, accedida a través del enlace en el correo.
+    /// </summary>
+    /// <param name="id">El ID del administrador a eliminar.</param>
+    /// <param name="token">El token de seguridad para la confirmación.</param>
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmDeletion(int id, string token)
@@ -118,8 +148,9 @@ public class UserManagementController : BaseAdminController
             return RedirectToAction("Index", "Dashboard"); // Redirigimos al dashboard principal
         }
 
-        var usersResult = await _userService.GetAllUsersForManagementAsync();
-        var userToDelete = usersResult.Value?.FirstOrDefault(u => u.Id == id);
+        var filter = new UserQueryFilters { PageSize = int.MaxValue };
+        var usersResult = await _userService.GetPagedUsersForManagementAsync(filter);
+        var userToDelete = usersResult.Value?.Items.FirstOrDefault(u => u.Id == id);
 
         if (userToDelete == null)
         {
@@ -132,6 +163,11 @@ public class UserManagementController : BaseAdminController
         return View(userToDelete); // Mostramos la vista de confirmación
     }
 
+    /// <summary>
+    /// Procesa la confirmación final y ejecuta la eliminación de la cuenta de administrador.
+    /// </summary>
+    /// <param name="id">El ID del administrador a eliminar.</param>
+    /// <param name="token">El token de seguridad para la confirmación.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [AllowAnonymous]

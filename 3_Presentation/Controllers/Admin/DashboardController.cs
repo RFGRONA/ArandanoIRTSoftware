@@ -9,6 +9,10 @@ using RestSharp.Portable.Serializers;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador para el dashboard principal del área de administración.
+///     Es responsable de agregar datos de múltiples servicios para construir el modelo de vista del dashboard.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class DashboardController : Controller
@@ -18,6 +22,9 @@ public class DashboardController : Controller
     private readonly ILogger<DashboardController> _logger;
     private readonly IPlantService _plantService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DashboardController" />.
+    /// </summary>
     public DashboardController(
         IDataQueryService dataQueryService,
         ICropService cropService,
@@ -30,6 +37,18 @@ public class DashboardController : Controller
         _logger = logger;
     }
 
+    /// <summary>
+    ///     Muestra la página principal del dashboard.
+    ///     Este método recolecta y procesa una gran cantidad de datos, incluyendo:
+    ///     - Listas de cultivos y plantas para los filtros.
+    ///     - KPIs (Indicadores Clave de Rendimiento) como el número de dispositivos activos.
+    ///     - Estadísticas térmicas y ambientales de las últimas 24 horas.
+    ///     - Datos de series temporales para los gráficos de temperatura, humedad y luz.
+    ///     - Las capturas térmicas más recientes.
+    /// </summary>
+    /// <param name="selectedCropId">El ID del cultivo seleccionado para filtrar los datos (opcional).</param>
+    /// <param name="selectedPlantId">El ID de la planta seleccionada para filtrar los datos (opcional).</param>
+    /// <returns>La vista del dashboard con el modelo <see cref="DashboardViewModel" /> completamente poblado.</returns>
     public async Task<IActionResult> Index(int? selectedCropId = null, int? selectedPlantId = null)
     {
         _logger.LogInformation(

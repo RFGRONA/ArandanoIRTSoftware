@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador para la gestión y visualización de los datos ambientales históricos.
+///     Requiere autorización y pertenece al área de Administración.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class AmbientDataController : Controller
@@ -19,6 +23,9 @@ public class AmbientDataController : Controller
     private readonly ILogger<AmbientDataController> _logger;
     private readonly IPlantService _plantService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AmbientDataController" />.
+    /// </summary>
     public AmbientDataController(
         IDataQueryService dataQueryService,
         IDeviceAdminService deviceAdminService,
@@ -34,6 +41,11 @@ public class AmbientDataController : Controller
     }
 
     // GET: Admin/AmbientData
+    /// <summary>
+    ///     Muestra la vista principal con una tabla paginada y filtrable de los datos de sensores ambientales.
+    /// </summary>
+    /// <param name="filters">Objeto que contiene los parámetros de filtrado y paginación desde la URL.</param>
+    /// <returns>La vista `Index` con los datos paginados y las listas para los filtros.</returns>
     public async Task<IActionResult> Index([FromQuery] DataQueryFilters filters)
     {
         _logger.LogInformation("Accediendo al listado de datos ambientales con filtros: {FiltersJson}",
@@ -116,6 +128,11 @@ public class AmbientDataController : Controller
         return View(emptyPagedResult);
     }
 
+    /// <summary>
+    ///     Genera y devuelve un archivo CSV con los datos ambientales según los filtros aplicados.
+    /// </summary>
+    /// <param name="filters">Los filtros de la consulta para la exportación.</param>
+    /// <returns>Un `FileResult` que inicia la descarga del archivo CSV en el navegador.</returns>
     public async Task<IActionResult> DownloadCsv([FromQuery] DataQueryFilters filters)
     {
         _logger.LogInformation("Iniciando descarga CSV de datos ambientales con filtros: {FiltersJson}",

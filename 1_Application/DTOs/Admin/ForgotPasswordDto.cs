@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
+/// <summary>
+/// DTO para el formulario de solicitud de restablecimiento de contraseña.
+/// </summary>
 public class ForgotPasswordDto
 {
     [Required(ErrorMessage = "El correo electrónico es requerido.")]

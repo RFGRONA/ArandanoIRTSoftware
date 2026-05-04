@@ -1,23 +1,35 @@
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Crops;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de gestión de cultivos.
+///     Se encarga de las operaciones CRUD interactuando directamente con la base de datos a través de Entity Framework
+///     Core.
+/// </summary>
 public class CropService : ICropService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<CropService> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="CropService" />.
+    /// </summary>
+    /// <param name="context">El contexto de la base de datos.</param>
+    /// <param name="logger">El servicio de logging.</param>
     public CropService(ApplicationDbContext context, ILogger<CropService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result<int>> CreateCropAsync(CropCreateDto cropDto)
     {
         try
@@ -42,6 +54,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeleteCropAsync(int cropId)
     {
         try
@@ -79,6 +92,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<IEnumerable<CropSummaryDto>>> GetAllCropsAsync()
     {
         try
@@ -103,6 +117,52 @@ public class CropService : ICropService
         }
     }
 
+    public async Task<Result<PagedResultDto<CropSummaryDto>>> GetPagedCropsAsync(CropQueryFilters filters)
+    {
+        try
+        {
+            var query = _context.Crops.AsNoTracking();
+
+            if (!string.IsNullOrEmpty(filters.CityName))
+            {
+                query = query.Where(c => c.CityName.Contains(filters.CityName));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (filters.SortOrder?.ToLower() == "desc")
+                query = query.OrderByDescending(c => c.CreatedAt);
+            else
+                query = query.OrderBy(c => c.CreatedAt);
+
+            var cropSummaries = await query
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
+                .Select(c => new CropSummaryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    CityName = c.CityName,
+                    CreatedAt = c.CreatedAt
+                })
+                .ToListAsync();
+
+            return Result.Success(new PagedResultDto<CropSummaryDto>
+            {
+                Items = cropSummaries,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Excepción al obtener los cultivos paginados.");
+            return Result.Failure<PagedResultDto<CropSummaryDto>>($"Error interno al obtener cultivos: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<Result<CropDetailsDto?>> GetCropByIdAsync(int cropId)
     {
         try
@@ -135,6 +195,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<CropEditDto?>> GetCropForEditByIdAsync(int cropId)
     {
         try
@@ -165,6 +226,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdateCropAsync(CropEditDto cropDto)
     {
         try
@@ -195,6 +257,7 @@ public class CropService : ICropService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<CropSettings>> GetAnalysisParametersAsync(int cropId)
     {
         try

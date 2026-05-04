@@ -8,28 +8,47 @@ using Configuration = brevo_csharp.Client.Configuration;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+/// Implementación del servicio de envío de correos que utiliza la API de Brevo (antes Sendinblue).
+/// </summary>
 public class BrevoEmailService : IEmailService
 {
     private readonly BrevoSettings _brevoSettings;
     private readonly ILogger<BrevoEmailService> _logger;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="BrevoEmailService"/>.
+    /// </summary>
+    /// <param name="brevoSettings">La configuración específica de Brevo, como la API Key.</param>
+    /// <param name="logger">El servicio de logging.</param>
     public BrevoEmailService(IOptions<BrevoSettings> brevoSettings, ILogger<BrevoEmailService> logger)
     {
         _brevoSettings = brevoSettings.Value;
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result> SendEmailAsync(string toEmail, string toName, string subject, string htmlContent)
     {
         return await SendEmailInternalAsync(toEmail, toName, subject, htmlContent, null);
     }
 
+    /// <inheritdoc />
     public async Task<Result> SendEmailWithAttachmentAsync(string toEmail, string toName, string subject, string htmlContent, byte[] attachmentContent, string attachmentName)
     {
         var attachment = new SendSmtpEmailAttachment(content: attachmentContent, name: attachmentName);
         return await SendEmailInternalAsync(toEmail, toName, subject, htmlContent, new List<SendSmtpEmailAttachment> { attachment });
     }
 
+    /// <summary>
+    /// Método central que construye y envía el correo electrónico utilizando el SDK de Brevo.
+    /// </summary>
+    /// <param name="toEmail">La dirección de correo del destinatario.</param>
+    /// <param name="toName">El nombre del destinatario.</param>
+    /// <param name="subject">El asunto del correo.</param>
+    /// <param name="htmlContent">El cuerpo del correo en formato HTML.</param>
+    /// <param name="attachments">Una lista opcional de archivos adjuntos.</param>
+    /// <returns>Un objeto Result que indica si el envío fue exitoso.</returns>
     private async Task<Result> SendEmailInternalAsync(string toEmail, string toName, string subject, string htmlContent, List<SendSmtpEmailAttachment>? attachments)
     {
         if (string.IsNullOrEmpty(_brevoSettings.ApiKey))

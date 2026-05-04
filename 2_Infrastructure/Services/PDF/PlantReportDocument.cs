@@ -6,17 +6,32 @@ using QuestPDF.Infrastructure;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services.Pdf;
 
+/// <summary>
+/// Representa la definición estructural de un informe de planta, implementando la interfaz IDocument de QuestPDF.
+/// Recibe un modelo con todos los datos y se encarga de componer el documento con cabeceras, contenido y pies de página.
+/// </summary>
 public class PlantReportDocument : IDocument
 {
     private readonly PlantReportModel _model;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="PlantReportDocument"/>.
+    /// </summary>
+    /// <param name="model">El modelo de datos que contiene toda la información a renderizar en el reporte.</param>
     public PlantReportDocument(PlantReportModel model)
     {
         _model = model;
     }
 
+    /// <summary>
+    /// Obtiene los metadatos del documento, como el título, autor, etc.
+    /// </summary>
     public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
 
+    /// <summary>
+    /// Método principal donde se compone la estructura del documento, página por página.
+    /// </summary>
+    /// <param name="container">El contenedor principal del documento.</param>
     public void Compose(IDocumentContainer container)
     {
         container.Page(page =>
@@ -32,6 +47,9 @@ public class PlantReportDocument : IDocument
         });
     }
 
+    /// <summary>
+    /// Compone la sección de la cabecera de cada página del documento.
+    /// </summary>
     private void ComposeHeader(IContainer container)
     {
         container.Row(row =>
@@ -51,6 +69,9 @@ public class PlantReportDocument : IDocument
         });
     }
 
+    /// <summary>
+    /// Compone el contenido principal del documento, distribuyendo los elementos en diferentes páginas.
+    /// </summary>
     private void ComposeContent(IContainer container)
     {
         // --- INICIO DE LA CORRECCIÓN DE MAQUETACIÓN ---
@@ -108,6 +129,9 @@ public class PlantReportDocument : IDocument
         // --- FIN DE LA CORRECCIÓN DE MAQUETACIÓN ---
     }
 
+    /// <summary>
+    /// Compone la cuadrícula de métricas de resumen en la parte superior del informe.
+    /// </summary>
     private void ComposeSummaryMetrics(IContainer container)
     {
         container.Grid(grid =>
@@ -121,6 +145,9 @@ public class PlantReportDocument : IDocument
         });
     }
 
+    /// <summary>
+    /// Compone la sección de diagnóstico o resumen ejecutivo.
+    /// </summary>
     private void ComposeDiagnosis(IContainer container)
     {
         container.Column(col =>
@@ -131,6 +158,9 @@ public class PlantReportDocument : IDocument
         });
     }
 
+    /// <summary>
+    /// Compone un único cuadro de métrica con un título y un valor.
+    /// </summary>
     private void ComposeMetric(IContainer container, string title, string value)
     {
         container.Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(5).Column(column =>
@@ -140,6 +170,9 @@ public class PlantReportDocument : IDocument
         });
     }
 
+    /// <summary>
+    /// Compone la tabla que muestra la bitácora de observaciones manuales.
+    /// </summary>
     private void ComposeObservationsTable(IContainer container)
     {
         // Aplicamos la misma corrección de columnas aquí para consistencia
@@ -172,6 +205,9 @@ public class PlantReportDocument : IDocument
         });
     }
 
+    /// <summary>
+    /// Compone la tabla que muestra el historial de cambios de estado (eventos relevantes).
+    /// </summary>
     private void ComposeEventsTable(IContainer container)
     {
         container.Column(column =>
@@ -209,6 +245,9 @@ public class PlantReportDocument : IDocument
     }
 
     // Clase estática interna para los estilos reutilizables
+    /// <summary>
+    /// Clase estática interna que define los estilos de texto reutilizables para el documento.
+    /// </summary>
     private static class Styles
     {
         public static TextStyle Title => TextStyle.Default.FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
@@ -216,6 +255,9 @@ public class PlantReportDocument : IDocument
         public static TextStyle Header => TextStyle.Default.FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
     }
 
+    /// <summary>
+    /// Genera un texto de diagnóstico simple basado en el valor máximo de CWSI del reporte.
+    /// </summary>
     private string GenerateDiagnosisText()
     {
         if (_model.MaxCwsi == null) return "No hay suficientes datos para generar un diagnóstico.";

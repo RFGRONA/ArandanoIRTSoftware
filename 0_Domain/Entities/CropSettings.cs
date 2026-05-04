@@ -4,6 +4,9 @@ using ArandanoIRT.Web._1_Application.Helper;
 
 namespace ArandanoIRT.Web._0_Domain.Entities;
 
+/// <summary>
+/// Contenedor principal para todas las configuraciones específicas de un cultivo.
+/// </summary>
 public class CropSettings
 {
     [JsonPropertyName("analysis_parameters")]
@@ -16,6 +19,9 @@ public class CropSettings
     public CalibrationReminder CalibrationReminder { get; set; } = new();
 }
 
+/// <summary>
+/// Define los parámetros utilizados para el análisis de estrés hídrico.
+/// </summary>
 [ValidateAnalysisParameters]
 public class AnalysisParameters
 {
@@ -48,8 +54,44 @@ public class AnalysisParameters
     [Display(Name = "Umbral Intensidad Lumínica")]
     [JsonPropertyName("light_intensity_threshold")]
     public int LightIntensityThreshold { get; set; } = 600;
+
+    [Required(ErrorMessage = "La temperatura mínima de canopia es obligatoria.")]
+    [Range(5.0, 45.0, ErrorMessage = "El valor debe estar entre 5.0 y 45.0.")]
+    [Display(Name = "Temperatura Mínima Válida de Canopia (°C)")]
+    [JsonPropertyName("min_valid_canopy_temp")]
+    public double MinValidCanopyTemp { get; set; } = 5.0;
+
+    [Required(ErrorMessage = "La temperatura máxima de canopia es obligatoria.")]
+    [Range(5.0, 45.0, ErrorMessage = "El valor debe estar entre 5.0 y 45.0.")]
+    [Display(Name = "Temperatura Máxima Válida de Canopia (°C)")]
+    [JsonPropertyName("max_valid_canopy_temp")]
+    public double MaxValidCanopyTemp { get; set; } = 40.0;
+
+    [Required(ErrorMessage = "La pendiente empírica M es obligatoria.")]
+    [Display(Name = "Pendiente Empírica (M)")]
+    [JsonPropertyName("empirical_m")]
+    public double EmpiricalM { get; set; } = -1.56;
+
+    [Required(ErrorMessage = "La intersección empírica C es obligatoria.")]
+    [Display(Name = "Intersección Empírica (C)")]
+    [JsonPropertyName("empirical_c")]
+    public double EmpiricalC { get; set; } = -0.21;
+
+    [Required(ErrorMessage = "El límite superior empírico es obligatorio.")]
+    [Display(Name = "Límite Superior Empírico (UL)")]
+    [JsonPropertyName("empirical_ul")]
+    public double EmpiricalUl { get; set; } = 5.0;
+
+    [Required(ErrorMessage = "La ventana de suavizado es obligatoria.")]
+    [Range(10, 120, ErrorMessage = "La ventana debe estar entre 10 y 120 minutos.")]
+    [Display(Name = "Ventana de Suavizado (min)")]
+    [JsonPropertyName("smoothing_window_minutes")]
+    public int SmoothingWindowMinutes { get; set; } = 60;
 }
 
+/// <summary>
+/// Define los parámetros para la detección de anomalías en los datos.
+/// </summary>
 public class AnomalyParameters
 {
     [Required(ErrorMessage = "El umbral Delta T es obligatorio.")]
@@ -64,6 +106,9 @@ public class AnomalyParameters
     public int DurationMinutes { get; set; } = 30;
 }
 
+/// <summary>
+/// Define los parámetros para los recordatorios de calibración de dispositivos.
+/// </summary>
 public class CalibrationReminder
 {
     [Required(ErrorMessage = "El intervalo de recordatorio es obligatorio.")]

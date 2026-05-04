@@ -12,12 +12,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio que gestiona las observaciones manuales de los agrónomos.
+/// </summary>
 public class ObservationService : IObservationService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ObservationService> _logger;
     private readonly UserManager<User> _userManager;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="ObservationService" />.
+    /// </summary>
+    /// <param name="context">El contexto de la base de datos.</param>
+    /// <param name="userManager">El servicio para la gestión de usuarios de ASP.NET Core Identity.</param>
+    /// <param name="logger">El servicio de logging.</param>
     public ObservationService(ApplicationDbContext context, UserManager<User> userManager,
         ILogger<ObservationService> logger)
     {
@@ -26,6 +35,7 @@ public class ObservationService : IObservationService
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result> CreateObservationAsync(ObservationCreateDto model, ClaimsPrincipal userPrincipal)
     {
         // Obtenemos el usuario completo a partir del ClaimsPrincipal de la sesión.
@@ -59,6 +69,7 @@ public class ObservationService : IObservationService
         }
     }
 
+    /// <inheritdoc />
     public async Task<PagedResultDto<ObservationListDto>> GetPagedObservationsAsync(ObservationQueryFilters filters)
     {
         var query = _context.Observations.AsNoTracking();
@@ -83,8 +94,12 @@ public class ObservationService : IObservationService
         var totalCount = await query.CountAsync();
 
         // Aplicar orden y paginación
+        if (filters.SortOrder?.ToLower() == "asc")
+            query = query.OrderBy(o => o.CreatedAt);
+        else
+            query = query.OrderByDescending(o => o.CreatedAt);
+
         var items = await query
-            .OrderByDescending(o => o.CreatedAt)
             .Skip((filters.PageNumber - 1) * filters.PageSize)
             .Take(filters.PageSize)
             .Select(o => new ObservationListDto

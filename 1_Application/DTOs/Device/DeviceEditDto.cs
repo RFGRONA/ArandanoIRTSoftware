@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
+/// <summary>
+///     DTO para el formulario de edición de un dispositivo existente.
+///     Incluye el ID del dispositivo y listas para las opciones de la vista.
+/// </summary>
 public class DeviceEditDto : IDeviceFormData
 {
     [Required]

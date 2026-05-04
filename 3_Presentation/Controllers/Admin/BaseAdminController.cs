@@ -9,7 +9,13 @@ namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 /// </summary>
 public abstract class BaseAdminController : Controller
 {
+    /// <summary>
+    ///     Clave para almacenar mensajes de éxito en TempData.
+    /// </summary>
     protected const string SuccessMessageKey = "SuccessMessage";
+    /// <summary>
+    ///     Clave para almacenar mensajes de error en TempData.
+    /// </summary>
     protected const string ErrorMessageKey = "ErrorMessage";
     protected const string InvalidRequestDataMessage = "Invalid request data.";
 

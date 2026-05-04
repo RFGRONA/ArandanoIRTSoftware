@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ArandanoIRT.Web._0_Domain.Common;
+using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._0_Domain.Enums;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
@@ -12,11 +13,15 @@ public class AnalyticsService : IAnalyticsService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<AnalyticsService> _logger;
+    private readonly IAnalysisExecutionService _analysisExecutionService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public AnalyticsService(ApplicationDbContext context, ILogger<AnalyticsService> logger)
+    public AnalyticsService(ApplicationDbContext context, ILogger<AnalyticsService> logger, IAnalysisExecutionService analysisExecutionService, IServiceScopeFactory scopeFactory)
     {
         _context = context;
         _logger = logger;
+        _analysisExecutionService = analysisExecutionService;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<Result> SaveThermalMaskAsync(int plantId, string maskCoordinatesJson)
@@ -117,11 +122,7 @@ public class AnalyticsService : IAnalyticsService
             return Result.Failure<AnalysisDetailsViewModel>(
                 "La planta no tiene una máscara térmica definida y no puede ser analizada.");
 
-        var cropPlants = await _context.Plants.Where(p => p.CropId == plant.CropId).ToListAsync();
-        if (!cropPlants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL) ||
-            !cropPlants.Any(p => p.ExperimentalGroup == ExperimentalGroupType.STRESS))
-            return Result.Failure<AnalysisDetailsViewModel>(
-                "La configuración del cultivo es inválida para el análisis.");
+
 
         // 2. Definir las fechas de visualización. Estas siempre serán locales y sin parte de tiempo.
         var displayEndDate = endDate ?? DateTime.Now.Date;
@@ -174,16 +175,54 @@ public class AnalyticsService : IAnalyticsService
 
         if (!analysisData.Any())
         {
-            _logger.LogWarning("No se encontraron datos de análisis para la planta {PlantId} en ningún rango.",
-                plantId);
-            return Result.Failure<AnalysisDetailsViewModel>(
-                "No hay datos de análisis disponibles para esta planta en el periodo seleccionado o en su historial.");
+            _logger.LogWarning("No se encontraron datos de análisis para la planta {PlantId}. Lanzando Catch-Up en Background...", plantId);
+
+            Task.Run(async () =>
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var scopedExecutionService = scope.ServiceProvider.GetRequiredService<IAnalysisExecutionService>();
+                try
+                {
+                    await scopedExecutionService.ExecuteCatchUpForPlantAsync(plantId);
+                }
+                catch (Exception ex)
+                {
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<AnalyticsService>>();
+                    logger.LogError(ex, "Error crítico durante Catch-Up en background para la planta {PlantId}", plantId);
+                }
+            });
+
+            return Result.Failure<AnalysisDetailsViewModel>("Sin datos de análisis actualizados. Reconstruyendo análisis de la planta en segundo plano. Consulte nuevamente en unos minutos.");
         }
 
         _logger.LogInformation("Consulta completada. Se encontraron {Count} registros de análisis.",
             analysisData.Count);
 
-        // 5. Formatear datos para Chart.js (sin cambios)
+        var smoothingWindow = plant.Crop.CropSettings.AnalysisParameters.SmoothingWindowMinutes;
+        var smoothedData = new List<AnalysisResult>();
+        foreach (var record in analysisData)
+        {
+            var windowStart = record.RecordedAt.AddMinutes(-smoothingWindow);
+            var pointsInWindow = analysisData
+                .Where(ar => ar.RecordedAt >= windowStart && ar.RecordedAt <= record.RecordedAt)
+                .ToList();
+
+            var smoothedRecord = new AnalysisResult
+            {
+                RecordedAt = record.RecordedAt,
+                CwsiValue = (float?)pointsInWindow.Average(p => p.CwsiValue),
+                CanopyTemperature = (float?)pointsInWindow.Average(p => p.CanopyTemperature),
+                AmbientTemperature = (float?)pointsInWindow.Average(p => p.AmbientTemperature),
+                Vpd = (float?)pointsInWindow.Average(p => p.Vpd),
+                BaselineLL = (float?)pointsInWindow.Average(p => p.BaselineLL),
+                BaselineUL = (float?)pointsInWindow.Average(p => p.BaselineUL)
+            };
+            smoothedData.Add(smoothedRecord);
+        }
+
+        analysisData = smoothedData;
+
+        // 5. Formatear datos para Chart.js
         var labels = analysisData.Select(ar => ar.RecordedAt.ToColombiaTime().ToString("dd/MM HH:mm")).ToList();
 
         var cwsiChartData = new
@@ -204,7 +243,7 @@ public class AnalyticsService : IAnalyticsService
         var tempChartData = new
         {
             labels,
-            datasets = new[]
+            datasets = new object[]
             {
                 new
                 {
@@ -219,6 +258,21 @@ public class AnalyticsService : IAnalyticsService
                     data = analysisData.Select(ar => ar.AmbientTemperature),
                     borderColor = "rgb(54, 162, 235)",
                     tension = 0.1
+                },
+                new
+                {
+                    label = "Línea Base Empírica (LL)",
+                    data = analysisData.Select(ar => ar.BaselineLL),
+                    borderColor = "rgb(153, 102, 255)",
+                    tension = 0.1
+                },
+                new
+                {
+                    label = "VPD (kPa)",
+                    data = analysisData.Select(ar => ar.Vpd),
+                    borderColor = "rgb(255, 159, 64)",
+                    tension = 0.1,
+                    yAxisID = "y1"
                 }
             }
         };
@@ -238,5 +292,34 @@ public class AnalyticsService : IAnalyticsService
         };
 
         return Result.Success(viewModel);
+    }
+
+    public async Task<Result> ReanalyzePlantAsync(int plantId)
+    {
+        var plant = await _context.Plants.FindAsync(plantId);
+        if (plant == null) return Result.Failure("Planta no encontrada.");
+
+        var deletedRows = await _context.AnalysisResults
+            .Where(ar => ar.PlantId == plantId)
+            .ExecuteDeleteAsync();
+
+        _logger.LogInformation("Eliminados {Count} resultados de análisis para la planta {PlantId} previo a la reevaluación.", deletedRows, plantId);
+
+        Task.Run(async () =>
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var scopedExecutionService = scope.ServiceProvider.GetRequiredService<IAnalysisExecutionService>();
+            try
+            {
+                await scopedExecutionService.ExecuteCatchUpForPlantAsync(plantId);
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<AnalyticsService>>();
+                logger.LogError(ex, "Error crítico durante ReAnalysis en background para la planta {PlantId}", plantId);
+            }
+        });
+
+        return Result.Success();
     }
 }

@@ -8,6 +8,11 @@ using Serilog.Context;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Api;
 
+/// <summary>
+///     Controlador de API principal que maneja todas las comunicaciones entrantes de los dispositivos de hardware.
+///     Proporciona endpoints para la activación, autenticación y envío de datos.
+///     Utiliza LogContext para enriquecer todos los logs con el ID del dispositivo que realiza la petición.
+/// </summary>
 [Route("api/device-api")]
 [ApiController]
 public class DeviceApiController : ControllerBase
@@ -16,6 +21,9 @@ public class DeviceApiController : ControllerBase
     private readonly IDataSubmissionService _dataSubmissionService;
     private readonly ILogger<DeviceApiController> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DeviceApiController" />.
+    /// </summary>
     public DeviceApiController(
         IDeviceService deviceService,
         IDataSubmissionService dataSubmissionService,
@@ -26,6 +34,12 @@ public class DeviceApiController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    ///     Endpoint para la activación inicial de un dispositivo.
+    ///     No requiere autenticación.
+    /// </summary>
+    /// <param name="requestDto">Datos de la solicitud de activación, incluyendo HardwareId, código y MAC address.</param>
+    /// <returns>Un `Ok (200)` con los tokens de acceso si la activación es exitosa, o un `BadRequest (400)` si falla.</returns>
     [HttpPost("activate")]
     public async Task<IActionResult> ActivateDevice([FromBody] DeviceActivationRequestDto requestDto)
     {
@@ -49,6 +63,11 @@ public class DeviceApiController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Endpoint para refrescar los tokens de autenticación de un dispositivo.
+    /// </summary>
+    /// <param name="requestDto">DTO que contiene el Refresh Token actual.</param>
+    /// <returns>Un `Ok (200)` con el nuevo par de tokens si es exitoso, o `Unauthorized (401)` si el token no es válido.</returns>
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] DeviceAuthRequestDto requestDto)
     {
@@ -69,6 +88,11 @@ public class DeviceApiController : ControllerBase
         return Unauthorized("Refresh token inválido o expirado.");
     }
 
+    /// <summary>
+    ///     Endpoint de prueba para verificar que un Access Token es válido.
+    ///     Requiere autenticación con la política "DeviceAuthenticated".
+    /// </summary>
+    /// <returns>Un `Ok (200)` si el token es válido.</returns>
     [HttpPost("auth")]
     [Authorize(Policy = "DeviceAuthenticated")]
     public IActionResult AuthenticateDevice()
@@ -94,6 +118,12 @@ public class DeviceApiController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Endpoint para que los dispositivos envíen registros de log al sistema.
+    ///     Requiere autenticación.
+    /// </summary>
+    /// <param name="logDto">El DTO con la información del log.</param>
+    /// <returns>Un `NoContent (204)` si el log se procesa correctamente.</returns>
     [HttpPost("log")]
     [Authorize(Policy = "DeviceAuthenticated")]
     public IActionResult SubmitLog([FromBody] DeviceLogRequestDto logDto)
@@ -123,6 +153,12 @@ public class DeviceApiController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Endpoint para que los dispositivos envíen datos de sensores ambientales.
+    ///     Requiere autenticación.
+    /// </summary>
+    /// <param name="ambientDataDto">El DTO con los datos de temperatura, humedad, etc.</param>
+    /// <returns>Un `NoContent (204)` si los datos se guardan con éxito.</returns>
     [HttpPost("ambient-data")]
     [Authorize(Policy = "DeviceAuthenticated")]
     public async Task<IActionResult> SubmitAmbientData([FromBody] AmbientDataDto ambientDataDto)
@@ -148,6 +184,14 @@ public class DeviceApiController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Endpoint para que los dispositivos envíen datos de capturas térmicas.
+    ///     Acepta un formato `multipart/form-data` con un JSON de datos y un archivo de imagen opcional.
+    ///     Requiere autenticación.
+    /// </summary>
+    /// <param name="thermalDataJson">Una cadena JSON con las estadísticas térmicas.</param>
+    /// <param name="imageFile">Un archivo de imagen RGB opcional.</param>
+    /// <returns>Un `Ok (200)` si los datos se guardan con éxito.</returns>
     [HttpPost("capture-data")]
     [Authorize(Policy = "DeviceAuthenticated")]
     [Consumes("multipart/form-data")]
@@ -199,6 +243,11 @@ public class DeviceApiController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Método de utilidad para extraer la identidad del dispositivo (ID, PlantID, CropID)
+    ///     a partir de los claims contenidos en el token de acceso JWT.
+    /// </summary>
+    /// <returns>Un objeto <c>DeviceIdentityContext</c> con los IDs, o null si los claims no son válidos.</returns>
     private DeviceIdentityContext? GetDeviceIdentityFromClaims()
     {
         var deviceIdClaim = User.FindFirstValue("DeviceId");

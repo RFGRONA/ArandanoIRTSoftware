@@ -12,12 +12,19 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Services;
 
+/// <summary>
+///     Un servicio en segundo plano que realiza el análisis de estrés hídrico a intervalos regulares.
+///     Orquesta el proceso de recolección de datos, cálculo de CWSI y actualización del estado de las plantas.
+/// </summary>
 public class WaterStressAnalysisService : BackgroundService
 {
     private readonly ILogger<WaterStressAnalysisService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BackgroundJobSettings _settings;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="WaterStressAnalysisService" />.
+    /// </summary>
     public WaterStressAnalysisService(
         IServiceScopeFactory scopeFactory,
         IOptions<BackgroundJobSettings> settings,
@@ -28,6 +35,12 @@ public class WaterStressAnalysisService : BackgroundService
         _settings = settings.Value;
     }
 
+    /// <summary>
+    ///     Método principal del servicio. Se ejecuta en un bucle periódico según el intervalo configurado.
+    ///     Para cada cultivo, verifica si la hora actual está dentro de la ventana de análisis definida en su configuración
+    ///     antes de iniciar un ciclo de análisis.
+    /// </summary>
+    /// <param name="stoppingToken">Token que indica cuándo se debe detener el servicio.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var interval = TimeSpan.FromMinutes(_settings.AnalysisIntervalMinutes);
@@ -64,236 +77,28 @@ public class WaterStressAnalysisService : BackgroundService
     private async Task RunAnalysisCycleAsync(IServiceProvider services, Crop crop, AnalysisParameters parameters,
         DateTime nowUtc, CancellationToken token)
     {
-        var dataQueryService = services.GetRequiredService<IDataQueryService>();
-        var environmentalDataProvider = services.GetRequiredService<IEnvironmentalDataProvider>();
+        var analysisExecutionService = services.GetRequiredService<IAnalysisExecutionService>();
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        var alertTriggerService = services.GetRequiredService<IAlertTriggerService>();
 
-        // 1. Obtener plantas y validar la configuración del cultivo
-        var plantsInCrop = await dbContext.Plants
-            .Where(p => p.CropId == crop.Id)
+        // 1. Obtener plantas monitoreadas del cultivo
+        var monitoredPlants = await dbContext.Plants
+            .Where(p => p.CropId == crop.Id && p.ExperimentalGroup == ExperimentalGroupType.MONITORED)
+            .Select(p => p.Id)
             .ToListAsync(token);
 
-        var hasControl = plantsInCrop.Any(p => p.ExperimentalGroup == ExperimentalGroupType.CONTROL);
-        var hasStress = plantsInCrop.Any(p => p.ExperimentalGroup == ExperimentalGroupType.STRESS);
-        var hasMonitored = plantsInCrop.Any(p => p.ExperimentalGroup == ExperimentalGroupType.MONITORED);
-
-        if (!hasControl || !hasStress || !hasMonitored)
+        if (!monitoredPlants.Any())
         {
-            _logger.LogWarning(
-                "El cultivo {CropName} no puede ser analizado. Se requiere al menos una planta de tipo 'Control', 'Stress' y 'Monitored'.",
-                crop.Name);
-            return; // Detenemos el análisis para este cultivo
-        }
-
-        // 2. Obtener datos crudos
-        var allPlantIds = plantsInCrop.Select(p => p.Id).ToList();
-        var startTime = nowUtc.AddMinutes(-_settings.AnalysisIntervalMinutes);
-        var rawDataResult = await dataQueryService.GetRawDataForAnalysisAsync(allPlantIds, startTime, nowUtc);
-        if (rawDataResult.IsFailure || !rawDataResult.Value.Any()) return;
-
-        var plantsData = rawDataResult.Value;
-
-        // 3. Validar condiciones ambientales
-        var referenceReading = plantsData.SelectMany(p => p.EnvironmentalReadings).FirstOrDefault();
-        if (referenceReading == null) return;
-
-        var lightValue = GetLightValueFromJson(referenceReading.ExtraData);
-        var envDataResult = await environmentalDataProvider.GetEnvironmentalDataForAnalysisAsync(
-            crop.CityName, lightValue, parameters.LightIntensityThreshold, referenceReading.Temperature,
-            referenceReading.Humidity);
-
-        if (envDataResult.IsFailure || !envDataResult.Value.IsConditionSuitable)
-        {
-            _logger.LogWarning(
-                "Las condiciones ambientales para el cultivo {CropName} no son adecuadas para el análisis.", crop.Name);
+            _logger.LogWarning("El cultivo {CropName} no tiene plantas 'Monitored' para analizar.", crop.Name);
             return;
         }
 
-        var envData = envDataResult.Value;
+        _logger.LogInformation("Delegando análisis a AnalysisExecutionService para {Count} plantas monitoreadas.", monitoredPlants.Count);
 
-        // 4. Calcular Líneas Base T_wet y T_dry
-        var controlPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.CONTROL);
-        var stressPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.STRESS);
-
-        var wetTemperatures = controlPlantsData.SelectMany(p => p.ThermalCaptures)
-            .Select(tc => DeserializeThermalStats(tc.ThermalDataStats)?.Avg_Temp ?? 0).Where(t => t > 0).ToList();
-        var dryTemperatures = stressPlantsData.SelectMany(p => p.ThermalCaptures)
-            .Select(tc => DeserializeThermalStats(tc.ThermalDataStats)?.Avg_Temp ?? 0).Where(t => t > 0).ToList();
-
-        if (!wetTemperatures.Any() || !dryTemperatures.Any())
+        foreach (var plantId in monitoredPlants)
         {
-            _logger.LogWarning(
-                "No hay suficientes datos de plantas 'Control' o 'Stress' para calcular las líneas base en el cultivo {CropName}.",
-                crop.Name);
-            return;
+            await analysisExecutionService.ExecuteCatchUpForPlantAsync(plantId);
         }
 
-        double tWet = wetTemperatures.Average();
-        double tDry = dryTemperatures.Max();
-
-        // 5. Analizar cada planta 'Monitored'
-        var monitoredPlantsData = plantsData.Where(p => p.Plant.ExperimentalGroup == ExperimentalGroupType.MONITORED);
-        foreach (var plantData in monitoredPlantsData)
-        {
-            var plantTc = CalculateCanopyTemperature(plantData);
-            if (!plantTc.HasValue) continue;
-
-            var cwsi = tDry - tWet > 0 ? (plantTc.Value - tWet) / (tDry - tWet) : 0;
-            cwsi = Math.Clamp(cwsi, 0, 1); // Asegurar que el valor esté entre 0 y 1
-
-            var previousStatus = plantData.Plant.Status;
-            var newStatus = DetermineStatus(cwsi, parameters, previousStatus);
-
-            // 6. Guardar resultado y disparar alerta si es necesario
-            var analysisResult = new AnalysisResult
-            {
-                PlantId = plantData.Plant.Id,
-                RecordedAt = nowUtc,
-                CwsiValue = (float)cwsi,
-                Status = newStatus,
-                CanopyTemperature = plantTc.Value,
-                AmbientTemperature = (float)envData.AmbientTemperatureC,
-                Vpd = (float)envData.VpdKpa,
-                BaselineTwet = (float)tWet,
-                BaselineTdry = (float)tDry
-            };
-
-            dbContext.AnalysisResults.Add(analysisResult);
-
-            if (newStatus != previousStatus)
-            {
-                // Llamar al servicio de alertas ANTES de cambiar el estado en la base de datos
-                await alertTriggerService.TriggerStressAlertAsync(
-                    plantData.Plant.Id,
-                    plantData.Plant.Name,
-                    newStatus,
-                    previousStatus,
-                    (float)cwsi
-                );
-
-                // 1. Crear el registro en la tabla de historial
-                var historyRecord = new PlantStatusHistory
-                {
-                    PlantId = plantData.Plant.Id,
-                    Status = newStatus,
-                    Observation = $"Cambio de estado automático por el sistema basado en un valor CWSI de {cwsi:F2}.",
-                    UserId = null,
-                    ChangedAt = nowUtc
-                };
-                dbContext.PlantStatusHistories.Add(historyRecord);
-
-                // 2. Actualizar el estado de la planta en la entidad principal
-                var plantToUpdate = await dbContext.Plants.FindAsync(plantData.Plant.Id);
-                if (plantToUpdate != null)
-                {
-                    plantToUpdate.Status = newStatus;
-                    plantToUpdate.UpdatedAt = nowUtc;
-                }
-            }
-        }
-
-        await dbContext.SaveChangesAsync(token);
         _logger.LogInformation("Ciclo de análisis completado para el cultivo: {CropName}", crop.Name);
-    }
-
-    private float? CalculateCanopyTemperature(PlantRawDataDto plantData)
-    {
-        var lastCapture = plantData.ThermalCaptures.OrderByDescending(tc => tc.RecordedAtServer).FirstOrDefault();
-        if (lastCapture == null) return null;
-
-        var stats = DeserializeThermalStats(lastCapture.ThermalDataStats);
-        if (stats == null) return null;
-
-        // Lógica de máscara/fallback
-        if (!string.IsNullOrWhiteSpace(plantData.Plant.ThermalMaskData) && stats.Temperatures != null)
-            try
-            {
-                var mask = JsonSerializer.Deserialize<ThermalMask>(plantData.Plant.ThermalMaskData);
-                if (mask?.Coordinates != null && mask.Coordinates.Any())
-                {
-                    var maskedTemperatures = new List<float>();
-                    foreach (var coord in mask.Coordinates)
-                    {
-                        var index = coord.Y * 32 + coord.X; // Asumiendo 32x24
-                        if (index < stats.Temperatures.Count) maskedTemperatures.Add(stats.Temperatures[index].Value);
-                    }
-
-                    return maskedTemperatures.Any() ? maskedTemperatures.Average() : stats.Avg_Temp;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al procesar máscara térmica para la planta {PlantId}", plantData.Plant.Id);
-                return stats.Avg_Temp; // Fallback a avg_temp si la máscara falla
-            }
-
-        return stats.Avg_Temp; // Fallback si no hay máscara
-    }
-
-    private PlantStatus DetermineStatus(double cwsi, AnalysisParameters parameters, PlantStatus previousStatus)
-    {
-        PlantStatus newStatus;
-        if (cwsi > parameters.CwsiThresholdCritical)
-            newStatus = PlantStatus.SEVERE_STRESS;
-        else if (cwsi > parameters.CwsiThresholdIncipient)
-            newStatus = PlantStatus.MILD_STRESS;
-        else
-            newStatus = PlantStatus.OPTIMAL;
-
-        // Lógica de recuperación
-        var wasStressed = previousStatus == PlantStatus.MILD_STRESS || previousStatus == PlantStatus.SEVERE_STRESS;
-        if (wasStressed && newStatus == PlantStatus.OPTIMAL) return PlantStatus.RECOVERING;
-
-        // Si ya estaba en recuperación y sigue óptimo, se considera recuperado.
-        if (previousStatus == PlantStatus.RECOVERING && newStatus == PlantStatus.OPTIMAL) return PlantStatus.OPTIMAL;
-
-        return newStatus;
-    }
-
-    // Métodos auxiliares para deserializar JSON de forma segura
-    private float? GetLightValueFromJson(string? extraDataJson)
-    {
-        if (string.IsNullOrWhiteSpace(extraDataJson)) return null;
-        try
-        {
-            using var jsonDoc = JsonDocument.Parse(extraDataJson);
-            if (jsonDoc.RootElement.TryGetProperty("light", out var lightElement) &&
-                lightElement.TryGetSingle(out var lightValue)) return lightValue;
-        }
-        catch
-        {
-            /* Ignorar error */
-        }
-
-        return null;
-    }
-
-    private ThermalDataDto? DeserializeThermalStats(string? thermalDataJson)
-    {
-        if (string.IsNullOrEmpty(thermalDataJson)) return null;
-        try
-        {
-            return JsonSerializer.Deserialize<ThermalDataDto>(thermalDataJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        }
-        catch
-        {
-            /* Ignorar error */
-        }
-
-        return null;
-    }
-
-    // DTOs internos para el parseo de JSON
-    private class ThermalMask
-    {
-        public List<Coord>? Coordinates { get; set; }
-    }
-
-    private class Coord
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
     }
 }

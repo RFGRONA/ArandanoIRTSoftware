@@ -1,67 +1,83 @@
+@*
+    Página de detalles del análisis para una planta específica.
+    Muestra la evolución de métricas clave como el CWSI y las temperaturas
+    a través de gráficos interactivos. Permite filtrar por fechas y realizar
+    acciones como generar reportes o recalcular el historial de análisis.
+*@
+
 @using System.Globalization
 @model ArandanoIRT.Web._3_Presentation.ViewModels.Analysis.AnalysisDetailsViewModel
 @{
-    ViewData["Title"] = $"Análisis de {Model.PlantName}";
-    Layout = "_AdminLayout";
-    var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
+ViewData["Title"] = $"Análisis de {Model.PlantName}";
+Layout = "_AdminLayout";
+@* Define la fecha máxima para los selectores de fecha como el día de hoy. *@
+var maxDate = DateTime.Now.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* Contenedor para el gráfico para controlar su tamaño y la responsividad */
-        .chart-container {
-            position: relative;
-            height: 400px; /* Aqui se le da una altura fija para que tenga mas consistencia */
-            width: 100%;
-        }
-    </style>
+<link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+</style>
 }
 
 <div class="page-header">
     <h1>@ViewData["Title"] <small class="text-muted fs-5">(@Model.CropName)</small></h1>
+    @if (Model.HasData)
+    {
     <div class="header-actions">
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#reanalyzePlantModal">
+            <i class="fas fa-sync-alt me-2"></i> Re-analizar Planta
+        </button>
+        @* Genera un reporte PDF con los datos del rango de fechas actual. *@
         <a asp-action="GenerateReport" asp-route-plantId="@Model.PlantId"
            asp-route-startDate="@Model.StartDate.ToString("o")" asp-route-endDate="@Model.EndDate.ToString("o")"
-           class="btn btn-success">
-            <i class="fas fa-download me-2"></i> Descargar PDF
-        </a>
+           class="btn btn-success"><i class="fas fa-download me-2"></i> Descargar PDF</a>
+
+        @* Abre un modal para enviar el reporte PDF a una dirección de correo. *@
         <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#emailReportModal">
             <i class="fas fa-paper-plane me-2"></i> Enviar por Correo
         </button>
+
+
     </div>
+    }
 </div>
 
+@* Formulario para seleccionar y filtrar por un rango de fechas. *@
 <div class="card filter-card mb-4">
     <form asp-action="Details" asp-route-id="@Model.PlantId" method="get">
         <div class="row g-3 align-items-end">
+            <div class="col-md-4"><label class="form-label fw-bold">Desde</label><input type="date" name="startDate"
+                                                                                        class="form-control"
+                                                                                        value="@Model.StartDate.ToString("yyyy-MM-dd")"
+                                                                                        max="@maxDate"/></div>
+            <div class="col-md-4"><label class="form-label fw-bold">Hasta</label><input type="date" name="endDate"
+                                                                                        class="form-control"
+                                                                                        value="@Model.EndDate.ToString("yyyy-MM-dd")"
+                                                                                        max="@maxDate"/></div>
             <div class="col-md-4">
-                <label class="form-label fw-bold">Desde</label>
-                <input type="date" name="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")"
-                       max="@maxDate"/>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Hasta</label>
-                <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")"
-                       max="@maxDate"/>
-            </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-filter me-2"></i>Filtrar Periodo
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-2"></i>Filtrar Periodo
                 </button>
             </div>
         </div>
     </form>
 </div>
 
+@* Si existen datos para el rango de fechas, muestra los gráficos. *@
+@if (Model.HasData)
+{
 <div class="row">
     <div class="col-lg-12 mb-4">
         <div class="card dashboard-card">
             <div class="card-header">
                 <div class="card-header-icon"><i class="fas fa-water"></i></div>
-                <h5 class="card-header-title">Evolución del Índice de Estrés Hídrico (CWSI)</h5>
-            </div>
+                <h5 class="card-header-title">Evolución del Índice de Estrés Hídrico (CWSI)</h5></div>
             <div class="card-body">
                 <div class="chart-container">
                     <canvas id="cwsiChart"></canvas>
@@ -73,8 +89,7 @@
         <div class="card dashboard-card">
             <div class="card-header">
                 <div class="card-header-icon"><i class="fas fa-thermometer-half"></i></div>
-                <h5 class="card-header-title">Evolución de Temperaturas</h5>
-            </div>
+                <h5 class="card-header-title">Evolución de Temperaturas</h5></div>
             <div class="card-body">
                 <div class="chart-container">
                     <canvas id="tempChart"></canvas>
@@ -83,8 +98,29 @@
         </div>
     </div>
 </div>
+}
+else @* Si no hay datos, muestra una opción para generar el historial completo. *@
+{
+<div class="card">
+    <div class="card-body text-center p-5">
+        <i class="fas fa-info-circle fa-3x text-primary mb-3"></i>
+        <h4 class="card-title">No hay datos de análisis</h4>
+        <p class="card-text text-muted">No se encontraron resultados de análisis para el periodo seleccionado.</p>
+        <p>Puedes iniciar un proceso para analizar todo el historial de datos crudos de esta planta. El proceso se
+            ejecutará en segundo plano.</p>
 
-<!-- Modal para Enviar Reporte -->
+        <form asp-action="StartCatchUpAnalysis" method="post" class="mt-4">
+            <input type="hidden" name="plantId" value="@Model.PlantId" />
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-lg btn-primary">
+                <i class="fas fa-history me-2"></i> Generar Historial de Análisis
+            </button>
+        </form>
+    </div>
+</div>
+}
+
+@* Modal que se muestra al hacer clic en "Enviar por Correo". *@
 <div class="modal fade" id="emailReportModal" tabindex="-1" aria-labelledby="emailReportModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -97,14 +133,16 @@
                     <p>Se enviará el reporte de la planta <strong>@Model.PlantName</strong> para el periodo
                         seleccionado.</p>
 
-                    <input type="hidden" name="plantId" value="@Model.PlantId"/>
-                    <input type="date" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")"/>
-                    <input type="date" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")"/>
+                    @* Campos ocultos para enviar el contexto actual (planta y fechas) al controlador. *@
+                    <input type="hidden" name="plantId" value="@Model.PlantId" />
+                    <input type="date" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" class="d-none"/>
+                    <input type="date" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" class="d-none"/>
 
                     <div class="mb-3">
                         <label for="recipientEmail" class="form-label">Correo Electrónico del Destinatario</label>
+                        @* El campo se pre-rellena con el email del usuario autenticado. *@
                         <input type="email" class="form-control" id="recipientEmail" name="recipientEmail"
-                               value="@User.Identity.Name" required>
+                               value="@User.Identity?.Name" required>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -118,20 +156,57 @@
     </div>
 </div>
 
+<!-- Modal de Confirmación para Re-analizar Planta -->
+<div class="modal fade" id="reanalyzePlantModal" tabindex="-1" aria-labelledby="reanalyzePlantModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header modal-header-warning">
+                <h5 class="modal-title" id="reanalyzePlantModalLabel">Confirmar Reevaluación de la Planta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de limpiar todos los datos históricos y reevaluar la planta <strong>@Model.PlantName</strong>?</p>
+                <div class="alert alert-warning mt-3">
+                    <strong>Atención:</strong> Esto ejecutará el cálculo empírico desde cero según los parámetros y umbrales actuales del cultivo. Los resultados nuevos tardarán un par de minutos en generarse.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <form id="reanalyzePlantForm" asp-action="ReanalyzePlant" asp-route-id="@Model.PlantId" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="button" class="btn btn-secondary-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Sí, Re-analizar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script
-        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
+<<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const hasData = @Model.HasData.ToString().ToLower();
+
+        if (hasData) {
+            // Registrar el plugin de anotaciones para Chart.js v3+
+            // El plugin a menudo se expone como 'ChartAnnotation' cuando se carga a través de CDN.
+            if (typeof Chart !== 'undefined' && typeof ChartAnnotation !== 'undefined') {
+                Chart.register(ChartAnnotation);
+            } else if (typeof Chart !== 'undefined' && typeof annotationPlugin !== 'undefined') { // Se recurre al nombre original
+                Chart.register(annotationPlugin);
+            }
+
             // --- Gráfico CWSI ---
-            const cwsiData = JSON.parse('@Html.Raw(Model.CwsiChartDataJson)');
+            const cwsiData = @Html.Raw(Model.CwsiChartDataJson);
 
-            // Se añaden datasets "dummy" para que las líneas de estrés aparezcan en la leyenda interactiva.
+            // Se añaden datasets "dummy" (sin datos) para que las líneas de umbral
+            // de estrés aparezcan en la leyenda. Esto permite al usuario ocultarlas
+            // o mostrarlas de forma interactiva.
             cwsiData.datasets.push({
                 label: 'Estrés Incipiente',
-                data: [], // Sin datos, solo para la leyenda
+                data: [],
                 borderColor: '#ffc107',
                 borderDash: [6, 6],
                 borderWidth: 2,
@@ -140,7 +215,7 @@
             });
             cwsiData.datasets.push({
                 label: 'Estrés Crítico',
-                data: [], // Sin datos, solo para la leyenda
+                data: [],
                 borderColor: '#dc3545',
                 borderDash: [6, 6],
                 borderWidth: 2,
@@ -149,78 +224,82 @@
             });
 
             const ctxCswi = document.getElementById('cwsiChart').getContext('2d');
-            const cwsiChart = new Chart(ctxCswi, {
-                type: 'line',
-                data: cwsiData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // Mejora la visualización en diferentes tamaños
-                    scales: {y: {beginAtZero: true, max: 1}},
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            // Lógica para ocultar las anotaciones al hacer clic en la leyenda
-                            onClick: (e, legendItem, legend) => {
-                                const index = legendItem.datasetIndex;
-                                const ci = legend.chart;
+            if (ctxCswi) {
+                new Chart(ctxCswi, {
+                    type: 'line',
+                    data: cwsiData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {y: {beginAtZero: true, max: 1}},
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                // Se sobrescribe la función onClick de la leyenda para controlar
+                                // la visibilidad tanto del dataset principal (CWSI) como de
+                                // las líneas de anotación de los umbrales de estrés.
+                                onClick: (e, legendItem, legend) => {
+                                    const index = legendItem.datasetIndex;
+                                    const ci = legend.chart;
 
-                                // Ocultar/mostrar el dataset principal (CWSI)
-                                if (index === 0) {
-                                    if (ci.isDatasetVisible(index)) {
-                                        ci.hide(index);
-                                        legendItem.hidden = true;
+                                    // Lógica para el dataset principal (CWSI).
+                                    if (index === 0) {
+                                        ci.toggleDataVisibility(index);
+                                        legendItem.hidden = !ci.isDatasetVisible(index);
                                     } else {
-                                        ci.show(index);
-                                        legendItem.hidden = false;
+                                        // Lógica para las líneas de anotación.
+                                        const annotationName = index === 1 ? 'incipientStressLine' : 'criticalStressLine';
+                                        const isVisible = ci.options.plugins.annotation.annotations[annotationName].display;
+                                        ci.options.plugins.annotation.annotations[annotationName].display = !isVisible;
+                                        legendItem.hidden = isVisible;
                                     }
-                                } else {
-                                    // Ocultar/mostrar las líneas de anotación
-                                    const annotationName = index === 1 ? 'incipientStressLine' : 'criticalStressLine';
-                                    const isVisible = ci.options.plugins.annotation.annotations[annotationName].display;
-                                    ci.options.plugins.annotation.annotations[annotationName].display = !isVisible;
-                                    legendItem.hidden = isVisible;
                                     ci.update();
                                 }
-                            }
-                        },
-                        annotation: {
-                            annotations: {
-                                incipientStressLine: {
-                                    type: 'line',
-                                    yMin: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
-                                    yMax: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
-                                    borderColor: '#ffc107',
-                                    borderWidth: 2,
-                                    borderDash: [6, 6],
-                                    display: true // Controlado por la leyenda
-                                },
-                                criticalStressLine: {
-                                    type: 'line',
-                                    yMin: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
-                                    yMax: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
-                                    borderColor: '#dc3545',
-                                    borderWidth: 2,
-                                    borderDash: [6, 6],
-                                    display: true // Controlado por la leyenda
+                            },
+                            // El plugin 'annotation' dibuja líneas horizontales para los umbrales de estrés.
+                            annotation: {
+                                annotations: {
+                                    incipientStressLine: {
+                                        type: 'line',
+                                        yMin: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
+                                        yMax: @Model.CwsiThresholdIncipient.ToString(CultureInfo.InvariantCulture),
+                                        borderColor: '#ffc107',
+                                        borderWidth: 2,
+                                        borderDash: [6, 6],
+                                        display: true // Su visibilidad se controla con la leyenda.
+                                    },
+                                    criticalStressLine: {
+                                        type: 'line',
+                                        yMin: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
+                                        yMax: @Model.CwsiThresholdCritical.ToString(CultureInfo.InvariantCulture),
+                                        borderColor: '#dc3545',
+                                        borderWidth: 2,
+                                        borderDash: [6, 6],
+                                        display: true // Su visibilidad se controla con la leyenda.
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
+
 
             // --- Gráfico de Temperatura ---
-            const tempData = JSON.parse('@Html.Raw(Model.TempChartDataJson)');
+            const tempData = @Html.Raw(Model.TempChartDataJson);
             const ctxTemp = document.getElementById('tempChart').getContext('2d');
-            new Chart(ctxTemp, {
-                type: 'line',
-                data: tempData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // Mejora la visualización
-                    plugins: {legend: {position: 'top'}}
-                }
-            });
-        });
-    </script>
+            if (ctxTemp) {
+                new Chart(ctxTemp, {
+                    type: 'line',
+                    data: tempData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {legend: {position: 'top'}}
+                    }
+                });
+            }
+        }
+    });
+</script>
 }

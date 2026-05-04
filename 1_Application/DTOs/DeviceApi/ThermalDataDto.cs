@@ -4,6 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 
+/// <summary>
+///     DTO para recibir los datos de la cámara térmica enviados por un dispositivo.
+///     Incluye estadísticas clave y, opcionalmente, la matriz completa de temperaturas.
+/// </summary>
 public class ThermalDataDto
 {
     [Required(ErrorMessage = "La temperatura máxima es requerida.")]

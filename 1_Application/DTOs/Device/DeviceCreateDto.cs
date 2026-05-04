@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
+/// <summary>
+///     DTO para el formulario de creación de un nuevo dispositivo.
+///     Implementa IDeviceFormData y añade propiedades específicas para la vista de creación.
+/// </summary>
 public class DeviceCreateDto : IDeviceFormData
 {
     [Required(ErrorMessage = "El nombre del dispositivo es obligatorio.")]

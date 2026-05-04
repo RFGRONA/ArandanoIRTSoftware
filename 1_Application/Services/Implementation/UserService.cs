@@ -3,6 +3,7 @@ using System.Security.Claims;
 using ArandanoIRT.Web._0_Domain.Common;
 using ArandanoIRT.Web._0_Domain.Entities;
 using ArandanoIRT.Web._1_Application.DTOs.Admin;
+using ArandanoIRT.Web._1_Application.DTOs.Common;
 using ArandanoIRT.Web._1_Application.Services.Contracts;
 using ArandanoIRT.Web._2_Infrastructure.Data;
 using ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
@@ -14,6 +15,11 @@ using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de gestión de usuarios.
+///     Centraliza toda la lógica de negocio para el registro, autenticación, gestión de perfiles,
+///     y acciones administrativas sobre los usuarios, utilizando ASP.NET Core Identity.
+/// </summary>
 public class UserService : IUserService
 {
     private readonly IAlertService _alertService;
@@ -24,6 +30,9 @@ public class UserService : IUserService
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="UserService" />.
+    /// </summary>
     public UserService(
         ApplicationDbContext context,
         UserManager<User> userManager,
@@ -42,6 +51,7 @@ public class UserService : IUserService
         _alertService = alertService;
     }
 
+    /// <inheritdoc />
     public async Task<(SignInResult Result, bool JustLockedOut)> LoginUserAsync(LoginDto model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -68,6 +78,7 @@ public class UserService : IUserService
         return (signInResult, false);
     }
 
+    /// <inheritdoc />
     public async Task<Result> RegisterUserAsync(RegisterDto model)
     {
         // 1. Validar la invitación primero (operación de solo lectura)
@@ -133,6 +144,7 @@ public class UserService : IUserService
         return Result.Success(user.Id);
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<SelectListItem>> GetUsersForSelectionAsync()
     {
         return await _context.Users
@@ -147,6 +159,7 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
+    /// <inheritdoc />
     public async Task<Result<(string Name, string ResetLink)>> GeneratePasswordResetAsync(ForgotPasswordDto model,
         IUrlHelper urlHelper, string scheme)
     {
@@ -175,6 +188,7 @@ public class UserService : IUserService
         return Result.Success((user.FirstName, callbackUrl));
     }
 
+    /// <inheritdoc />
     public async Task<Result> ResetPasswordAsync(ResetPasswordDto model)
     {
         var user = await _userManager.FindByEmailAsync(model.Email);
@@ -197,6 +211,7 @@ public class UserService : IUserService
         return Result.Success();
     }
 
+    /// <inheritdoc />
     public async Task<Result> ChangePasswordAsync(ClaimsPrincipal userPrincipal, ChangePasswordDto model)
     {
         var user = await _userManager.GetUserAsync(userPrincipal);
@@ -220,6 +235,7 @@ public class UserService : IUserService
         return Result.Success();
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdateProfileAsync(ClaimsPrincipal userPrincipal, ProfileInfoDto model)
     {
         var user = await _userManager.GetUserAsync(userPrincipal);
@@ -241,6 +257,7 @@ public class UserService : IUserService
         return Result.Success();
     }
 
+    /// <inheritdoc />
     public async Task<List<User>> GetAdminsToNotifyAsync(Expression<Func<AccountSettings, bool>> predicate)
     {
         var allAdmins = await _userManager.GetUsersInRoleAsync("Admin");
@@ -248,16 +265,24 @@ public class UserService : IUserService
         return allAdmins.Where(u => compiledPredicate(u.AccountSettings)).ToList();
     }
 
+    /// <inheritdoc />
     public async Task<List<User>> GetAllUsersAsync()
     {
         return await _userManager.Users.ToListAsync();
     }
 
-    public async Task<Result<IEnumerable<UserDto>>> GetAllUsersForManagementAsync()
+    public async Task<Result<PagedResultDto<UserDto>>> GetPagedUsersForManagementAsync(UserQueryFilters filters)
     {
         try
         {
-            var users = await _userManager.Users.OrderBy(u => u.FirstName).ToListAsync();
+            var query = _userManager.Users.AsQueryable();
+
+            if (filters.SortOrder?.ToLower() == "desc")
+                query = query.OrderByDescending(u => u.CreatedAt);
+            else
+                query = query.OrderBy(u => u.CreatedAt);
+
+            var users = await query.ToListAsync();
             var userDtos = new List<UserDto>();
             var now = DateTime.UtcNow;
             const int inactivityDaysThreshold = 30;
@@ -267,12 +292,20 @@ public class UserService : IUserService
                 var roles = await _userManager.GetRolesAsync(user);
                 var isAdmin = roles.Contains("Admin");
 
+                var userRole = isAdmin ? "Administrador" : "Usuario Estándar";
+
+                // Filter by role manually in memory if specified
+                if (!string.IsNullOrEmpty(filters.Role) && userRole != filters.Role)
+                {
+                    continue;
+                }
+
                 var userDto = new UserDto
                 {
                     Id = user.Id,
                     FullName = $"{user.FirstName} {user.LastName}",
                     Email = user.Email,
-                    Role = isAdmin ? "Administrador" : "Usuario Estándar",
+                    Role = userRole,
                     RegisteredDate = user.CreatedAt.ToLocalTime()
                 };
 
@@ -285,15 +318,29 @@ public class UserService : IUserService
                 userDtos.Add(userDto);
             }
 
-            return Result.Success<IEnumerable<UserDto>>(userDtos);
+            var totalCount = userDtos.Count;
+            var pagedItems = userDtos
+                .Skip((filters.PageNumber - 1) * filters.PageSize)
+                .Take(filters.PageSize)
+                .ToList();
+
+            return Result.Success(new PagedResultDto<UserDto>
+            {
+                Items = pagedItems,
+                TotalCount = totalCount,
+                PageNumber = filters.PageNumber,
+                PageSize = filters.PageSize
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al obtener la lista de usuarios para gestión.");
-            return Result.Failure<IEnumerable<UserDto>>("Ocurrió un error al cargar los usuarios.");
+            return Result.Failure<PagedResultDto<UserDto>>("Ocurrió un error al cargar los usuarios.");
         }
     }
 
+
+    /// <inheritdoc />
     public async Task<Result> PromoteToAdminAsync(int userIdToPromote)
     {
         var user = await _userManager.FindByIdAsync(userIdToPromote.ToString());
@@ -316,6 +363,7 @@ public class UserService : IUserService
         return Result.Failure($"No se pudo ascender al usuario: {errors}");
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeleteUserAsync(int userIdToDelete, int currentUserId)
     {
         // Regla de Seguridad 1: Un administrador no puede eliminarse a sí mismo.
@@ -352,6 +400,7 @@ public class UserService : IUserService
         return Result.Failure($"No se pudo eliminar al usuario: {errors}");
     }
 
+    /// <inheritdoc />
     public async Task<Result<string>> InitiateAdminDeletionAsync(int adminToDeleteId, int currentAdminId,
         string currentAdminPassword, IUrlHelper urlHelper, string scheme)
     {
@@ -395,6 +444,7 @@ public class UserService : IUserService
         return Result.Success(adminToDelete.FirstName);
     }
 
+    /// <inheritdoc />
     public async Task<Result> ConfirmAdminDeletionAsync(int adminToDeleteId, string token)
     {
         var adminToDelete = await _userManager.FindByIdAsync(adminToDeleteId.ToString());

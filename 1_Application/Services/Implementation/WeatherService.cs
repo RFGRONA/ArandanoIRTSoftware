@@ -8,12 +8,19 @@ using ArandanoIRT.Web._2_Infrastructure.Settings;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio que obtiene datos del clima.
+///     Se comunica con la API externa (WeatherAPI.com) para obtener las condiciones climáticas actuales.
+/// </summary>
 public class WeatherService : IWeatherService
 {
     private readonly HttpClient _httpClient;
     private readonly WeatherApiSettings _settings;
     private readonly ILogger<WeatherService> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="WeatherService" />.
+    /// </summary>
     public WeatherService(
         IHttpClientFactory httpClientFactory,
         IOptions<WeatherApiSettings> settingsOptions,
@@ -24,6 +31,12 @@ public class WeatherService : IWeatherService
         _logger = logger;
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    ///     Esta implementación realiza una llamada HTTP GET a la API de WeatherAPI.com.
+    ///     Incluye validaciones de configuración, manejo de errores de red y de la API,
+    ///     y deserializa la respuesta JSON en los DTOs de la aplicación.
+    /// </remarks>
     public async Task<Result<WeatherInfo>> GetCurrentWeatherAsync(string cityQuery)
     {
         if (string.IsNullOrWhiteSpace(_settings.ApiKey))

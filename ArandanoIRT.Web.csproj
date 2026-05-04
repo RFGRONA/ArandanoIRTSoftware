@@ -9,6 +9,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Remove="ArandanoIRT.Tests\**" />
+        <Content Remove="ArandanoIRT.Tests\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
         <PackageReference Include="brevo_csharp" Version="1.1.1"/>
         <PackageReference Include="CsvHelper" Version="33.1.0" />
@@ -33,6 +38,7 @@
         <PackageReference Include="SkiaSharp" Version="3.119.0" />
         <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
         <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.119.0" />
+        <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
     </ItemGroup>
 
     <ItemGroup>

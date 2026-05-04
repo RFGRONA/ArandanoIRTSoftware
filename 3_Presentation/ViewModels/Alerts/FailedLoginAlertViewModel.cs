@@ -1,5 +1,8 @@
 namespace ArandanoIRT.Web._3_Presentation.ViewModels.Alerts;
 
+/// <summary>
+///     ViewModel para la plantilla de correo electrónico que notifica sobre intentos de inicio de sesión fallidos.
+/// </summary>
 public class FailedLoginAlertViewModel
 {
     public string? UserName { get; set; }

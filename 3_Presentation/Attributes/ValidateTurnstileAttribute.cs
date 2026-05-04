@@ -4,8 +4,18 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace ArandanoIRT.Web._3_Presentation.Attributes;
 
+/// <summary>
+///     Un atributo de filtro de acción que intercepta las peticiones para validar el token de Cloudflare Turnstile.
+///     Se utiliza para proteger los formularios contra envíos automatizados por bots.
+///     La validación se omite automáticamente en el entorno de desarrollo.
+/// </summary>
 public class ValidateTurnstileAttribute : ActionFilterAttribute
 {
+    /// <summary>
+    ///     Se ejecuta antes de que se ejecute la acción del controlador.
+    ///     Extrae el token de Turnstile del formulario, lo valida usando ITurnstileService y, si la validación falla,
+    ///     detiene la ejecución y devuelve la vista con un error en el ModelState.
+    /// </summary>
     public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var environment = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();

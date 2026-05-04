@@ -10,6 +10,10 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador que maneja todas las acciones relacionadas con la cuenta de usuario,
+///     como inicio de sesión, cierre de sesión, registro y recuperación de contraseña.
+/// </summary>
 [Area("Admin")]
 public class AccountController : Controller
 {
@@ -19,6 +23,9 @@ public class AccountController : Controller
     private readonly IAlertService _alertService;
     private readonly UserManager<User> _userManager;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AccountController" />.
+    /// </summary>
     public AccountController(
         SignInManager<User> signInManager,
         IUserService userService,
@@ -34,6 +41,10 @@ public class AccountController : Controller
     }
 
     // --- LOGIN ---
+    /// <summary>
+    ///     Muestra la página de inicio de sesión.
+    /// </summary>
+    /// <param name="returnUrl">La URL a la que se redirigirá al usuario después de un inicio de sesión exitoso.</param>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult Login(string? returnUrl = null)
@@ -44,6 +55,10 @@ public class AccountController : Controller
         return View(model);
     }
 
+    /// <summary>
+    ///     Procesa la solicitud de inicio de sesión de un usuario.
+    /// </summary>
+    /// <param name="model">Los datos del formulario de inicio de sesión.</param>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
@@ -90,6 +105,9 @@ public class AccountController : Controller
     }
 
     // --- LOGOUT ---
+    /// <summary>
+    ///     Cierra la sesión del usuario actual.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
@@ -100,6 +118,10 @@ public class AccountController : Controller
     }
 
     // --- REGISTRO ---
+    /// <summary>
+    ///     Muestra la página de registro de un nuevo usuario.
+    /// </summary>
+    /// <param name="code">El código de invitación (opcionalmente pasado por la URL).</param>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult Register(string? code)
@@ -108,6 +130,10 @@ public class AccountController : Controller
         return View(model);
     }
 
+    /// <summary>
+    ///     Procesa la solicitud de registro de un nuevo usuario.
+    /// </summary>
+    /// <param name="model">Los datos del formulario de registro.</param>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
@@ -125,12 +151,20 @@ public class AccountController : Controller
     }
 
     // --- ACCESO DENEGADO ---
+    /// <summary>
+    ///     Muestra la página de "Acceso Denegado".
+    /// </summary>
     [HttpGet]
     public IActionResult AccessDenied()
     {
         return View();
     }
 
+    /// <summary>
+    ///     Redirige a una URL local de forma segura para prevenir ataques de redirección abierta.
+    ///     Si la URL no es local, redirige a la página principal del dashboard.
+    /// </summary>
+    /// <param name="returnUrl">La URL de destino.</param>
     private IActionResult RedirectToLocal(string? returnUrl)
     {
         if (Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
@@ -140,6 +174,9 @@ public class AccountController : Controller
     // --- RECUPERACIÓN DE CONTRASEÑA ---
 
     // GET: /Admin/Account/ForgotPassword
+    /// <summary>
+    ///     Muestra el formulario para solicitar el restablecimiento de contraseña.
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult ForgotPassword()
@@ -148,6 +185,10 @@ public class AccountController : Controller
     }
 
     // POST: /Admin/Account/ForgotPassword
+    /// <summary>
+    ///     Procesa la solicitud de restablecimiento de contraseña.
+    /// </summary>
+    /// <param name="model">El DTO con el correo electrónico del usuario.</param>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
@@ -169,6 +210,11 @@ public class AccountController : Controller
     }
 
     // GET: /Admin/Account/ResetPassword
+    /// <summary>
+    ///     Muestra el formulario para establecer una nueva contraseña.
+    /// </summary>
+    /// <param name="token">El token de restablecimiento.</param>
+    /// <param name="email">El correo del usuario.</param>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult ResetPassword(string? token = null, string? email = null)
@@ -181,6 +227,10 @@ public class AccountController : Controller
     }
 
     // POST: /Admin/Account/ResetPassword
+    /// <summary>
+    ///     Procesa el envío del formulario con la nueva contraseña.
+    /// </summary>
+    /// <param name="model">El DTO con el token, correo y la nueva contraseña.</param>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]

@@ -29,18 +29,31 @@
                     <option value="">Todas</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label fw-bold">Desde</label>
                 <input type="date" name="startDate" class="form-control" value="@startDateValue" max="@maxDate"/>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label fw-bold">Hasta</label>
                 <input type="date" name="endDate" class="form-control" value="@endDateValue" max="@maxDate"/>
             </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100">
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Orden</label>
+                <select name="sortOrder" id="sortOrder" class="form-select">
+                    <option value="desc">Más recientes</option>
+                    <option value="asc">Más antiguos</option>
+                </select>
+                @if(!string.IsNullOrEmpty(ViewBag.SortOrder as string)) {
+                    <script>document.getElementById('sortOrder').value = '@ViewBag.SortOrder';</script>
+                }
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
                     <i class="fas fa-filter me-2"></i>Filtrar
                 </button>
+                <a asp-action="History" class="btn btn-outline-secondary flex-grow-1 text-center">
+                    <i class="fas fa-undo me-2"></i>Limpiar
+                </a>
             </div>
         </div>
     </form>

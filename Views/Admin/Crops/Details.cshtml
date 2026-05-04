@@ -63,6 +63,25 @@ else
                         </dl>
                     </div>
                 </div>
+                <!-- INICIO DEL BLOQUE EMPÍRICO -->
+                <div class="col-lg-4 mb-3">
+                    <div class="parameter-card">
+                        <h6>Modelo Empírico (CWSI)</h6>
+                        <dl>
+                            <dt>Pendiente Empírica (M)</dt>
+                            <dd>@Model.CropSettings.AnalysisParameters.EmpiricalM</dd>
+                            <dt>Intersección Empírica (C)</dt>
+                            <dd>@Model.CropSettings.AnalysisParameters.EmpiricalC</dd>
+                            <dt>Límite Superior (UL)</dt>
+                            <dd>@Model.CropSettings.AnalysisParameters.EmpiricalUl</dd>
+                            <dt>Rango Temp. Canopia (°C)</dt>
+                            <dd>@Model.CropSettings.AnalysisParameters.MinValidCanopyTemp - @Model.CropSettings.AnalysisParameters.MaxValidCanopyTemp</dd>
+                            <dt>Media Móvil (min)</dt>
+                            <dd>@Model.CropSettings.AnalysisParameters.SmoothingWindowMinutes</dd>
+                        </dl>
+                    </div>
+                </div>
+                <!-- FIN DEL BLOQUE EMPÍRICO -->
                 <div class="col-lg-4 mb-3">
                     <div class="parameter-card">
                         <h6>Anomalías Nocturnas</h6>

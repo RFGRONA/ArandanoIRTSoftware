@@ -3,9 +3,19 @@ using ArandanoIRT.Web._0_Domain.Entities;
 
 namespace ArandanoIRT.Web._1_Application.Helper;
 
+/// <summary>
+///     Atributo de validación personalizado para la clase AnalysisParameters.
+///     Aplica reglas de negocio que involucran la comparación de múltiples propiedades.
+/// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class ValidateAnalysisParametersAttribute : ValidationAttribute
 {
+    /// <summary>
+    ///     Valida que los parámetros de análisis cumplan con las siguientes reglas:
+    ///     1. El umbral de estrés incipiente debe ser menor que el umbral crítico.
+    ///     2. La hora de inicio del análisis debe ser anterior a la hora de fin.
+    ///     3. La ventana de análisis debe estar dentro del rango de alta actividad solar (8:00 - 16:00).
+    /// </summary>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         const int minSolarHour = 8;

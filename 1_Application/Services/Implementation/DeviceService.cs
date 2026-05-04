@@ -10,6 +10,10 @@ using Microsoft.Extensions.Options;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio que maneja la lógica de negocio orientada a los dispositivos.
+///     Se encarga de la activación, autenticación por tokens y gestión de estado de los dispositivos.
+/// </summary>
 public class DeviceService : IDeviceService
 {
     private readonly ApplicationDbContext _context;
@@ -18,6 +22,9 @@ public class DeviceService : IDeviceService
     private readonly TokenSettings _tokenSettings;
     // IDataSubmissionService ya no es necesario aquí porque los logs los maneja ILogger.
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DeviceService" />.
+    /// </summary>
     public DeviceService(
         ApplicationDbContext context,
         IOptions<TokenSettings> tokenSettingsOptions,
@@ -28,6 +35,7 @@ public class DeviceService : IDeviceService
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<Result<DeviceActivationResponseDto>> ActivateDeviceAsync(
         DeviceActivationRequestDto activationRequest)
     {
@@ -166,6 +174,7 @@ public class DeviceService : IDeviceService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<DeviceAuthResponseDto>> RefreshDeviceTokenAsync(string refreshTokenValue)
     {
         _logger.LogInformation("Intentando refrescar token.");
@@ -214,6 +223,7 @@ public class DeviceService : IDeviceService
         }
     }
 
+    /// <inheritdoc />
     public async Task<Result<AuthenticatedDeviceDetailsDto>> ValidateTokenAndGetDeviceDetailsAsync(string accessToken)
     {
         _logger.LogDebug("Validando Access Token.");
@@ -257,6 +267,7 @@ public class DeviceService : IDeviceService
         }
     }
 
+    /// <inheritdoc />
     public async Task<List<Device>> GetInactiveDevicesAsync(int inactivityMultiplier)
     {
         var inactiveDevices = new List<Device>();
@@ -280,6 +291,7 @@ public class DeviceService : IDeviceService
         return inactiveDevices;
     }
 
+    /// <inheritdoc />
     public async Task<Result> UpdateDeviceStatusAsync(int deviceId, DeviceStatus newStatus)
     {
         var device = await _context.Devices.FindAsync(deviceId);
@@ -300,6 +312,11 @@ public class DeviceService : IDeviceService
         return Result.Success();
     }
 
+    /// <summary>
+    ///     Genera un nuevo par de Access/Refresh tokens, revoca los anteriores y guarda el nuevo en la base de datos.
+    /// </summary>
+    /// <param name="deviceId">El ID del dispositivo para el cual se generarán los tokens.</param>
+    /// <returns>Una tupla con los nuevos tokens y la fecha de expiración del Access Token.</returns>
     private async Task<Result<(string NewAccessToken, string NewRefreshToken, DateTime NewAccessTokenExpiration)>>
         GenerateAndSaveNewTokensAsync(int deviceId)
     {

@@ -3,6 +3,9 @@ using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Device;
 
+/// <summary>
+///     DTO para mostrar una vista resumida de un dispositivo, ideal para listas y tablas.
+/// </summary>
 public class DeviceSummaryDto
 {
     public int Id { get; set; }

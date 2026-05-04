@@ -45,27 +45,7 @@
             <h3 class="mb-0">Cultivo: @crop.Name</h3>
         </div>
         <div class="card-body p-4">
-            
-            <h6 class="text-muted text-uppercase small mb-3">Requisitos para el Análisis</h6>
-            <div class="readiness-container">
-                @{
-                    var readiness = crop.AnalysisReadiness;
-                    void RenderRequirement(bool isValid, string text)
-                    {
-                        <div class="readiness-item">
-                            <i class="icon fas @(isValid ? "fa-check-circle" : "fa-times-circle") @(isValid ? "valid" : "invalid")"></i>
-                            <span>@text</span>
-                        </div>
-                    }
 
-                    RenderRequirement(readiness.HasControlGroup, "Grupo 'Control' definido");
-                    RenderRequirement(readiness.HasStressGroup, "Grupo 'Estrés' definido");
-                    RenderRequirement(readiness.HasMonitoredGroup, "Grupo 'Monitoreado' definido");
-                    RenderRequirement(readiness.HasControlWithMask, "Máscara en 'Control'");
-                    RenderRequirement(readiness.HasStressWithMask, "Máscara en 'Estrés'");
-                }
-            </div>
-            
             @if (crop.Plants.Any())
             {
                 <div class="table-responsive">
@@ -103,7 +83,7 @@
 
                                     <td class="text-center">
                                         <a asp-action="Details" asp-route-id="@plant.Id"
-                                           class="btn btn-primary btn-sm @(plant.ExperimentalGroup != ExperimentalGroupType.MONITORED || !crop.AnalysisReadiness.IsReady || !plant.HasMask ? "disabled" : "")"
+                                           class="btn btn-primary btn-sm @(!plant.HasMask ? "disabled" : "")"
                                            title="Analizar">
                                             <i class="fas fa-chart-line"></i> Analizar
                                         </a>

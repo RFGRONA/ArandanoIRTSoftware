@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.DeviceApi;
 
+/// <summary>
+///     Representa una entrada de log de dispositivo de forma estructurada.
+/// </summary>
 public class DeviceLogEntryDto
 {
     [Required(ErrorMessage = "El tipo de log es requerido.")]

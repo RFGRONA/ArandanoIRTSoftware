@@ -1,9 +1,11 @@
 @using ArandanoIRT.Web._0_Domain.Common
 @using ArandanoIRT.Web._0_Domain.Enums
-@model IEnumerable<ArandanoIRT.Web._1_Application.DTOs.Device.DeviceSummaryDto>
+@using ArandanoIRT.Web._1_Application.DTOs.Device
+@model ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<ArandanoIRT.Web._1_Application.DTOs.Device.DeviceSummaryDto>
 @{
     ViewData["Title"] = "Gestión de Dispositivos";
     Layout = "_AdminLayout";
+    var currentFilters = ViewBag.CurrentFilters as DeviceQueryFilters;
 }
 
 @section Styles {
@@ -23,6 +25,50 @@
 @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
 @if (ViewData["ErrorMessage"] != null) { <div class="alert alert-danger">@ViewData["ErrorMessage"]</div> }
 
+<!-- Panel de Filtros -->
+<div class="card filter-card mb-4 p-3 shadow-sm">
+    <form method="get" asp-action="Index">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="PlantId" class="form-label">Planta</label>
+                <select name="PlantId" id="PlantId" class="form-select" asp-items="ViewBag.AvailablePlants">
+                    <option value="">-- Todas --</option>
+                </select>
+                @if(currentFilters?.PlantId != null) {
+                    <script>document.getElementById('PlantId').value = '@currentFilters.PlantId';</script>
+                }
+            </div>
+            <div class="col-md-3">
+                <label for="Status" class="form-label">Estado</label>
+                <select name="Status" id="Status" class="form-select" asp-items="ViewBag.AvailableStatuses">
+                    <option value="">-- Todos --</option>
+                </select>
+                @if(currentFilters?.Status != null) {
+                    <script>document.getElementById('Status').value = '@currentFilters.Status';</script>
+                }
+            </div>
+            <div class="col-md-3">
+                <label for="SortOrder" class="form-label">Orden</label>
+                <select name="SortOrder" id="SortOrder" class="form-select">
+                    <option value="desc">Más recientes</option>
+                    <option value="asc">Más antiguos</option>
+                </select>
+                @if(!string.IsNullOrEmpty(currentFilters?.SortOrder)) {
+                    <script>document.getElementById('SortOrder').value = '@currentFilters.SortOrder';</script>
+                }
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="fas fa-filter me-2"></i>Filtrar
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary flex-grow-1 text-center">
+                    <i class="fas fa-undo me-2"></i>Limpiar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
 <div class="card table-card">
     <div class="table-responsive">
         <table class="table">
@@ -38,9 +84,9 @@
                 </tr>
             </thead>
             <tbody>
-            @if (Model != null && Model.Any())
+            @if (Model != null && Model.Items.Any())
             {
-                @foreach (var item in Model)
+                @foreach (var item in Model.Items)
                 {
                     <tr>
                         <td>@Html.DisplayFor(modelItem => item.Name)</td>
@@ -111,4 +157,39 @@
             </tbody>
         </table>
     </div>
+
+    @if (Model != null && Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav class="pagination-container" aria-label="Paginación de dispositivos">
+                <span class="pagination-summary">Mostrando @Model.Items.Count() de @Model.TotalCount registros</span>
+                <ul class="pagination">
+                    <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageNumber - 1)"
+                           asp-route-PlantId="@currentFilters?.PlantId"
+                           asp-route-Status="@currentFilters?.Status"
+                           asp-route-SortOrder="@currentFilters?.SortOrder">Anterior</a>
+                    </li>
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pageNumber="@i"
+                               asp-route-PlantId="@currentFilters?.PlantId"
+                               asp-route-Status="@currentFilters?.Status"
+                               asp-route-SortOrder="@currentFilters?.SortOrder">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageNumber + 1)"
+                           asp-route-PlantId="@currentFilters?.PlantId"
+                           asp-route-Status="@currentFilters?.Status"
+                           asp-route-SortOrder="@currentFilters?.SortOrder">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
 </div>

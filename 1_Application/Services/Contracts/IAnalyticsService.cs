@@ -9,4 +9,5 @@ public interface IAnalyticsService
     Task<Result> SaveThermalMaskAsync(int plantId, string maskCoordinatesJson);
     Task<Result<List<CropMonitorViewModel>>> GetCropsForMonitoringAsync();
     Task<Result<AnalysisDetailsViewModel>> GetAnalysisDetailsAsync(int plantId, DateTime? startDate, DateTime? endDate);
+    Task<Result> ReanalyzePlantAsync(int plantId);
 }

@@ -3,6 +3,10 @@ using System.Text.Json.Serialization;
 namespace ArandanoIRT.Web._1_Application.DTOs.Weather;
 
 // Este DTO es para la respuesta de nuestro IWeatherService
+/// <summary>
+///     DTO principal que representa la información del clima de una forma limpia y estandarizada para ser usada dentro de
+///     la aplicación.
+/// </summary>
 public class WeatherInfo
 {
     public float? TemperatureCelsius { get; set; }
@@ -15,6 +19,9 @@ public class WeatherInfo
 // Estos pueden ser clases privadas o internas dentro del servicio si solo se usan allí.
 // O públicas si se reutilizan. Por ahora, públicas en el mismo archivo por simplicidad.
 
+/// <summary>
+///     Modelo para deserializar la respuesta completa de la API externa WeatherAPI.com.
+/// </summary>
 public class WeatherApiResponse
 {
     [JsonPropertyName("current")]
@@ -24,6 +31,9 @@ public class WeatherApiResponse
     public WeatherApiError? Error { get; set; } // Para capturar errores de la API
 }
 
+/// <summary>
+///     Modelo para deserializar el objeto "current" de la respuesta de WeatherAPI.
+/// </summary>
 public class CurrentWeather
 {
     [JsonPropertyName("temp_c")]
@@ -51,6 +61,9 @@ public class WeatherCondition // NUEVA CLASE para el objeto condition
     public int Code { get; set; }
 }
 
+/// <summary>
+///     Modelo para deserializar el objeto de error en caso de que la respuesta de WeatherAPI falle.
+/// </summary>
 public class WeatherApiError
 {
     [JsonPropertyName("code")]

@@ -68,6 +68,21 @@ public class AnalyticsController : BaseAdminController
         return View(result.Value);
     }
 
+    [HttpPost]
+    public async Task<IActionResult> ReanalyzePlant(int id)
+    {
+        var result = await _analyticsService.ReanalyzePlantAsync(id);
+
+        if (result.IsFailure)
+        {
+            TempData["ErrorMessage"] = result.ErrorMessage;
+            return RedirectToAction(nameof(Index));
+        }
+
+        TempData["SuccessMessage"] = "Se han eliminado los análisis anteriores. La planta se está reevaluando en segundo plano. Los resultados aparecerán en unos minutos.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
 
     [HttpGet]
     public async Task<IActionResult> GenerateReport(int plantId, DateTime startDate, DateTime endDate)

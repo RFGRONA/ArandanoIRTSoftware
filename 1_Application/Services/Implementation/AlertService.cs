@@ -9,12 +9,23 @@ using ArandanoIRT.Web._3_Presentation.ViewModels.Reports;
 
 namespace ArandanoIRT.Web._1_Application.Services.Implementation;
 
+/// <summary>
+///     Implementación del servicio de alertas y notificaciones.
+///     Utiliza el IRazorViewToStringRenderer para convertir vistas Razor en HTML y el IEmailService para enviar los
+///     correos.
+/// </summary>
 public class AlertService : IAlertService
 {
     private readonly IEmailService _emailService;
     private readonly ILogger<AlertService> _logger;
     private readonly IRazorViewToStringRenderer _razorRenderer;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="AlertService" />.
+    /// </summary>
+    /// <param name="emailService">El servicio para el envío de correos.</param>
+    /// <param name="razorRenderer">El servicio para renderizar vistas Razor a string.</param>
+    /// <param name="logger">El servicio de logging para registrar eventos y errores.</param>
     public AlertService(
         IEmailService emailService,
         IRazorViewToStringRenderer razorRenderer,
@@ -26,6 +37,7 @@ public class AlertService : IAlertService
     }
 
     // --- Alertas de Seguridad ---
+    /// <inheritdoc />
     public async Task TriggerFailedLoginAlertAsync(User user, string forgotPasswordUrl)
     {
         try
@@ -51,6 +63,7 @@ public class AlertService : IAlertService
     }
 
     // --- Notificaciones de Cuenta ---
+    /// <inheritdoc />
     public async Task SendPasswordResetEmailAsync(string userEmail, string userName, string resetLink)
     {
         var emailModel = (Name: userName, ResetLink: resetLink);
@@ -60,6 +73,7 @@ public class AlertService : IAlertService
         await _emailService.SendEmailAsync(userEmail, userName, "Restablece tu contraseña", emailHtml);
     }
 
+    /// <inheritdoc />
     public async Task SendPasswordChangedEmailAsync(string userEmail, string userName)
     {
         var emailHtml =
@@ -69,6 +83,7 @@ public class AlertService : IAlertService
     }
 
     // --- Notificaciones de Registro ---
+    /// <inheritdoc />
     public async Task SendInvitationEmailAsync(string recipientEmail, string recipientName, InvitationCode invitation)
     {
         var emailHtml =
@@ -79,6 +94,7 @@ public class AlertService : IAlertService
     }
 
     // --- Notificaciones de Soporte ---
+    /// <inheritdoc />
     public async Task SendPublicHelpRequestEmailAsync(PublicHelpRequestDto request, List<User> adminsToNotify)
     {
         if (!adminsToNotify.Any())
@@ -100,6 +116,7 @@ public class AlertService : IAlertService
         }
     }
 
+    /// <inheritdoc />
     public async Task SendAuthenticatedHelpRequestEmailAsync(AuthenticatedHelpRequestDto request, User requestingUser,
         List<User> adminsToNotify)
     {
@@ -124,6 +141,7 @@ public class AlertService : IAlertService
     }
 
     // --- Alerta Genérica ---
+    /// <inheritdoc />
     public async Task SendGenericAlertEmailAsync(string email, string name, GenericAlertViewModel model)
     {
         try
@@ -143,6 +161,7 @@ public class AlertService : IAlertService
     }
 
     // --- Alertas de Análisis ---
+    /// <inheritdoc />
     public async Task SendAnomalyAlertEmailAsync(string recipientEmail, AnomalyAlertViewModel viewModel)
     {
         var htmlContent = await _razorRenderer.RenderViewToStringAsync(
@@ -155,6 +174,7 @@ public class AlertService : IAlertService
         _logger.LogInformation("Alerta de comportamiento anómalo enviada a {RecipientEmail}", recipientEmail);
     }
 
+    /// <inheritdoc />
     public async Task SendMaskCreationAlertEmailAsync(string recipientEmail, MaskCreationAlertViewModel viewModel)
     {
         var htmlContent = await _razorRenderer.RenderViewToStringAsync(
@@ -167,6 +187,7 @@ public class AlertService : IAlertService
         _logger.LogInformation("Alerta de creación de máscara enviada a {RecipientEmail}", recipientEmail);
     }
 
+    /// <inheritdoc />
     public async Task SendStressAlertEmailAsync(string recipientEmail, StressAlertViewModel viewModel)
     {
         var htmlContent = await _razorRenderer.RenderViewToStringAsync(
@@ -180,6 +201,7 @@ public class AlertService : IAlertService
             viewModel.PlantName, recipientEmail);
     }
 
+    /// <inheritdoc />
     public async Task SendReportByEmailAsync(string recipientEmail, string plantName, byte[] pdfAttachment)
     {
         var subject = $"Reporte de Estado Hídrico: {plantName}";
@@ -206,6 +228,7 @@ public class AlertService : IAlertService
             recipientEmail);
     }
 
+    /// <inheritdoc />
     public async Task SendInactivityWarningEmailAsync(User admin, int daysInactive, string loginUrl)
     {
         try
@@ -256,6 +279,7 @@ public class AlertService : IAlertService
         }
     }
 
+    /// <inheritdoc />
     public async Task SendAdminDeletionRequestEmailAsync(List<User> otherAdmins, string initiatingAdminName,
         string adminToDeleteName, string confirmationLink)
     {
@@ -290,6 +314,7 @@ public class AlertService : IAlertService
         }
     }
 
+    /// <inheritdoc />
     public async Task SendAccountDeletedEmailAsync(string userEmail, string userName)
     {
         try

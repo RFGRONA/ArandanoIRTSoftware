@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
+/// <summary>
+///     DTO para el formulario de creación de una nueva planta.
+/// </summary>
 public class PlantCreateDto : IPlantFormData
 {
     public IEnumerable<SelectListItem> AvailableCrops { get; set; } = new List<SelectListItem>();

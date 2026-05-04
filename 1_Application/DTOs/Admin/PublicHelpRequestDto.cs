@@ -2,6 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Admin;
 
+/// <summary>
+/// DTO para manejar las solicitudes de ayuda enviadas desde el formulario público, por usuarios no autenticados.
+/// </summary>
 public class PublicHelpRequestDto
 {
     [Required(ErrorMessage = "Tu nombre es requerido.")]

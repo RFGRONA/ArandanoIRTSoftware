@@ -3,6 +3,9 @@ using ArandanoIRT.Web._0_Domain.Enums;
 
 namespace ArandanoIRT.Web._1_Application.DTOs.Plants;
 
+/// <summary>
+///     DTO para el formulario de actualización manual del estado de una planta.
+/// </summary>
 public class PlantStatusUpdateDto
 {
     [Required] public int PlantId { get; set; }

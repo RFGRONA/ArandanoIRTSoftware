@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador para la gestión y visualización de las capturas térmicas y RGB históricas.
+///     Requiere autorización y pertenece al área de Administración.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class CapturesController : Controller
@@ -19,6 +23,9 @@ public class CapturesController : Controller
     private readonly ILogger<CapturesController> _logger;
     private readonly IPlantService _plantService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="CapturesController" />.
+    /// </summary>
     public CapturesController(
         IDataQueryService dataQueryService,
         IDeviceAdminService deviceAdminService,
@@ -34,6 +41,11 @@ public class CapturesController : Controller
     }
 
     // GET: Admin/Captures
+    /// <summary>
+    ///     Muestra la vista principal con una tabla paginada y filtrable de las capturas térmicas.
+    /// </summary>
+    /// <param name="filters">Objeto que contiene los parámetros de filtrado y paginación desde la URL.</param>
+    /// <returns>La vista `Index` con los datos paginados y las listas para los filtros.</returns>
     public async Task<IActionResult> Index([FromQuery] DataQueryFilters filters)
     {
         _logger.LogInformation("Accediendo al listado de capturas térmicas/RGB con filtros: {FiltersJson}",
@@ -120,6 +132,11 @@ public class CapturesController : Controller
     }
 
     // GET: Admin/Captures/Details/5
+    /// <summary>
+    ///     Muestra la vista de detalles para una única captura térmica, incluyendo el mapa de calor.
+    /// </summary>
+    /// <param name="id">El ID de la captura a visualizar.</param>
+    /// <returns>La vista `Details` con el modelo de datos de la captura, o una redirección si no se encuentra.</returns>
     public async Task<IActionResult> Details(long? id)
     {
         if (id == null)
@@ -150,6 +167,11 @@ public class CapturesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    /// <summary>
+    ///     Genera y devuelve un archivo CSV con los datos de las capturas térmicas según los filtros aplicados.
+    /// </summary>
+    /// <param name="filters">Los filtros de la consulta para la exportación.</param>
+    /// <returns>Un `FileResult` que inicia la descarga del archivo CSV en el navegador.</returns>
     public async Task<IActionResult> DownloadCsv([FromQuery] DataQueryFilters filters)
     {
         _logger.LogInformation("Iniciando descarga CSV de capturas térmicas con filtros: {FiltersJson}",

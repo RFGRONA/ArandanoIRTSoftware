@@ -7,29 +7,43 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+/// Controlador para la gestión CRUD (Crear, Leer, Actualizar, Eliminar) de las entidades de Planta.
+/// Requiere autorización y pertenece al área de Administración.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class PlantsController : BaseAdminController
 {
     private readonly IPlantService _plantService;
 
+    /// <summary>
+    /// Inicializa una nueva instancia de la clase <see cref="PlantsController"/>.
+    /// </summary>
     public PlantsController(IPlantService plantService)
     {
         _plantService = plantService;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] PlantQueryFilters filters)
     {
-        var result = await _plantService.GetAllPlantsAsync();
+        var result = await _plantService.GetPagedPlantsAsync(filters);
         if (!result.IsSuccess)
         {
             TempData[ErrorMessageKey] = result.ErrorMessage;
-            return View(new List<PlantSummaryDto>());
+            return View(new ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<PlantSummaryDto>());
         }
 
+        ViewBag.CurrentFilters = filters;
+        ViewBag.AvailableCrops = await _plantService.GetCropsForSelectionAsync();
+        ViewBag.AvailableStatuses = EnumSelectListExtensions.ToSelectList<PlantStatus>();
         return View(result.Value);
     }
 
+    /// <summary>
+    /// Muestra la página de detalles para una planta específica.
+    /// </summary>
+    /// <param name="id">El ID de la planta a mostrar.</param>
     public async Task<IActionResult> Details(int id)
     {
         if (!ModelState.IsValid)
@@ -49,6 +63,9 @@ public class PlantsController : BaseAdminController
     }
 
     // CORREGIDO: Instanciar y poblar el DTO para la vista.
+    /// <summary>
+    /// Muestra el formulario para crear una nueva planta.
+    /// </summary>
     public async Task<IActionResult> Create()
     {
         var model = new PlantCreateDto
@@ -60,6 +77,10 @@ public class PlantsController : BaseAdminController
         return View(model);
     }
 
+    /// <summary>
+    /// Procesa el envío del formulario para crear una nueva planta.
+    /// </summary>
+    /// <param name="plantDto">Los datos de la nueva planta a crear.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(PlantCreateDto plantDto)
@@ -83,6 +104,10 @@ public class PlantsController : BaseAdminController
     }
 
     // CORREGIDO: La lógica que poblaba el ViewBag era redundante, el servicio ya lo hace.
+    /// <summary>
+    /// Muestra el formulario para editar una planta existente.
+    /// </summary>
+    /// <param name="id">El ID de la planta a editar.</param>
     public async Task<IActionResult> Edit(int id)
     {
         if (!ModelState.IsValid)
@@ -102,6 +127,11 @@ public class PlantsController : BaseAdminController
         return View(result.Value);
     }
 
+    /// <summary>
+    /// Procesa el envío del formulario para actualizar una planta existente.
+    /// </summary>
+    /// <param name="id">El ID de la planta que se está editando.</param>
+    /// <param name="plantDto">Los datos actualizados de la planta.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, PlantEditDto plantDto)
@@ -126,6 +156,10 @@ public class PlantsController : BaseAdminController
         return HandleServiceResult(result, nameof(Index), plantDto);
     }
 
+    /// <summary>
+    /// Muestra una vista de confirmación antes de eliminar una planta.
+    /// </summary>
+    /// <param name="id">El ID de la planta a eliminar.</param>
     public async Task<IActionResult> Delete(int id)
     {
         if (!ModelState.IsValid)
@@ -144,6 +178,10 @@ public class PlantsController : BaseAdminController
         return View(result.Value);
     }
 
+    /// <summary>
+    /// Ejecuta la eliminación de una planta tras la confirmación del usuario.
+    /// </summary>
+    /// <param name="id">El ID de la planta a eliminar.</param>
     [HttpPost]
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]

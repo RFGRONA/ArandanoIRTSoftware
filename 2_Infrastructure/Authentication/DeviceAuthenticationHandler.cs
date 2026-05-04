@@ -7,28 +7,49 @@ using ArandanoIRT.Web._1_Application.Services.Contracts;
 
 namespace ArandanoIRT.Web._2_Infrastructure.Authentication;
 
+/// <summary>
+///     Define las opciones de configuración para el esquema de autenticación de dispositivos.
+/// </summary>
 public class DeviceAuthenticationOptions : AuthenticationSchemeOptions
 {
+    /// <summary>
+    ///     El nombre por defecto para este esquema de autenticación.
+    /// </summary>
     public const string DefaultScheme = "DeviceAuthScheme";
+    /// <summary>
+    ///     El nombre del encabezado HTTP donde se buscará el token (generalmente "Authorization").
+    /// </summary>
     public string TokenHeaderName { get; set; } = "Authorization";
     public string TokenPrefix { get; set; } = "Device"; // Ej: "Device <token>"
 }
 
+/// <summary>
+///     Handler de autenticación personalizado para ASP.NET Core, responsable de validar los tokens enviados por los
+///     dispositivos.
+/// </summary>
 public class DeviceAuthenticationHandler : AuthenticationHandler<DeviceAuthenticationOptions>
 {
     private readonly IDeviceService _deviceService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DeviceAuthenticationHandler" />.
+    /// </summary>
     public DeviceAuthenticationHandler(
         IOptionsMonitor<DeviceAuthenticationOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ISystemClock clock,
         IDeviceService deviceService) // Inyectar IDeviceService
-        : base(options, logger, encoder, clock)
+        : base(options, logger, encoder)
     {
         _deviceService = deviceService;
     }
 
+    /// <summary>
+    ///     Orquesta el proceso principal de autenticación para cada petición.
+    ///     Extrae el token del encabezado, lo valida usando IDeviceService y, si es exitoso, crea una identidad
+    ///     (ClaimsPrincipal) para el dispositivo.
+    /// </summary>
+    /// <returns>Un resultado de autenticación que indica éxito o fracaso.</returns>
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         // Si no está el header de autorización, no podemos autenticar.
@@ -106,6 +127,10 @@ public class DeviceAuthenticationHandler : AuthenticationHandler<DeviceAuthentic
         return AuthenticateResult.Success(ticket);
     }
 
+    /// <summary>
+    ///     Maneja el desafío de autenticación, que se invoca cuando la autenticación falla y se requiere una acción.
+    ///     Para una API, esto típicamente significa devolver un código de estado 401 Unauthorized.
+    /// </summary>
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         // Este método se llama si la autenticación falla y se necesita un "challenge".
@@ -118,6 +143,10 @@ public class DeviceAuthenticationHandler : AuthenticationHandler<DeviceAuthentic
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    ///     Maneja el acceso prohibido, que se invoca cuando la autenticación es exitosa pero la autorización falla.
+    ///     Esto resulta en un código de estado 403 Forbidden.
+    /// </summary>
     protected override Task HandleForbiddenAsync(AuthenticationProperties properties)
     {
         // Este método se llama si la autenticación tiene éxito pero la autorización falla (403).

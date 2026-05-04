@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador para la gestión CRUD (Crear, Leer, Actualizar, Eliminar) de las entidades de Dispositivo.
+///     El acceso a este controlador está restringido a usuarios con el rol "Admin".
+/// </summary>
 [Area("Admin")]
 [Authorize(Roles = "Admin")]
 public class DevicesController : Controller
@@ -13,6 +17,9 @@ public class DevicesController : Controller
     private readonly IDeviceAdminService _deviceAdminService;
     private readonly ILogger<DevicesController> _logger;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="DevicesController" />.
+    /// </summary>
     public DevicesController(IDeviceAdminService deviceAdminService, ILogger<DevicesController> logger)
     {
         _deviceAdminService = deviceAdminService;
@@ -20,18 +27,25 @@ public class DevicesController : Controller
     }
 
     // GET: Admin/Devices
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] DeviceQueryFilters filters)
     {
-        var result = await _deviceAdminService.GetAllDevicesAsync();
+        var result = await _deviceAdminService.GetPagedDevicesAsync(filters);
         if (result.IsSuccess)
         {
+            ViewBag.CurrentFilters = filters;
+            ViewBag.AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync();
+            ViewBag.AvailableStatuses = _deviceAdminService.GetDeviceStatusesForSelection();
             return View(result.Value);
         }
         ViewData["ErrorMessage"] = result.ErrorMessage;
-        return View(new List<DeviceSummaryDto>());
+        return View(new ArandanoIRT.Web._1_Application.DTOs.Common.PagedResultDto<DeviceSummaryDto>());
     }
 
     // GET: Admin/Devices/Details/5
+    /// <summary>
+    ///     Muestra la página de detalles para un dispositivo específico.
+    /// </summary>
+    /// <param name="id">El ID del dispositivo a mostrar.</param>
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
@@ -49,6 +63,9 @@ public class DevicesController : Controller
     }
 
     // GET: Admin/Devices/Create
+    /// <summary>
+    ///     Muestra el formulario para crear un nuevo dispositivo.
+    /// </summary>
     public async Task<IActionResult> Create()
     {
         var dto = new DeviceCreateDto
@@ -60,6 +77,10 @@ public class DevicesController : Controller
     }
 
     // POST: Admin/Devices/Create
+    /// <summary>
+    ///     Procesa el envío del formulario para crear un nuevo dispositivo.
+    /// </summary>
+    /// <param name="deviceDto">Los datos del nuevo dispositivo a crear.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(DeviceCreateDto deviceDto)
@@ -83,6 +104,10 @@ public class DevicesController : Controller
     }
 
     // GET: Admin/Devices/Edit/5
+    /// <summary>
+    ///     Muestra el formulario para editar un dispositivo existente.
+    /// </summary>
+    /// <param name="id">El ID del dispositivo a editar.</param>
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
@@ -96,6 +121,11 @@ public class DevicesController : Controller
     }
 
     // POST: Admin/Devices/Edit/5
+    /// <summary>
+    ///     Procesa el envío del formulario para actualizar un dispositivo existente.
+    /// </summary>
+    /// <param name="id">El ID del dispositivo que se está editando.</param>
+    /// <param name="deviceDto">Los datos actualizados del dispositivo.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, DeviceEditDto deviceDto)
@@ -124,6 +154,10 @@ public class DevicesController : Controller
     }
 
     // GET: Admin/Devices/Delete/5
+    /// <summary>
+    ///     Muestra una vista de confirmación antes de eliminar un dispositivo.
+    /// </summary>
+    /// <param name="id">El ID del dispositivo a eliminar.</param>
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
@@ -137,6 +171,10 @@ public class DevicesController : Controller
     }
 
     // POST: Admin/Devices/Delete/5
+    /// <summary>
+    ///     Ejecuta la eliminación de un dispositivo tras la confirmación del usuario.
+    /// </summary>
+    /// <param name="id">El ID del dispositivo a eliminar.</param>
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
@@ -154,6 +192,10 @@ public class DevicesController : Controller
     // --- MÉTODOS AUXILIARES ---
 
     // Método helper para poblar los dropdowns en caso de error de validación
+    /// <summary>
+    ///     Método de utilidad para volver a poblar las listas desplegables en un DTO de creación,
+    ///     típicamente después de un error de validación.
+    /// </summary>
     private async Task PopulateDropdownsForDto(DeviceCreateDto dto)
     {
         dto.AvailablePlants = await _deviceAdminService.GetPlantsForSelectionAsync();

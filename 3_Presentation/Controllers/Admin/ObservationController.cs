@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArandanoIRT.Web._3_Presentation.Controllers.Admin;
 
+/// <summary>
+///     Controlador para la gestión de las observaciones manuales realizadas por los usuarios.
+/// </summary>
 [Area("Admin")]
 [Authorize]
 public class ObservationController : Controller
@@ -16,6 +19,9 @@ public class ObservationController : Controller
     private readonly IPlantService _plantService;
     private readonly IUserService _userService;
 
+    /// <summary>
+    ///     Inicializa una nueva instancia de la clase <see cref="ObservationController" />.
+    /// </summary>
     public ObservationController(IObservationService observationService, IPlantService plantService,
         IUserService userService)
     {
@@ -25,6 +31,11 @@ public class ObservationController : Controller
     }
 
     // GET: Admin/Observation
+    /// <summary>
+    ///     Muestra la página principal con una lista paginada y filtrable de todas las observaciones manuales.
+    /// </summary>
+    /// <param name="filters">Objeto que contiene los parámetros de filtrado y paginación desde la URL.</param>
+    /// <returns>La vista `Index` con los datos paginados y las listas para los filtros.</returns>
     public async Task<IActionResult> Index([FromQuery] ObservationQueryFilters filters)
     {
         if (filters.StartDate.HasValue)
@@ -46,6 +57,9 @@ public class ObservationController : Controller
     }
 
     // GET: Admin/Observation/Create
+    /// <summary>
+    ///     Muestra el formulario para crear una nueva observación manual.
+    /// </summary>
     public async Task<IActionResult> Create()
     {
         var model = new ObservationCreateDto
@@ -56,6 +70,10 @@ public class ObservationController : Controller
     }
 
     // POST: Admin/Observation/Create
+    /// <summary>
+    ///     Procesa el envío del formulario para crear una nueva observación.
+    /// </summary>
+    /// <param name="model">Los datos de la nueva observación a crear.</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ObservationCreateDto model)
