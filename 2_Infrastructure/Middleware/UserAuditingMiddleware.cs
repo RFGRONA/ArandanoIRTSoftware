@@ -36,7 +36,7 @@ public class UserAuditingMiddleware
 
         try
         {
-            await dbContext.Database.ExecuteSqlRawAsync("SET application_name = {0}", appName);
+            await dbContext.Database.ExecuteSqlRawAsync("SELECT set_config('application_name', {0}, false)", appName);
         }
         catch (Exception ex)
         {

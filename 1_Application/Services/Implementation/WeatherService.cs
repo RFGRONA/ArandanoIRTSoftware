@@ -50,11 +50,36 @@ public class WeatherService : IWeatherService
             return Result.Failure<WeatherInfo>("Ciudad no especificada para la consulta del clima.");
         }
 
-        string encodedCityQuery = HttpUtility.UrlEncode(cityQuery);
+        string cleanCityQuery = cityQuery.Trim();
+        if (cleanCityQuery.Contains(','))
+        {
+            var parts = cleanCityQuery.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            bool isCoordinates = parts.Length == 2 &&
+                                 double.TryParse(parts[0].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _) &&
+                                 double.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _);
+
+            if (!isCoordinates)
+            {
+                if (parts.Length > 2)
+                {
+                    cleanCityQuery = $"{parts[0].Trim()}, {parts[^1].Trim()}";
+                }
+                else if (parts.Length == 2)
+                {
+                    cleanCityQuery = $"{parts[0].Trim()}, {parts[1].Trim()}";
+                }
+            }
+            else
+            {
+                cleanCityQuery = $"{parts[0].Trim()},{parts[1].Trim()}";
+            }
+        }
+
+        string encodedCityQuery = HttpUtility.UrlEncode(cleanCityQuery);
         // MODIFICADO: Añadido &lang=es
         var requestUrl = $"current.json?key={_settings.ApiKey}&q={encodedCityQuery}&aqi=no&lang=es";
 
-        _logger.LogInformation("Consultando WeatherAPI: {RequestUrl}", requestUrl);
+        _logger.LogInformation("Consultando WeatherAPI: {RequestUrl} (Original: {OriginalQuery})", requestUrl, cityQuery);
 
         try
         {
